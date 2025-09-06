@@ -63,7 +63,7 @@ const CreateGroup: React.FC = () => {
       });
 
       toast.success('Group created successfully!');
-      navigate(`/group/${response.group.url_slug}`);
+      navigate(`/group/${response.url_slug}`);
     } catch (error) {
       toast.error('Failed to create group');
       console.error('Error creating group:', error);
