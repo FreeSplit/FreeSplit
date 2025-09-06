@@ -1,22 +1,8 @@
-// Simple gRPC-Web API implementation
-const proto = require('../proto/expense_pb');
+// Simple HTTP API implementation using axios
+import axios from 'axios';
 
-// Import the gRPC clients
-const { 
-  ExpenseServiceClient,
-  GroupServiceClient,
-  ParticipantServiceClient,
-  DebtServiceClient
-} = require('../proto/expense_grpc_web_pb');
-
-// gRPC-Web client configuration
-const GRPC_HOST = process.env.REACT_APP_GRPC_HOST || 'http://localhost:8080';
-
-// Create gRPC clients
-const groupClient = new GroupServiceClient(GRPC_HOST);
-const participantClient = new ParticipantServiceClient(GRPC_HOST);
-const expenseClient = new ExpenseServiceClient(GRPC_HOST);
-const debtClient = new DebtServiceClient(GRPC_HOST);
+// API configuration
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8081';
 
 // Types (matching the protobuf messages)
 export interface Group {
@@ -85,41 +71,29 @@ export const createGroup = async (data: {
   currency: string;
   participant_names: string[];
 }): Promise<Group> => {
-  return new Promise((resolve, reject) => {
+  try {
     console.log('Creating group with data:', data);
-    console.log('Proto object:', proto);
-    console.log('Proto.freesplit:', proto.freesplit);
     
-    try {
-      const request = new proto.CreateGroupRequest();
-      request.setName(data.name);
-      request.setCurrency(data.currency);
-      request.setParticipantNamesList(data.participant_names);
-      
-      console.log('Request created:', request);
-      
-      groupClient.createGroup(request, {}, (err: any, response: any) => {
-        console.log('gRPC response:', { err, response });
-        if (err) {
-          console.error('gRPC error:', err);
-          reject(err);
-          return;
-        }
-        // The response has a 'group' field, so we need to extract it
-        const group = response?.getGroup();
-        if (group) {
-          console.log('Group extracted:', group.toObject());
-          resolve(group.toObject() as Group);
-        } else {
-          console.error('No group in response');
-          reject(new Error('No group in response'));
-        }
-      });
-    } catch (error) {
-      console.error('Error creating request:', error);
-      reject(error);
+    const response = await axios.post(`${API_BASE_URL}/freesplit.GroupService/CreateGroup`, {
+      name: data.name,
+      currency: data.currency,
+      participant_names: data.participant_names
+    });
+    
+    console.log('HTTP response:', response.data);
+    
+    // Extract the group from the response
+    const group = response.data.group;
+    if (group) {
+      console.log('Group extracted:', group);
+      return group as Group;
+    } else {
+      throw new Error('No group in response');
     }
-  });
+  } catch (error) {
+    console.error('Error creating group:', error);
+    throw error;
+  }
 };
 
 export const updateGroup = async (data: {
