@@ -2,8 +2,6 @@ package server
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 
 	"freesplit/internal/database"
 	pb "freesplit/proto"
@@ -198,13 +196,4 @@ func (s *GroupService) UpdateGroup(ctx context.Context, req *pb.UpdateGroupReque
 	}
 
 	return &pb.UpdateGroupResponse{Group: pbGroup}, nil
-}
-
-// generateURLSlug creates a unique URL slug for groups
-func generateURLSlug() (string, error) {
-	bytes := make([]byte, 16)
-	if _, err := rand.Read(bytes); err != nil {
-		return "", err
-	}
-	return hex.EncodeToString(bytes), nil
 }

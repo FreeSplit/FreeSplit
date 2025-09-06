@@ -1,7 +1,10 @@
 FROM golang:1.21-alpine AS builder
 
-# Install protobuf compiler and grpc plugins
-RUN apk add --no-cache protobuf-dev protoc-gen-go protoc-gen-go-grpc
+# Install protobuf compiler, grpc plugins, and build tools
+RUN apk add --no-cache protobuf-dev
+RUN go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
+RUN go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+ENV PATH="/root/go/bin:${PATH}"
 
 WORKDIR /app
 
@@ -20,7 +23,7 @@ RUN protoc --go_out=. --go_opt=paths=source_relative \
     proto/expense.proto
 
 # Build the application
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o main .
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 
 # Final stage
 FROM alpine:latest

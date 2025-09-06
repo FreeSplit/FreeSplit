@@ -4,15 +4,14 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
 	"math"
-	"time"
 
 	"freesplit/internal/database"
 	pb "freesplit/proto"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
@@ -39,14 +38,14 @@ func (s *ExpenseService) GetExpensesByGroup(ctx context.Context, req *pb.GetExpe
 		}
 
 		pbExpenses = append(pbExpenses, &pb.Expense{
-			Id:         int32(expense.ID),
-			Name:       expense.Name,
-			Cost:       expense.Cost,
-			Emoji:      expense.Emoji,
-			PayerId:    int32(expense.PayerID),
-			SplitType:  expense.SplitType,
-			SplitIds:   splitIds,
-			GroupId:    int32(expense.GroupID),
+			Id:        int32(expense.ID),
+			Name:      expense.Name,
+			Cost:      expense.Cost,
+			Emoji:     expense.Emoji,
+			PayerId:   int32(expense.PayerID),
+			SplitType: expense.SplitType,
+			SplitIds:  splitIds,
+			GroupId:   int32(expense.GroupID),
 		})
 	}
 
@@ -62,11 +61,11 @@ func (s *ExpenseService) GetSplitsByParticipant(ctx context.Context, req *pb.Get
 	var pbSplits []*pb.Split
 	for _, split := range splits {
 		pbSplits = append(pbSplits, &pb.Split{
-			SplitId:      int32(split.ID),
-			GroupId:      int32(split.GroupID),
-			ExpenseId:    int32(split.ExpenseID),
+			SplitId:       int32(split.ID),
+			GroupId:       int32(split.GroupID),
+			ExpenseId:     int32(split.ExpenseID),
 			ParticipantId: int32(split.ParticipantID),
-			SplitAmount:  split.SplitAmount,
+			SplitAmount:   split.SplitAmount,
 		})
 	}
 
@@ -88,24 +87,24 @@ func (s *ExpenseService) GetExpenseWithSplits(ctx context.Context, req *pb.GetEx
 	}
 
 	pbExpense := &pb.Expense{
-		Id:         int32(expense.ID),
-		Name:       expense.Name,
-		Cost:       expense.Cost,
-		Emoji:      expense.Emoji,
-		PayerId:    int32(expense.PayerID),
-		SplitType:  expense.SplitType,
-		SplitIds:   splitIds,
-		GroupId:    int32(expense.GroupID),
+		Id:        int32(expense.ID),
+		Name:      expense.Name,
+		Cost:      expense.Cost,
+		Emoji:     expense.Emoji,
+		PayerId:   int32(expense.PayerID),
+		SplitType: expense.SplitType,
+		SplitIds:  splitIds,
+		GroupId:   int32(expense.GroupID),
 	}
 
 	var pbSplits []*pb.Split
 	for _, split := range expense.Splits {
 		pbSplits = append(pbSplits, &pb.Split{
-			SplitId:      int32(split.ID),
-			GroupId:      int32(split.GroupID),
-			ExpenseId:    int32(split.ExpenseID),
+			SplitId:       int32(split.ID),
+			GroupId:       int32(split.GroupID),
+			ExpenseId:     int32(split.ExpenseID),
 			ParticipantId: int32(split.ParticipantID),
-			SplitAmount:  split.SplitAmount,
+			SplitAmount:   split.SplitAmount,
 		})
 	}
 
@@ -173,24 +172,24 @@ func (s *ExpenseService) CreateExpense(ctx context.Context, req *pb.CreateExpens
 	}
 
 	pbExpense := &pb.Expense{
-		Id:         int32(expense.ID),
-		Name:       expense.Name,
-		Cost:       expense.Cost,
-		Emoji:      expense.Emoji,
-		PayerId:    int32(expense.PayerID),
-		SplitType:  expense.SplitType,
-		SplitIds:   splitIds,
-		GroupId:    int32(expense.GroupID),
+		Id:        int32(expense.ID),
+		Name:      expense.Name,
+		Cost:      expense.Cost,
+		Emoji:     expense.Emoji,
+		PayerId:   int32(expense.PayerID),
+		SplitType: expense.SplitType,
+		SplitIds:  splitIds,
+		GroupId:   int32(expense.GroupID),
 	}
 
 	var pbSplits []*pb.Split
 	for _, split := range splits {
 		pbSplits = append(pbSplits, &pb.Split{
-			SplitId:      int32(split.ID),
-			GroupId:      int32(split.GroupID),
-			ExpenseId:    int32(split.ExpenseID),
+			SplitId:       int32(split.ID),
+			GroupId:       int32(split.GroupID),
+			ExpenseId:     int32(split.ExpenseID),
 			ParticipantId: int32(split.ParticipantID),
-			SplitAmount:  split.SplitAmount,
+			SplitAmount:   split.SplitAmount,
 		})
 	}
 
@@ -265,24 +264,24 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, req *pb.UpdateExpens
 	}
 
 	pbExpense := &pb.Expense{
-		Id:         int32(expense.ID),
-		Name:       expense.Name,
-		Cost:       expense.Cost,
-		Emoji:      expense.Emoji,
-		PayerId:    int32(expense.PayerID),
-		SplitType:  expense.SplitType,
-		SplitIds:   splitIds,
-		GroupId:    int32(expense.GroupID),
+		Id:        int32(expense.ID),
+		Name:      expense.Name,
+		Cost:      expense.Cost,
+		Emoji:     expense.Emoji,
+		PayerId:   int32(expense.PayerID),
+		SplitType: expense.SplitType,
+		SplitIds:  splitIds,
+		GroupId:   int32(expense.GroupID),
 	}
 
 	var pbSplits []*pb.Split
 	for _, split := range splits {
 		pbSplits = append(pbSplits, &pb.Split{
-			SplitId:      int32(split.ID),
-			GroupId:      int32(split.GroupID),
-			ExpenseId:    int32(split.ExpenseID),
+			SplitId:       int32(split.ID),
+			GroupId:       int32(split.GroupID),
+			ExpenseId:     int32(split.ExpenseID),
 			ParticipantId: int32(split.ParticipantID),
-			SplitAmount:  split.SplitAmount,
+			SplitAmount:   split.SplitAmount,
 		})
 	}
 
@@ -292,7 +291,7 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, req *pb.UpdateExpens
 	}, nil
 }
 
-func (s *ExpenseService) DeleteExpense(ctx context.Context, req *pb.DeleteExpenseRequest) (*pb.Empty, error) {
+func (s *ExpenseService) DeleteExpense(ctx context.Context, req *pb.DeleteExpenseRequest) (*emptypb.Empty, error) {
 	// Start transaction
 	tx := s.db.Begin()
 	defer func() {
@@ -333,7 +332,7 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, req *pb.DeleteExpens
 		return nil, status.Errorf(codes.Internal, "Failed to commit transaction: %v", err)
 	}
 
-	return &pb.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // calculateSimplifiedDebts implements the debt simplification algorithm
@@ -442,4 +441,3 @@ func generateURLSlug() (string, error) {
 	}
 	return hex.EncodeToString(bytes), nil
 }
-

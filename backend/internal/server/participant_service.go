@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"gorm.io/gorm"
 )
 
@@ -89,7 +90,7 @@ func (s *ParticipantService) UpdateParticipant(ctx context.Context, req *pb.Upda
 	return &pb.UpdateParticipantResponse{Participant: pbParticipant}, nil
 }
 
-func (s *ParticipantService) DeleteParticipant(ctx context.Context, req *pb.DeleteParticipantRequest) (*pb.Empty, error) {
+func (s *ParticipantService) DeleteParticipant(ctx context.Context, req *pb.DeleteParticipantRequest) (*emptypb.Empty, error) {
 	// Start transaction
 	tx := s.db.Begin()
 	defer func() {
@@ -144,7 +145,7 @@ func (s *ParticipantService) DeleteParticipant(ctx context.Context, req *pb.Dele
 		return nil, status.Errorf(codes.Internal, "Failed to commit transaction: %v", err)
 	}
 
-	return &pb.Empty{}, nil
+	return &emptypb.Empty{}, nil
 }
 
 // calculateSimplifiedDebts implements the debt simplification algorithm

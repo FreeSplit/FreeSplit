@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"math"
 
 	"freesplit/internal/database"
 	pb "freesplit/proto"
@@ -38,10 +37,10 @@ func (s *DebtService) GetDebts(ctx context.Context, req *pb.GetDebtsRequest) (*p
 	var pbDebts []*pb.Debt
 	for _, debt := range debts {
 		pbDebts = append(pbDebts, &pb.Debt{
-			DebtId:    int32(debt.ID),
-			GroupId:   int32(debt.GroupID),
-			LenderId:  int32(debt.LenderID),
-			DebtorId:  int32(debt.DebtorID),
+			DebtId:     int32(debt.ID),
+			GroupId:    int32(debt.GroupID),
+			LenderId:   int32(debt.LenderID),
+			DebtorId:   int32(debt.DebtorID),
 			DebtAmount: debt.DebtAmount,
 			PaidAmount: debt.PaidAmount,
 		})
@@ -58,7 +57,7 @@ func (s *DebtService) GetDebts(ctx context.Context, req *pb.GetDebtsRequest) (*p
 	}
 
 	return &pb.GetDebtsResponse{
-		Debts:       pbDebts,
+		Debts:        pbDebts,
 		Participants: pbParticipants,
 	}, nil
 }
@@ -89,14 +88,13 @@ func (s *DebtService) UpdateDebtPaidAmount(ctx context.Context, req *pb.UpdateDe
 
 	// Convert to response format
 	pbDebt := &pb.Debt{
-		DebtId:    int32(debt.ID),
-		GroupId:   int32(debt.GroupID),
-		LenderId:  int32(debt.LenderID),
-		DebtorId:  int32(debt.DebtorID),
+		DebtId:     int32(debt.ID),
+		GroupId:    int32(debt.GroupID),
+		LenderId:   int32(debt.LenderID),
+		DebtorId:   int32(debt.DebtorID),
 		DebtAmount: debt.DebtAmount,
 		PaidAmount: debt.PaidAmount,
 	}
 
 	return &pb.UpdateDebtPaidAmountResponse{Debt: pbDebt}, nil
 }
-
