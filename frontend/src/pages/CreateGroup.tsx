@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign } from 'lucide-react';
-import { createGroup } from '../services/api';
+import { createGroup } from '../services/grpc-api';
 import toast from 'react-hot-toast';
 
 const CreateGroup: React.FC = () => {
