@@ -30,7 +30,7 @@ const Debts: React.FC = () => {
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
-      setDebts(debtsResponse.debts);
+      setDebts(debtsResponse);
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);

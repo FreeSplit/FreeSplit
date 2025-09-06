@@ -51,9 +51,12 @@ export interface Debt {
 }
 
 // Group API
-export const getGroup = async (urlSlug: string): Promise<Group> => {
+export const getGroup = async (urlSlug: string): Promise<{group: Group, participants: Participant[]}> => {
   const response = await axios.get(`${API_BASE_URL}/api/groups?url_slug=${urlSlug}`);
-  return response.data;
+  return {
+    group: response.data,
+    participants: response.data.participants || []
+  };
 };
 
 export const createGroup = async (data: {

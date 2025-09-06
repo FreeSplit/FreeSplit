@@ -31,8 +31,8 @@ const GroupDashboard: React.FC = () => {
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
-      setExpenses(expensesResponse.expenses);
-      setDebts(debtsResponse.debts);
+      setExpenses(expensesResponse);
+      setDebts(debtsResponse);
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);

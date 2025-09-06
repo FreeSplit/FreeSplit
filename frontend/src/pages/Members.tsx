@@ -46,7 +46,7 @@ const Members: React.FC = () => {
         group_id: group!.id
       });
       
-      setParticipants(prev => [...prev, response.participant]);
+      setParticipants(prev => [...prev, response]);
       setNewMemberName('');
       setShowAddForm(false);
       toast.success('Member added successfully!');
@@ -66,7 +66,7 @@ const Members: React.FC = () => {
       });
       
       setParticipants(prev => 
-        prev.map(p => p.id === participantId ? response.participant : p)
+        prev.map(p => p.id === participantId ? response : p)
       );
       setEditingId(null);
       setEditName('');
