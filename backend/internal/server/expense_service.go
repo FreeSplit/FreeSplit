@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"math"
 
 	"freesplit/internal/database"
@@ -115,10 +116,13 @@ func (s *ExpenseService) GetExpenseWithSplits(ctx context.Context, req *pb.GetEx
 }
 
 func (s *ExpenseService) CreateExpense(ctx context.Context, req *pb.CreateExpenseRequest) (*pb.CreateExpenseResponse, error) {
+	log.Printf("CreateExpense called with request: %+v", req)
+
 	// Start transaction
 	tx := s.db.Begin()
 	defer func() {
 		if r := recover(); r != nil {
+			log.Printf("Panic in CreateExpense: %v", r)
 			tx.Rollback()
 		}
 	}()
@@ -412,15 +416,16 @@ func (s *ExpenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		creditor.Balance -= amount
 		debtor.Balance -= amount
 
+		// Update the arrays before checking indices
+		creditors[creditorIdx] = creditor
+		debtors[debtorIdx] = debtor
+
 		if creditor.Balance < 0.01 {
 			creditorIdx++
 		}
 		if debtor.Balance < 0.01 {
 			debtorIdx++
 		}
-
-		creditors[creditorIdx] = creditor
-		debtors[debtorIdx] = debtor
 	}
 
 	// Create debts in database

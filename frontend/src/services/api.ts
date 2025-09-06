@@ -131,9 +131,15 @@ export const getExpenseWithSplits = async (expenseId: number): Promise<{expense:
 export const createExpense = async (data: {
   expense: Expense;
   splits: Split[];
-}): Promise<Expense> => {
-  // Simplified implementation for now
-  return data.expense;
+}): Promise<{expense: Expense, splits: Split[]}> => {
+  const response = await axios.post(`${API_BASE_URL}/api/expenses`, {
+    expense: data.expense,
+    splits: data.splits
+  });
+  return {
+    expense: response.data.expense,
+    splits: response.data.splits
+  };
 };
 
 export const updateExpense = async (data: {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -389,9 +390,100 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService *
 }
 
 func createExpense(w http.ResponseWriter, r *http.Request, expenseService *server.ExpenseService) {
-	// Simplified implementation for now
+	var req struct {
+		Expense struct {
+			ID        int32   `json:"id"`
+			Name      string  `json:"name"`
+			Cost      float64 `json:"cost"`
+			Emoji     string  `json:"emoji"`
+			PayerID   int32   `json:"payer_id"`
+			SplitType string  `json:"split_type"`
+			SplitIds  []int32 `json:"split_ids"`
+			GroupID   int32   `json:"group_id"`
+		} `json:"expense"`
+		Splits []struct {
+			SplitID       int32   `json:"split_id"`
+			GroupID       int32   `json:"group_id"`
+			ExpenseID     int32   `json:"expense_id"`
+			ParticipantID int32   `json:"participant_id"`
+			SplitAmount   float64 `json:"split_amount"`
+		} `json:"splits"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Create gRPC request
+	grpcReq := &pb.CreateExpenseRequest{
+		Expense: &pb.Expense{
+			Id:        req.Expense.ID,
+			Name:      req.Expense.Name,
+			Cost:      req.Expense.Cost,
+			Emoji:     req.Expense.Emoji,
+			PayerId:   req.Expense.PayerID,
+			SplitType: req.Expense.SplitType,
+			SplitIds:  req.Expense.SplitIds,
+			GroupId:   req.Expense.GroupID,
+		},
+		Splits: make([]*pb.Split, len(req.Splits)),
+	}
+
+	// Convert splits
+	for i, split := range req.Splits {
+		grpcReq.Splits[i] = &pb.Split{
+			SplitId:       split.SplitID,
+			GroupId:       split.GroupID,
+			ExpenseId:     split.ExpenseID,
+			ParticipantId: split.ParticipantID,
+			SplitAmount:   split.SplitAmount,
+		}
+	}
+
+	// Call gRPC service
+	log.Printf("Calling CreateExpense with request: %+v", grpcReq)
+	resp, err := expenseService.CreateExpense(context.Background(), grpcReq)
+	if err != nil {
+		log.Printf("Error creating expense: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+	if resp == nil {
+		log.Printf("CreateExpense returned nil response")
+		http.Error(w, "Internal server error: nil response", http.StatusInternalServerError)
+		return
+	}
+	log.Printf("CreateExpense response: %+v", resp)
+
+	// Convert to JSON response
+	response := map[string]interface{}{
+		"expense": map[string]interface{}{
+			"id":         resp.Expense.Id,
+			"name":       resp.Expense.Name,
+			"cost":       resp.Expense.Cost,
+			"emoji":      resp.Expense.Emoji,
+			"payer_id":   resp.Expense.PayerId,
+			"split_type": resp.Expense.SplitType,
+			"split_ids":  resp.Expense.SplitIds,
+			"group_id":   resp.Expense.GroupId,
+		},
+		"splits": make([]map[string]interface{}, len(resp.Splits)),
+	}
+
+	// Add splits
+	for i, split := range resp.Splits {
+		response["splits"].([]map[string]interface{})[i] = map[string]interface{}{
+			"split_id":       split.SplitId,
+			"group_id":       split.GroupId,
+			"expense_id":     split.ExpenseId,
+			"participant_id": split.ParticipantId,
+			"split_amount":   split.SplitAmount,
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Create expense not implemented yet"})
+	json.NewEncoder(w).Encode(response)
 }
 
 func updateExpense(w http.ResponseWriter, r *http.Request, expenseService *server.ExpenseService) {
