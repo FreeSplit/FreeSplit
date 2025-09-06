@@ -51,7 +51,7 @@ const EditExpense: React.FC = () => {
 
       // Initialize splits from existing data
       const initialSplits: { [key: number]: number } = {};
-      expenseResponse.splits.forEach(split => {
+      expenseResponse.splits.forEach((split: any) => {
         initialSplits[split.participant_id] = split.split_amount;
       });
       setSplits(initialSplits);

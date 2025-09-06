@@ -39,7 +39,7 @@ const AddExpense: React.FC = () => {
       // Initialize splits for equal splitting
       const equalAmount = 0; // Will be calculated when cost is entered
       const initialSplits: { [key: number]: number } = {};
-      response.participants.forEach(participant => {
+      response.participants.forEach((participant: any) => {
         initialSplits[participant.id] = equalAmount;
       });
       setSplits(initialSplits);
