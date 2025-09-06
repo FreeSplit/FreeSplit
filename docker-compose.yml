@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  freesplit-backend:
+    build: ./backend
+    ports:
+      - "8080:8080"  # gRPC
+      - "8081:8081"  # HTTP/REST
+    volumes:
+      - ./data:/data
+    environment:
+      - DATABASE_PATH=/data/freesplit.db
+    restart: unless-stopped
+
+  freesplit-frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - freesplit-backend
+    restart: unless-stopped
+
