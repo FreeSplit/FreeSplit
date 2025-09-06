@@ -67,7 +67,7 @@ export interface Debt {
 // Group API
 export const getGroup = async (urlSlug: string): Promise<Group> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.GetGroupRequest();
+    const request = new proto.GetGroupRequest();
     request.setUrlSlug(urlSlug);
     
     groupClient.getGroup(request, {}, (err: any, response: any) => {
@@ -86,24 +86,39 @@ export const createGroup = async (data: {
   participant_names: string[];
 }): Promise<Group> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.CreateGroupRequest();
-    request.setName(data.name);
-    request.setCurrency(data.currency);
-    request.setParticipantNamesList(data.participant_names);
+    console.log('Creating group with data:', data);
+    console.log('Proto object:', proto);
+    console.log('Proto.freesplit:', proto.freesplit);
     
-    groupClient.createGroup(request, {}, (err: any, response: any) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      // The response has a 'group' field, so we need to extract it
-      const group = response?.getGroup();
-      if (group) {
-        resolve(group.toObject() as Group);
-      } else {
-        reject(new Error('No group in response'));
-      }
-    });
+    try {
+      const request = new proto.CreateGroupRequest();
+      request.setName(data.name);
+      request.setCurrency(data.currency);
+      request.setParticipantNamesList(data.participant_names);
+      
+      console.log('Request created:', request);
+      
+      groupClient.createGroup(request, {}, (err: any, response: any) => {
+        console.log('gRPC response:', { err, response });
+        if (err) {
+          console.error('gRPC error:', err);
+          reject(err);
+          return;
+        }
+        // The response has a 'group' field, so we need to extract it
+        const group = response?.getGroup();
+        if (group) {
+          console.log('Group extracted:', group.toObject());
+          resolve(group.toObject() as Group);
+        } else {
+          console.error('No group in response');
+          reject(new Error('No group in response'));
+        }
+      });
+    } catch (error) {
+      console.error('Error creating request:', error);
+      reject(error);
+    }
   });
 };
 
@@ -113,7 +128,7 @@ export const updateGroup = async (data: {
   participant_id: number;
 }): Promise<Group> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.UpdateGroupRequest();
+    const request = new proto.UpdateGroupRequest();
     request.setName(data.name);
     request.setCurrency(data.currency);
     request.setParticipantId(data.participant_id);
@@ -134,7 +149,7 @@ export const addParticipant = async (data: {
   group_id: number;
 }): Promise<Participant> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.AddParticipantRequest();
+    const request = new proto.AddParticipantRequest();
     request.setName(data.name);
     request.setGroupId(data.group_id);
     
@@ -153,7 +168,7 @@ export const updateParticipant = async (data: {
   participant_id: number;
 }): Promise<Participant> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.UpdateParticipantRequest();
+    const request = new proto.UpdateParticipantRequest();
     request.setName(data.name);
     request.setParticipantId(data.participant_id);
     
@@ -169,7 +184,7 @@ export const updateParticipant = async (data: {
 
 export const deleteParticipant = async (participantId: number): Promise<void> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.DeleteParticipantRequest();
+    const request = new proto.DeleteParticipantRequest();
     request.setParticipantId(participantId);
     
     participantClient.deleteParticipant(request, {}, (err: any) => {
@@ -185,7 +200,7 @@ export const deleteParticipant = async (participantId: number): Promise<void> =>
 // Expense API - simplified for now
 export const getExpensesByGroup = async (groupId: number): Promise<Expense[]> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.GetExpensesByGroupRequest();
+    const request = new proto.GetExpensesByGroupRequest();
     request.setGroupId(groupId);
     
     expenseClient.getExpensesByGroup(request, {}, (err: any, response: any) => {
@@ -200,7 +215,7 @@ export const getExpensesByGroup = async (groupId: number): Promise<Expense[]> =>
 
 export const getSplitsByParticipant = async (participantId: number): Promise<Split[]> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.GetSplitsByParticipantRequest();
+    const request = new proto.GetSplitsByParticipantRequest();
     request.setParticipantId(participantId);
     
     expenseClient.getSplitsByParticipant(request, {}, (err: any, response: any) => {
@@ -215,7 +230,7 @@ export const getSplitsByParticipant = async (participantId: number): Promise<Spl
 
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.GetExpenseWithSplitsRequest();
+    const request = new proto.GetExpenseWithSplitsRequest();
     request.setExpenseId(expenseId);
     
     expenseClient.getExpenseWithSplits(request, {}, (err: any, response: any) => {
@@ -259,7 +274,7 @@ export const deleteExpense = async (data: {
 // Debt API
 export const getDebts = async (groupId: number): Promise<Debt[]> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.GetDebtsRequest();
+    const request = new proto.GetDebtsRequest();
     request.setGroupId(groupId);
     
     debtClient.getDebts(request, {}, (err: any, response: any) => {
@@ -277,7 +292,7 @@ export const updateDebtPaidAmount = async (data: {
   paid_amount: number;
 }): Promise<Debt> => {
   return new Promise((resolve, reject) => {
-    const request = new proto.freesplit.UpdateDebtPaidAmountRequest();
+    const request = new proto.UpdateDebtPaidAmountRequest();
     request.setDebtId(data.debt_id);
     request.setPaidAmount(data.paid_amount);
     
