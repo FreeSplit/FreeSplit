@@ -1,6 +1,6 @@
 # FreeSplit
 
-A simple, self-hosted expense splitting application similar to Splitwise. Built with Go (gRPC backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
+A simple, self-hosted expense splitting application. Built with Go (gRPC backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
 
 ## Features
 
@@ -16,13 +16,13 @@ A simple, self-hosted expense splitting application similar to Splitwise. Built 
 - ✅ Unlimited expenses, ad-free
 - ✅ Spending totals (group + per member)
 
-### Future Features
+### Future Feature Ideas
 - Categorize expenses (Food, Travel, etc.)
 - Receipt photo uploads
 - Payment requests / reminders
 - Currency converter
 - Export to CSV/Excel
-- Import from CSV/Excel from Splitwise
+- Import from CSV/Excel
 - Recurring transactions
 - Multi-language support
 - Mobile offline entry
@@ -31,7 +31,7 @@ A simple, self-hosted expense splitting application similar to Splitwise. Built 
 
 - **Backend**: Go with gRPC API
 - **Frontend**: React with PWA capabilities
-- **Database**: SQLite (easily replaceable)
+- **Database**: SQLite
 - **Deployment**: Docker containers
 - **Communication**: gRPC-Web for frontend-backend communication
 
@@ -206,7 +206,7 @@ docker-compose down
 
 ## Contributing
 
-1. Fork the repository
+1. Clone the repository
 2. Create a feature branch
 3. Make your changes
 4. Add tests if applicable
