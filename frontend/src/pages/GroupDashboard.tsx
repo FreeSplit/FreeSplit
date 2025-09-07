@@ -23,10 +23,11 @@ const GroupDashboard: React.FC = () => {
   const loadGroupData = async () => {
     try {
       setLoading(true);
-      const [groupResponse, expensesResponse, debtsResponse] = await Promise.all([
-        getGroup(urlSlug!),
-        getExpensesByGroup(group?.id || 0),
-        getDebts(group?.id || 0)
+      const groupResponse = await getGroup(urlSlug!);
+      
+      const [expensesResponse, debtsResponse] = await Promise.all([
+        getExpensesByGroup(groupResponse.group.id),
+        getDebts(groupResponse.group.id)
       ]);
 
       setGroup(groupResponse.group);
@@ -195,6 +196,7 @@ const GroupDashboard: React.FC = () => {
                         {group.currency} {expense.cost.toFixed(2)}
                       </p>
                       <p className="text-sm text-gray-500">{expense.split_type}</p>
+                      <p className="text-xs text-gray-400">Added recently</p>
                     </div>
                   </div>
                 </div>
