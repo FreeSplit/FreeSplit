@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "🚀 Setting up FreeSplit - Expense Splitting Application"
-echo "=================================================="
+echo "======================================================="
 
 # Check if we want Docker or local setup
 if [ "$1" = "--local" ] || [ "$1" = "-l" ]; then

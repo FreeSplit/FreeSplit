@@ -22,7 +22,7 @@ func NewGroupService(db *gorm.DB) *GroupService {
 
 func (s *GroupService) GetGroup(ctx context.Context, req *pb.GetGroupRequest) (*pb.GetGroupResponse, error) {
 	var group database.Group
-	if err := s.db.Preload("Participants").Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
+	if err := s.db.Preload("Participants").Preload("Expenses").Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, status.Errorf(codes.NotFound, "Group not found")
 		}

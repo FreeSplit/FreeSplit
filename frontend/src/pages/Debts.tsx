@@ -23,14 +23,17 @@ const Debts: React.FC = () => {
   const loadGroupData = async () => {
     try {
       setLoading(true);
-      const [groupResponse, debtsResponse] = await Promise.all([
-        getGroup(urlSlug!),
-        getDebts(group?.id || 0)
-      ]);
+      const groupResponse = await getGroup(urlSlug!);
+      const debtsResponse = await getDebts(groupResponse.group.id);
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
       setDebts(debtsResponse);
+      
+      // Debug logging
+      console.log('Group data loaded:', groupResponse.group);
+      console.log('Participants loaded:', groupResponse.participants);
+      console.log('Debts loaded:', debtsResponse);
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);
