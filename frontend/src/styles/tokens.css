@@ -1,0 +1,41 @@
+:root {
+  /* Brand Colours */
+  --color-primary: #4F46E5;   /* Indigo 600 */
+  --color-accent: #F59E0B;    /* Amber 500 */
+
+  /* Feedback Colours */
+  --color-success: #16A34A;   /* Credit */
+  --color-error:   #DC2626;   /* Debt   */
+
+  /* Neutrals */
+  --color-bg:   #F9FAFB;
+  --color-card: #FFFFFF;
+  --color-text: #111827;
+  --color-muted:#4B5563;
+
+  /* Typography */
+  --font-heading: "Montserrat", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+  --font-body:    "Inter", system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+
+  /* Type scale */
+  --fs-xxl: clamp(28px, 4vw, 40px);
+  --fs-xl:  24px;
+  --fs-lg:  20px;
+  --fs-md:  16px;
+  --fs-sm:  14px;
+
+  /* Space (4pt) */
+  --space-0: 0;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radius & shadow */
+  --radius-sm: 4px;
+  --radius-md: 12px;
+  --radius-l:  40px;
+  --shadow-1:  2px 2px 4px rgba(0, 0, 0, 0.025);
+}
