@@ -52,11 +52,28 @@ const EditExpense: React.FC = () => {
         split_type: expense.split_type || 'equal'
       });
 
-      // Initialize splits from existing data
+      // Initialize splits from existing data, but include all current group members
       const initialSplits: { [key: number]: number } = {};
+      
+      // First, initialize all current participants with 0
+      groupResponse.participants.forEach(participant => {
+        initialSplits[participant.id] = 0;
+      });
+      
+      // Then, set the amounts from existing splits
       expenseResponse.splits.forEach((split: any) => {
         initialSplits[split.participant_id] = split.split_amount;
       });
+      
+      // If this is an equal split, recalculate for all participants
+      if (expense.split_type === 'equal') {
+        const cost = expense.cost || 0;
+        const equalAmount = groupResponse.participants.length > 0 ? cost / groupResponse.participants.length : 0;
+        groupResponse.participants.forEach(participant => {
+          initialSplits[participant.id] = equalAmount;
+        });
+      }
+      
       setSplits(initialSplits);
     } catch (error) {
       toast.error('Failed to load expense data');
@@ -75,6 +92,17 @@ const EditExpense: React.FC = () => {
     // Recalculate equal splits when cost changes
     if (field === 'cost' && formData.split_type === 'equal') {
       const cost = parseFloat(value as string) || 0;
+      const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+      const newSplits: { [key: number]: number } = {};
+      participants.forEach(participant => {
+        newSplits[participant.id] = equalAmount;
+      });
+      setSplits(newSplits);
+    }
+    
+    // Recalculate equal splits when split type changes to equal
+    if (field === 'split_type' && value === 'equal') {
+      const cost = parseFloat(formData.cost) || 0;
       const equalAmount = participants.length > 0 ? cost / participants.length : 0;
       const newSplits: { [key: number]: number } = {};
       participants.forEach(participant => {
@@ -125,8 +153,27 @@ const EditExpense: React.FC = () => {
         group_id: group!.id
       };
 
-      const splitArray: Split[] = Object.entries(splits)
-        .filter(([_, amount]) => amount > 0)
+      // Ensure all current group members are included in splits
+      const allSplits: { [key: number]: number } = { ...splits };
+      
+      // Add any missing participants
+      participants.forEach(participant => {
+        if (!(participant.id in allSplits)) {
+          allSplits[participant.id] = 0;
+        }
+      });
+      
+      // If equal split, recalculate for all participants
+      if (formData.split_type === 'equal') {
+        const cost = parseFloat(formData.cost) || 0;
+        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+        participants.forEach(participant => {
+          allSplits[participant.id] = equalAmount;
+        });
+      }
+      
+      const splitArray: Split[] = Object.entries(allSplits)
+        .filter(([_, amount]) => formData.split_type === 'equal' || amount > 0)
         .map(([participantId, amount]) => ({
           split_id: 0, // Will be set by backend
           group_id: group!.id,

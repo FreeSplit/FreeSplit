@@ -523,6 +523,7 @@ func updateExpense(w http.ResponseWriter, r *http.Request, expenseService *serve
 	var pbSplits []*pb.Split
 	for _, split := range requestData.Splits {
 		pbSplits = append(pbSplits, &pb.Split{
+			GroupId:       requestData.Expense.GroupID,
 			ParticipantId: split.ParticipantID,
 			SplitAmount:   split.SplitAmount,
 		})

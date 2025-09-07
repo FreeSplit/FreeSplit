@@ -110,8 +110,27 @@ const AddExpense: React.FC = () => {
         group_id: group!.id
       };
 
-      const splitArray: Split[] = Object.entries(splits)
-        .filter(([_, amount]) => amount > 0)
+      // Ensure all current group members are included in splits
+      const allSplits: { [key: number]: number } = { ...splits };
+      
+      // Add any missing participants
+      participants.forEach(participant => {
+        if (!(participant.id in allSplits)) {
+          allSplits[participant.id] = 0;
+        }
+      });
+      
+      // If equal split, recalculate for all participants
+      if (formData.split_type === 'equal') {
+        const cost = parseFloat(formData.cost) || 0;
+        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+        participants.forEach(participant => {
+          allSplits[participant.id] = equalAmount;
+        });
+      }
+      
+      const splitArray: Split[] = Object.entries(allSplits)
+        .filter(([_, amount]) => formData.split_type === 'equal' || amount > 0)
         .map(([participantId, amount]) => ({
           split_id: 0, // Will be set by backend
           group_id: group!.id,
