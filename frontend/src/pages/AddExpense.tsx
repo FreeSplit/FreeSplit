@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Minus } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import toast from 'react-hot-toast';
@@ -43,48 +43,6 @@ const AddExpense: React.FC = () => {
     return rounded;
   };
 
-  // Convert between split types
-  const convertSplits = (fromType: string, toType: string, currentSplits: { [key: number]: number }, cost: number) => {
-    const newSplits: { [key: number]: number } = {};
-    const participantIds = Object.keys(currentSplits).map(Number);
-    
-    if (toType === 'equal') {
-      const equalAmount = participantIds.length > 0 ? cost / participantIds.length : 0;
-      participantIds.forEach(id => {
-        newSplits[id] = equalAmount;
-      });
-    } else if (toType === 'amount') {
-      // Keep current amounts, but ensure they sum to cost
-      const currentTotal = Object.values(currentSplits).reduce((sum, val) => sum + val, 0);
-      if (currentTotal > 0) {
-        const multiplier = cost / currentTotal;
-        const amounts = participantIds.map(id => currentSplits[id] * multiplier);
-        const distributed = distributeWithRemainder(amounts, cost);
-        participantIds.forEach((id, index) => {
-          newSplits[id] = distributed[index];
-        });
-      } else {
-        participantIds.forEach(id => {
-          newSplits[id] = 0;
-        });
-      }
-    } else if (toType === 'shares') {
-      // Convert amounts to shares (1 share = equal split)
-      const equalAmount = participantIds.length > 0 ? cost / participantIds.length : 0;
-      participantIds.forEach(id => {
-        const amount = currentSplits[id] || 0;
-        newSplits[id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
-      });
-    } else if (toType === 'percentage') {
-      // Convert amounts to percentages
-      participantIds.forEach(id => {
-        const amount = currentSplits[id] || 0;
-        newSplits[id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-      });
-    }
-    
-    return newSplits;
-  };
 
   // Calculate amounts from shares
   const calculateAmountsFromShares = (shares: { [key: number]: number }, cost: number): { [key: number]: number } => {
@@ -114,13 +72,7 @@ const AddExpense: React.FC = () => {
     return amounts;
   };
 
-  useEffect(() => {
-    if (urlSlug) {
-      loadGroupData();
-    }
-  }, [urlSlug]);
-
-  const loadGroupData = async () => {
+  const loadGroupData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getGroup(urlSlug!);
@@ -148,11 +100,15 @@ const AddExpense: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSlug]);
+
+  useEffect(() => {
+    if (urlSlug) {
+      loadGroupData();
+    }
+  }, [urlSlug, loadGroupData]);
 
   const handleInputChange = (field: string, value: string | number) => {
-    const oldSplitType = formData.split_type;
-    
     setFormData(prev => ({
       ...prev,
       [field]: value

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 import { getGroup, getExpenseWithSplits, updateExpense, deleteExpense } from '../services/api';
@@ -71,13 +71,7 @@ const EditExpense: React.FC = () => {
     return amounts;
   };
 
-  useEffect(() => {
-    if (urlSlug && expenseId) {
-      loadExpenseData();
-    }
-  }, [urlSlug, expenseId]);
-
-  const loadExpenseData = async () => {
+  const loadExpenseData = useCallback(async () => {
     try {
       setLoading(true);
       const [groupResponse, expenseResponse] = await Promise.all([
@@ -150,11 +144,15 @@ const EditExpense: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSlug, expenseId]);
+
+  useEffect(() => {
+    if (urlSlug && expenseId) {
+      loadExpenseData();
+    }
+  }, [urlSlug, expenseId, loadExpenseData]);
 
   const handleInputChange = (field: string, value: string | number) => {
-    const oldSplitType = formData.split_type;
-    
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -356,16 +354,6 @@ const EditExpense: React.FC = () => {
     try {
       setSubmitting(true);
       
-      const splitArray: Split[] = Object.entries(splits)
-        .filter(([_, amount]) => amount > 0)
-        .map(([participantId, amount]) => ({
-          split_id: 0,
-          group_id: group!.id,
-          expense_id: parseInt(expenseId!),
-          participant_id: parseInt(participantId),
-          split_amount: amount
-        }));
-
       await deleteExpense(parseInt(expenseId!));
 
       toast.success('Expense deleted successfully!');
