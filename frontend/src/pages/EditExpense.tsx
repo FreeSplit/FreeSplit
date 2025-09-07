@@ -83,8 +83,6 @@ const EditExpense: React.FC = () => {
       setParticipants(groupResponse.participants);
 
       const expense = expenseResponse.expense;
-      console.log('Expense data loaded:', expense);
-      console.log('Splits data loaded:', expenseResponse.splits);
       
       setFormData({
         name: expense.name || '',
@@ -327,14 +325,10 @@ const EditExpense: React.FC = () => {
           split_amount: amount
         }));
 
-      console.log('Updating expense with data:', { expense, splits: splitArray });
-      
       const result = await updateExpense({
         expense,
         splits: splitArray
       });
-      
-      console.log('Update result:', result);
 
       toast.success('Expense updated successfully!');
       navigate(`/group/${urlSlug}`);

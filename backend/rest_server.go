@@ -148,7 +148,7 @@ func createGroup(w http.ResponseWriter, r *http.Request, groupService *server.Gr
 	}
 
 	// Call gRPC service
-	resp, err := groupService.CreateGroup(nil, grpcReq)
+	resp, err := groupService.CreateGroup(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error creating group: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -191,7 +191,7 @@ func getGroup(w http.ResponseWriter, r *http.Request, groupService *server.Group
 	}
 
 	grpcReq := &pb.GetGroupRequest{UrlSlug: urlSlug}
-	resp, err := groupService.GetGroup(nil, grpcReq)
+	resp, err := groupService.GetGroup(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error getting group: %v", err)
 		http.Error(w, "Group not found", http.StatusNotFound)
@@ -241,7 +241,7 @@ func updateGroup(w http.ResponseWriter, r *http.Request, groupService *server.Gr
 		ParticipantId: req.ParticipantID,
 	}
 
-	resp, err := groupService.UpdateGroup(nil, grpcReq)
+	resp, err := groupService.UpdateGroup(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error updating group: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -280,7 +280,7 @@ func addParticipant(w http.ResponseWriter, r *http.Request, participantService *
 		GroupId: req.GroupID,
 	}
 
-	resp, err := participantService.AddParticipant(nil, grpcReq)
+	resp, err := participantService.AddParticipant(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error adding participant: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -313,7 +313,7 @@ func updateParticipant(w http.ResponseWriter, r *http.Request, participantServic
 		ParticipantId: req.ParticipantID,
 	}
 
-	resp, err := participantService.UpdateParticipant(nil, grpcReq)
+	resp, err := participantService.UpdateParticipant(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error updating participant: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -347,7 +347,7 @@ func deleteParticipant(w http.ResponseWriter, r *http.Request, participantServic
 		ParticipantId: int32(participantID),
 	}
 
-	_, err = participantService.DeleteParticipant(nil, grpcReq)
+	_, err = participantService.DeleteParticipant(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error deleting participant: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -375,7 +375,7 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService *
 		GroupId: int32(groupID),
 	}
 
-	resp, err := expenseService.GetExpensesByGroup(nil, grpcReq)
+	resp, err := expenseService.GetExpensesByGroup(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error getting expenses: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -625,7 +625,7 @@ func getDebts(w http.ResponseWriter, r *http.Request, debtService *server.DebtSe
 		GroupId: int32(groupID),
 	}
 
-	resp, err := debtService.GetDebts(nil, grpcReq)
+	resp, err := debtService.GetDebts(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error getting debts: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
@@ -664,7 +664,7 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService *s
 		PaidAmount: req.PaidAmount,
 	}
 
-	resp, err := debtService.UpdateDebtPaidAmount(nil, grpcReq)
+	resp, err := debtService.UpdateDebtPaidAmount(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error updating debt: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

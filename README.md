@@ -77,7 +77,7 @@ protoc --go_out=. --go_opt=paths=source_relative \
 
 4. Run the backend:
 ```bash
-go run main.go
+go run rest_server.go
 ```
 
 #### Frontend Setup
@@ -158,7 +158,7 @@ The application uses a greedy algorithm to minimize the number of transactions n
 ### Backend Development
 
 The backend uses Go modules and gRPC. Key files:
-- `main.go` - Application entry point
+- `rest_server.go` - REST API server entry point
 - `proto/expense.proto` - gRPC service definitions
 - `internal/database/models.go` - Database models
 - `internal/server/` - gRPC service implementations
