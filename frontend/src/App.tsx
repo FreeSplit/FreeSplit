@@ -7,7 +7,8 @@ import AddExpense from './pages/AddExpense';
 import EditExpense from './pages/EditExpense';
 import Members from './pages/Members';
 import Debts from './pages/Debts';
-import './App.css';
+import './styles/global.css';
+import './styles/tokens.css';
 
 function App() {
   return (
