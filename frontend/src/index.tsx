@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import './index.css';
 import './styles/global.css';
 import './styles/tokens.css';
+import './styles/components.css';
 import App from './App';
 import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 

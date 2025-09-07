@@ -1,19 +1,26 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap');
 
-html, body, #root {
-  height: 100%;
+.root {
+  min-height: 100vh;
   background: var(--color-bg);
 }
-body {
+
+.body {
+  max-width: 672px;
+  margin: auto;
+}
+
+.section {
   margin: 0;
+  padding: 16px;
   color: var(--color-text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-header {
-  display: inline-flex; align-items: center; justify-content: space-between;
+.header {
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
   padding: 16px;
   background: var(--color-bg);
   border-bottom-color: var(--color-muted); border-bottom-width: 1px;
@@ -49,6 +56,19 @@ p {
   line-height: 1.25; 
 }
 
+.form-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  color: var(--color-muted);
+  line-height: 1.25; 
+  text-align: left;
+}
+
 .card {
   background: var(--color-card);
   border-radius: var(--radius-md);
@@ -79,4 +99,12 @@ p {
 .btn--secondary:disabled {
   border-color: var(--color-muted);
   color: var(--color-muted);
+}
+
+.form-input {
+  border-bottom: 1px solid var(--color-muted);
+  padding: 4px 0px;
+  color: var(--color-muted);
+  width: 100%;
+  background: transparent;
 }
