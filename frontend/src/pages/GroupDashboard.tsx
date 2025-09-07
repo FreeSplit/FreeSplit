@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
-import { getGroup, getExpensesByGroup, getDebts } from '../services/api';
+import { getGroup, getExpensesByGroup, getDebts, deleteExpense } from '../services/api';
 import { Group, Expense, Debt, Participant } from '../services/api';
 import toast from 'react-hot-toast';
 
@@ -55,6 +55,21 @@ const GroupDashboard: React.FC = () => {
   const getParticipantName = (participantId: number) => {
     const participant = participants.find(p => p.id === participantId);
     return participant?.name || 'Unknown';
+  };
+
+  const handleDeleteExpense = async (expenseId: number) => {
+    if (window.confirm('Are you sure you want to delete this expense?')) {
+      try {
+        await deleteExpense(expenseId);
+        toast.success('Expense deleted successfully');
+        // Reload expenses
+        const expensesResponse = await getExpensesByGroup(group!.id);
+        setExpenses(expensesResponse);
+      } catch (error) {
+        toast.error('Failed to delete expense');
+        console.error('Error deleting expense:', error);
+      }
+    }
   };
 
   if (loading) {
@@ -197,6 +212,24 @@ const GroupDashboard: React.FC = () => {
                       </p>
                       <p className="text-sm text-gray-500">{expense.split_type}</p>
                       <p className="text-xs text-gray-400">Added recently</p>
+                    </div>
+                    <div className="flex items-center space-x-2 ml-4">
+                      <button
+                        onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)}
+                        className="p-1 text-gray-400 hover:text-blue-600"
+                        title="Edit expense"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteExpense(expense.id)}
+                        className="p-1 text-gray-400 hover:text-red-600"
+                        title="Delete expense"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -124,8 +124,11 @@ export const getSplitsByParticipant = async (participantId: number): Promise<Spl
 };
 
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
-  // Simplified implementation for now
-  return { expense: {} as Expense, splits: [] };
+  const response = await axios.get(`${API_BASE_URL}/api/expense/${expenseId}`);
+  return {
+    expense: response.data.expense,
+    splits: response.data.splits
+  };
 };
 
 export const createExpense = async (data: {
@@ -145,19 +148,21 @@ export const createExpense = async (data: {
 export const updateExpense = async (data: {
   expense: Expense;
   splits: Split[];
-  participant_id: number;
-}): Promise<Expense> => {
-  // Simplified implementation for now
-  return data.expense;
+}): Promise<{expense: Expense, splits: Split[]}> => {
+  const response = await axios.put(`${API_BASE_URL}/api/expenses`, {
+    expense: data.expense,
+    splits: data.splits
+  });
+  return {
+    expense: response.data.expense,
+    splits: response.data.splits
+  };
 };
 
-export const deleteExpense = async (data: {
-  expense_id: number;
-  splits: Split[];
-}): Promise<void> => {
-  // Simplified implementation for now
-  return;
+export const deleteExpense = async (expenseId: number): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/api/expenses?expense_id=${expenseId}`);
 };
+
 
 // Debt API
 export const getDebts = async (groupId: number): Promise<Debt[]> => {

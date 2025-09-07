@@ -41,12 +41,15 @@ const EditExpense: React.FC = () => {
       setParticipants(groupResponse.participants);
 
       const expense = expenseResponse.expense;
+      console.log('Expense data loaded:', expense);
+      console.log('Splits data loaded:', expenseResponse.splits);
+      
       setFormData({
-        name: expense.name,
-        cost: expense.cost.toString(),
-        emoji: expense.emoji,
-        payer_id: expense.payer_id,
-        split_type: expense.split_type
+        name: expense.name || '',
+        cost: (expense.cost || 0).toString(),
+        emoji: expense.emoji || '💰',
+        payer_id: expense.payer_id || 0,
+        split_type: expense.split_type || 'equal'
       });
 
       // Initialize splits from existing data
@@ -132,11 +135,14 @@ const EditExpense: React.FC = () => {
           split_amount: amount
         }));
 
-      await updateExpense({
+      console.log('Updating expense with data:', { expense, splits: splitArray });
+      
+      const result = await updateExpense({
         expense,
-        splits: splitArray,
-        participant_id: formData.payer_id
+        splits: splitArray
       });
+      
+      console.log('Update result:', result);
 
       toast.success('Expense updated successfully!');
       navigate(`/group/${urlSlug}`);
@@ -166,10 +172,7 @@ const EditExpense: React.FC = () => {
           split_amount: amount
         }));
 
-      await deleteExpense({
-        expense_id: parseInt(expenseId!),
-        splits: splitArray
-      });
+      await deleteExpense(parseInt(expenseId!));
 
       toast.success('Expense deleted successfully!');
       navigate(`/group/${urlSlug}`);

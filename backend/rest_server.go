@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"freesplit/internal/database"
 	"freesplit/internal/server"
@@ -95,6 +96,16 @@ func main() {
 			updateExpense(w, r, expenseService)
 		case "DELETE":
 			deleteExpense(w, r, expenseService)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
+	// Single expense endpoint
+	http.HandleFunc("/api/expense/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "GET":
+			getExpenseWithSplits(w, r, expenseService)
 		default:
 			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		}
@@ -487,13 +498,111 @@ func createExpense(w http.ResponseWriter, r *http.Request, expenseService *serve
 }
 
 func updateExpense(w http.ResponseWriter, r *http.Request, expenseService *server.ExpenseService) {
-	// Simplified implementation for now
+	var requestData struct {
+		Expense struct {
+			ID        int32   `json:"id"`
+			Name      string  `json:"name"`
+			Cost      float64 `json:"cost"`
+			Emoji     string  `json:"emoji"`
+			PayerID   int32   `json:"payer_id"`
+			SplitType string  `json:"split_type"`
+			GroupID   int32   `json:"group_id"`
+		} `json:"expense"`
+		Splits []struct {
+			ParticipantID int32   `json:"participant_id"`
+			SplitAmount   float64 `json:"split_amount"`
+		} `json:"splits"`
+	}
+
+	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
+		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Convert splits to protobuf format
+	var pbSplits []*pb.Split
+	for _, split := range requestData.Splits {
+		pbSplits = append(pbSplits, &pb.Split{
+			ParticipantId: split.ParticipantID,
+			SplitAmount:   split.SplitAmount,
+		})
+	}
+
+	grpcReq := &pb.UpdateExpenseRequest{
+		Expense: &pb.Expense{
+			Id:        requestData.Expense.ID,
+			Name:      requestData.Expense.Name,
+			Cost:      requestData.Expense.Cost,
+			Emoji:     requestData.Expense.Emoji,
+			PayerId:   requestData.Expense.PayerID,
+			SplitType: requestData.Expense.SplitType,
+			GroupId:   requestData.Expense.GroupID,
+		},
+		Splits: pbSplits,
+	}
+
+	resp, err := expenseService.UpdateExpense(r.Context(), grpcReq)
+	if err != nil {
+		log.Printf("Error updating expense: %v", err)
+		http.Error(w, "Failed to update expense", http.StatusInternalServerError)
+		return
+	}
+
+	// Convert response to JSON format
+	expense := map[string]interface{}{
+		"id":         resp.Expense.Id,
+		"name":       resp.Expense.Name,
+		"cost":       resp.Expense.Cost,
+		"emoji":      resp.Expense.Emoji,
+		"payer_id":   resp.Expense.PayerId,
+		"split_type": resp.Expense.SplitType,
+		"group_id":   resp.Expense.GroupId,
+	}
+
+	splits := make([]map[string]interface{}, len(resp.Splits))
+	for i, split := range resp.Splits {
+		splits[i] = map[string]interface{}{
+			"split_id":       split.SplitId,
+			"group_id":       split.GroupId,
+			"expense_id":     split.ExpenseId,
+			"participant_id": split.ParticipantId,
+			"split_amount":   split.SplitAmount,
+		}
+	}
+
+	response := map[string]interface{}{
+		"expense": expense,
+		"splits":  splits,
+	}
+
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"message": "Update expense not implemented yet"})
+	json.NewEncoder(w).Encode(response)
 }
 
 func deleteExpense(w http.ResponseWriter, r *http.Request, expenseService *server.ExpenseService) {
-	// Simplified implementation for now
+	expenseIDStr := r.URL.Query().Get("expense_id")
+	if expenseIDStr == "" {
+		http.Error(w, "expense_id parameter required", http.StatusBadRequest)
+		return
+	}
+
+	expenseID, err := strconv.ParseInt(expenseIDStr, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid expense_id", http.StatusBadRequest)
+		return
+	}
+
+	grpcReq := &pb.DeleteExpenseRequest{
+		ExpenseId: int32(expenseID),
+	}
+
+	_, err = expenseService.DeleteExpense(r.Context(), grpcReq)
+	if err != nil {
+		log.Printf("Error deleting expense: %v", err)
+		http.Error(w, "Failed to delete expense", http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -568,6 +677,52 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService *s
 		"debtor_id":   resp.Debt.DebtorId,
 		"debt_amount": resp.Debt.DebtAmount,
 		"paid_amount": resp.Debt.PaidAmount,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response)
+}
+
+func getExpenseWithSplits(w http.ResponseWriter, r *http.Request, expenseService *server.ExpenseService) {
+	// Extract expense ID from URL path
+	path := strings.TrimPrefix(r.URL.Path, "/api/expense/")
+	expenseId, err := strconv.ParseInt(path, 10, 32)
+	if err != nil {
+		http.Error(w, "Invalid expense ID", http.StatusBadRequest)
+		return
+	}
+
+	grpcReq := &pb.GetExpenseWithSplitsRequest{ExpenseId: int32(expenseId)}
+	resp, err := expenseService.GetExpenseWithSplits(context.Background(), grpcReq)
+	if err != nil {
+		log.Printf("Error getting expense with splits: %v", err)
+		http.Error(w, "Expense not found", http.StatusNotFound)
+		return
+	}
+
+	// Convert splits to response format
+	splits := make([]map[string]interface{}, len(resp.Splits))
+	for i, split := range resp.Splits {
+		splits[i] = map[string]interface{}{
+			"split_id":       split.SplitId,
+			"group_id":       split.GroupId,
+			"expense_id":     split.ExpenseId,
+			"participant_id": split.ParticipantId,
+			"split_amount":   split.SplitAmount,
+		}
+	}
+
+	response := map[string]interface{}{
+		"expense": map[string]interface{}{
+			"id":         resp.Expense.Id,
+			"name":       resp.Expense.Name,
+			"cost":       resp.Expense.Cost,
+			"emoji":      resp.Expense.Emoji,
+			"payer_id":   resp.Expense.PayerId,
+			"split_type": resp.Expense.SplitType,
+			"group_id":   resp.Expense.GroupId,
+		},
+		"splits": splits,
 	}
 
 	w.Header().Set("Content-Type", "application/json")
