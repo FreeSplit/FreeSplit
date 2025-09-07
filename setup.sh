@@ -31,22 +31,53 @@ if [ "$SETUP_MODE" = "local" ]; then
     # Check if Go is installed
     if ! command -v go &> /dev/null; then
         echo "❌ Go is not installed. Please install Go first."
+        echo ""
+        echo "📦 Installation instructions:"
+        echo "   macOS: brew install go"
+        echo "   Windows: choco install golang (or download from https://golang.org/dl/)"
+        echo "   Linux: sudo apt install golang-go (or download from https://golang.org/dl/)"
+        echo ""
+        echo "   After installation, restart your terminal and run this script again."
         exit 1
     fi
 
     # Check if Node.js is installed
     if ! command -v node &> /dev/null; then
         echo "❌ Node.js is not installed. Please install Node.js first."
+        echo ""
+        echo "📦 Installation instructions:"
+        echo "   macOS: brew install node"
+        echo "   Windows: choco install nodejs (or download from https://nodejs.org/)"
+        echo "   Linux: sudo apt install nodejs npm (or download from https://nodejs.org/)"
+        echo ""
+        echo "   After installation, restart your terminal and run this script again."
         exit 1
     fi
 
     # Check if npm is installed
     if ! command -v npm &> /dev/null; then
         echo "❌ npm is not installed. Please install npm first."
+        echo ""
+        echo "📦 npm usually comes with Node.js, but if not:"
+        echo "   macOS: brew install npm"
+        echo "   Windows: choco install npm"
+        echo "   Linux: sudo apt install npm"
+        echo ""
+        echo "   After installation, restart your terminal and run this script again."
         exit 1
     fi
 
-    echo "✅ Go, Node.js, and npm are installed"
+    # Check Go version
+    GO_VERSION=$(go version | cut -d' ' -f3 | cut -d'o' -f2)
+    echo "✅ Go version: $GO_VERSION"
+    
+    # Check Node.js version
+    NODE_VERSION=$(node --version)
+    echo "✅ Node.js version: $NODE_VERSION"
+    
+    # Check npm version
+    NPM_VERSION=$(npm --version)
+    echo "✅ npm version: $NPM_VERSION"
 fi
 
 # Create data directory for database persistence
