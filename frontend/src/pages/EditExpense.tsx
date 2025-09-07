@@ -22,6 +22,54 @@ const EditExpense: React.FC = () => {
   });
 
   const [splits, setSplits] = useState<{ [key: number]: number }>({});
+  const [shares, setShares] = useState<{ [key: number]: number }>({});
+  const [percentages, setPercentages] = useState<{ [key: number]: number }>({});
+
+  // Helper function to round to 2 decimal places
+  const roundToTwoDecimals = (num: number): number => {
+    return Math.round(num * 100) / 100;
+  };
+
+  // Helper function to distribute remainder to last person
+  const distributeWithRemainder = (amounts: number[], total: number): number[] => {
+    const rounded = amounts.map(roundToTwoDecimals);
+    const sum = rounded.reduce((acc, val) => acc + val, 0);
+    const remainder = roundToTwoDecimals(total - sum);
+    
+    if (remainder !== 0 && rounded.length > 0) {
+      rounded[rounded.length - 1] = roundToTwoDecimals(rounded[rounded.length - 1] + remainder);
+    }
+    
+    return rounded;
+  };
+
+  // Calculate amounts from shares
+  const calculateAmountsFromShares = (shares: { [key: number]: number }, cost: number): { [key: number]: number } => {
+    const amounts: { [key: number]: number } = {};
+    const totalShares = Object.values(shares).reduce((sum, val) => sum + val, 0);
+    
+    if (totalShares > 0) {
+      const amountsArray = Object.entries(shares).map(([id, share]) => (share / totalShares) * cost);
+      const distributed = distributeWithRemainder(amountsArray, cost);
+      
+      Object.keys(shares).forEach((id, index) => {
+        amounts[Number(id)] = distributed[index];
+      });
+    }
+    
+    return amounts;
+  };
+
+  // Calculate amounts from percentages
+  const calculateAmountsFromPercentages = (percentages: { [key: number]: number }, cost: number): { [key: number]: number } => {
+    const amounts: { [key: number]: number } = {};
+    
+    Object.entries(percentages).forEach(([id, percentage]) => {
+      amounts[Number(id)] = roundToTwoDecimals((percentage / 100) * cost);
+    });
+    
+    return amounts;
+  };
 
   useEffect(() => {
     if (urlSlug && expenseId) {
@@ -54,10 +102,14 @@ const EditExpense: React.FC = () => {
 
       // Initialize splits from existing data, but include all current group members
       const initialSplits: { [key: number]: number } = {};
+      const initialShares: { [key: number]: number } = {};
+      const initialPercentages: { [key: number]: number } = {};
       
       // First, initialize all current participants with 0
       groupResponse.participants.forEach(participant => {
         initialSplits[participant.id] = 0;
+        initialShares[participant.id] = 1; // Default to 1 share each
+        initialPercentages[participant.id] = 0; // Will be calculated
       });
       
       // Then, set the amounts from existing splits
@@ -72,9 +124,26 @@ const EditExpense: React.FC = () => {
         groupResponse.participants.forEach(participant => {
           initialSplits[participant.id] = equalAmount;
         });
+      } else if (expense.split_type === 'shares') {
+        // Convert amounts to shares
+        const cost = expense.cost || 0;
+        const equalAmount = groupResponse.participants.length > 0 ? cost / groupResponse.participants.length : 0;
+        groupResponse.participants.forEach(participant => {
+          const amount = initialSplits[participant.id] || 0;
+          initialShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+        });
+      } else if (expense.split_type === 'percentage') {
+        // Convert amounts to percentages
+        const cost = expense.cost || 0;
+        groupResponse.participants.forEach(participant => {
+          const amount = initialSplits[participant.id] || 0;
+          initialPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
+        });
       }
       
       setSplits(initialSplits);
+      setShares(initialShares);
+      setPercentages(initialPercentages);
     } catch (error) {
       toast.error('Failed to load expense data');
       console.error('Error loading expense data:', error);
@@ -84,31 +153,75 @@ const EditExpense: React.FC = () => {
   };
 
   const handleInputChange = (field: string, value: string | number) => {
+    const oldSplitType = formData.split_type;
+    
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
 
-    // Recalculate equal splits when cost changes
-    if (field === 'cost' && formData.split_type === 'equal') {
-      const cost = parseFloat(value as string) || 0;
-      const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-      const newSplits: { [key: number]: number } = {};
-      participants.forEach(participant => {
-        newSplits[participant.id] = equalAmount;
-      });
-      setSplits(newSplits);
+    const cost = parseFloat(formData.cost) || 0;
+    
+    // Handle split type changes with seamless conversion
+    if (field === 'split_type') {
+      const newSplitType = value as string;
+      
+      if (newSplitType === 'equal') {
+        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+        const newSplits: { [key: number]: number } = {};
+        participants.forEach(participant => {
+          newSplits[participant.id] = equalAmount;
+        });
+        setSplits(newSplits);
+      } else if (newSplitType === 'shares') {
+        // Convert current amounts to shares
+        const newShares: { [key: number]: number } = {};
+        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+        participants.forEach(participant => {
+          const amount = splits[participant.id] || 0;
+          newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+        });
+        setShares(newShares);
+      } else if (newSplitType === 'percentage') {
+        // Convert current amounts to percentages
+        const newPercentages: { [key: number]: number } = {};
+        participants.forEach(participant => {
+          const amount = splits[participant.id] || 0;
+          newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
+        });
+        setPercentages(newPercentages);
+      } else if (newSplitType === 'amount') {
+        // Keep current amounts but ensure they sum to cost
+        const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
+        if (currentTotal > 0 && cost > 0) {
+          const multiplier = cost / currentTotal;
+          const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
+          const distributed = distributeWithRemainder(amounts, cost);
+          const newSplits: { [key: number]: number } = {};
+          participants.forEach((participant, index) => {
+            newSplits[participant.id] = distributed[index];
+          });
+          setSplits(newSplits);
+        }
+      }
     }
     
-    // Recalculate equal splits when split type changes to equal
-    if (field === 'split_type' && value === 'equal') {
-      const cost = parseFloat(formData.cost) || 0;
-      const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-      const newSplits: { [key: number]: number } = {};
-      participants.forEach(participant => {
-        newSplits[participant.id] = equalAmount;
-      });
-      setSplits(newSplits);
+    // Recalculate splits when cost changes
+    if (field === 'cost') {
+      if (formData.split_type === 'equal') {
+        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+        const newSplits: { [key: number]: number } = {};
+        participants.forEach(participant => {
+          newSplits[participant.id] = equalAmount;
+        });
+        setSplits(newSplits);
+      } else if (formData.split_type === 'shares') {
+        const newAmounts = calculateAmountsFromShares(shares, cost);
+        setSplits(newAmounts);
+      } else if (formData.split_type === 'percentage') {
+        const newAmounts = calculateAmountsFromPercentages(percentages, cost);
+        setSplits(newAmounts);
+      }
     }
   };
 
@@ -120,10 +233,44 @@ const EditExpense: React.FC = () => {
     }));
   };
 
+  const handleShareChange = (participantId: number, share: string) => {
+    const value = Math.max(1, Math.round(parseFloat(share) || 1));
+    setShares(prev => ({
+      ...prev,
+      [participantId]: value
+    }));
+    
+    // Recalculate amounts from shares
+    const cost = parseFloat(formData.cost) || 0;
+    const newShares = { ...shares, [participantId]: value };
+    const newAmounts = calculateAmountsFromShares(newShares, cost);
+    setSplits(newAmounts);
+  };
+
+  const handlePercentageChange = (participantId: number, percentage: string) => {
+    const value = Math.max(0, Math.min(100, roundToTwoDecimals(parseFloat(percentage) || 0)));
+    setPercentages(prev => ({
+      ...prev,
+      [participantId]: value
+    }));
+    
+    // Recalculate amounts from percentages
+    const cost = parseFloat(formData.cost) || 0;
+    const newPercentages = { ...percentages, [participantId]: value };
+    const newAmounts = calculateAmountsFromPercentages(newPercentages, cost);
+    setSplits(newAmounts);
+  };
+
   const validateSplits = () => {
     const totalCost = parseFloat(formData.cost) || 0;
     const totalSplits = Object.values(splits).reduce((sum, amount) => sum + amount, 0);
-    return Math.abs(totalCost - totalSplits) < 0.01;
+    
+    if (formData.split_type === 'percentage') {
+      const totalPercentage = Object.values(percentages).reduce((sum, pct) => sum + pct, 0);
+      return Math.abs(100 - totalPercentage) < 0.01; // Must sum to 100%
+    }
+    
+    return Math.abs(totalCost - totalSplits) < 0.01; // Allow small floating point differences
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -369,7 +516,7 @@ const EditExpense: React.FC = () => {
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 How to Split
               </label>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => handleInputChange('split_type', 'equal')}
@@ -404,6 +551,18 @@ const EditExpense: React.FC = () => {
                   }`}
                 >
                   <div className="font-medium">Shares</div>
+                  <div className="text-sm text-gray-500">By shares (1 = equal)</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('split_type', 'percentage')}
+                  className={`p-4 border rounded-lg text-center ${
+                    formData.split_type === 'percentage'
+                      ? 'border-blue-500 bg-blue-50 text-blue-700'
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                >
+                  <div className="font-medium">Percentage</div>
                   <div className="text-sm text-gray-500">By percentage</div>
                 </button>
               </div>
@@ -422,25 +581,72 @@ const EditExpense: React.FC = () => {
                         {participant.name}
                       </label>
                     </div>
-                    <div className="w-32">
+                    
+                    {/* Amount Input */}
+                    <div className="w-36">
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm">
+                        <span className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm w-8">
                           {group.currency}
                         </span>
                         <input
                           type="number"
                           value={splits[participant.id] || 0}
                           onChange={(e) => handleSplitChange(participant.id, e.target.value)}
-                          className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className={`w-full pl-10 pr-4 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right ${
+                            formData.split_type === 'shares' || formData.split_type === 'percentage' 
+                              ? 'text-gray-500 cursor-not-allowed' 
+                              : ''
+                          }`}
                           step="0.01"
                           min="0"
-                          disabled={formData.split_type === 'equal'}
+                          disabled={formData.split_type === 'equal' || formData.split_type === 'shares' || formData.split_type === 'percentage'}
+                          readOnly={formData.split_type === 'shares' || formData.split_type === 'percentage'}
+                          style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                         />
                       </div>
                     </div>
+                    
+                    {/* Shares Input */}
+                    {formData.split_type === 'shares' && (
+                      <div className="w-28">
+                        <div className="flex items-center justify-end">
+                          <input
+                            type="number"
+                            value={shares[participant.id] || 1}
+                            onChange={(e) => handleShareChange(participant.id, e.target.value)}
+                            className="w-16 px-2 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right"
+                            min="1"
+                            step="1"
+                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                          />
+                          <span className="ml-2 text-sm text-gray-600">shares</span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Percentage Input */}
+                    {formData.split_type === 'percentage' && (
+                      <div className="w-28">
+                        <div className="flex items-center justify-end">
+                          <input
+                            type="number"
+                            value={percentages[participant.id] || 0}
+                            onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
+                            className="w-16 px-2 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                          />
+                          <span className="ml-2 text-sm text-gray-600">%</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
+              
+              {/* Summary */}
               <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                 <div className="flex justify-between items-center">
                   <span className="font-medium text-gray-700">Total:</span>
@@ -448,6 +654,18 @@ const EditExpense: React.FC = () => {
                     {group.currency} {Object.values(splits).reduce((sum, amount) => sum + amount, 0).toFixed(2)}
                   </span>
                 </div>
+                {formData.split_type === 'shares' && (
+                  <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                    <span>Total Shares:</span>
+                    <span>{Object.values(shares).reduce((sum, share) => sum + share, 0)}</span>
+                  </div>
+                )}
+                {formData.split_type === 'percentage' && (
+                  <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
+                    <span>Total Percentage:</span>
+                    <span>{Object.values(percentages).reduce((sum, pct) => sum + pct, 0).toFixed(2)}%</span>
+                  </div>
+                )}
               </div>
             </div>
 
