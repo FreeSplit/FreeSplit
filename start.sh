@@ -1,14 +1,18 @@
 #!/bin/bash
 echo "Starting FreeSplit servers..."
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
 # Start backend
 echo "Starting backend server on port 8080..."
 cd backend && go run rest_server.go &
 BACKEND_PID=$!
 
-# Start frontend
+# Go back to project root and start frontend
 echo "Starting frontend server on port 3000..."
-cd ../frontend && npm start &
+cd "$SCRIPT_DIR/frontend" && npm start &
 FRONTEND_PID=$!
 
 echo ""
