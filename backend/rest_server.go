@@ -140,14 +140,14 @@ func createGroup(w http.ResponseWriter, r *http.Request, groupService *server.Gr
 		return
 	}
 
-	// Create gRPC request
+	// Create internal service request
 	grpcReq := &pb.CreateGroupRequest{
 		Name:             req.Name,
 		Currency:         req.Currency,
 		ParticipantNames: req.ParticipantNames,
 	}
 
-	// Call gRPC service
+	// Call internal service
 	resp, err := groupService.CreateGroup(context.TODO(), grpcReq)
 	if err != nil {
 		log.Printf("Error creating group: %v", err)
@@ -426,7 +426,7 @@ func createExpense(w http.ResponseWriter, r *http.Request, expenseService *serve
 		return
 	}
 
-	// Create gRPC request
+	// Create internal service request
 	grpcReq := &pb.CreateExpenseRequest{
 		Expense: &pb.Expense{
 			Id:        req.Expense.ID,
@@ -452,7 +452,7 @@ func createExpense(w http.ResponseWriter, r *http.Request, expenseService *serve
 		}
 	}
 
-	// Call gRPC service
+	// Call internal service
 	log.Printf("Calling CreateExpense with request: %+v", grpcReq)
 	resp, err := expenseService.CreateExpense(context.Background(), grpcReq)
 	if err != nil {

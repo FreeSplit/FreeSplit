@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Check } from 'lucide-react';
 import { getGroup, getDebts, updateDebtPaidAmount } from '../services/api';
@@ -14,13 +14,7 @@ const Debts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
 
-  useEffect(() => {
-    if (urlSlug) {
-      loadGroupData();
-    }
-  }, [urlSlug]);
-
-  const loadGroupData = async () => {
+  const loadGroupData = useCallback(async () => {
     try {
       setLoading(true);
       const groupResponse = await getGroup(urlSlug!);
@@ -36,7 +30,13 @@ const Debts: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSlug]);
+
+  useEffect(() => {
+    if (urlSlug) {
+      loadGroupData();
+    }
+  }, [urlSlug, loadGroupData]);
 
   const getParticipantName = (participantId: number) => {
     const participant = participants.find(p => p.id === participantId);

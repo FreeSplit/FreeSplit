@@ -325,7 +325,7 @@ const EditExpense: React.FC = () => {
           split_amount: amount
         }));
 
-      const result = await updateExpense({
+      await updateExpense({
         expense,
         splits: splitArray
       });

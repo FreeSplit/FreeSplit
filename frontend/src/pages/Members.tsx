@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Plus, Edit2, Trash2 } from 'lucide-react';
 import { getGroup, addParticipant, updateParticipant, deleteParticipant } from '../services/api';
@@ -16,13 +16,7 @@ const Members: React.FC = () => {
   const [newMemberName, setNewMemberName] = useState('');
   const [editName, setEditName] = useState('');
 
-  useEffect(() => {
-    if (urlSlug) {
-      loadGroupData();
-    }
-  }, [urlSlug]);
-
-  const loadGroupData = async () => {
+  const loadGroupData = useCallback(async () => {
     try {
       setLoading(true);
       const response = await getGroup(urlSlug!);
@@ -34,7 +28,13 @@ const Members: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSlug]);
+
+  useEffect(() => {
+    if (urlSlug) {
+      loadGroupData();
+    }
+  }, [urlSlug, loadGroupData]);
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();

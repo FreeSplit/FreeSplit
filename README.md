@@ -1,6 +1,6 @@
 # FreeSplit
 
-A simple, self-hosted expense splitting application. Built with Go (gRPC backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
+A simple, self-hosted expense splitting application. Built with Go (REST API backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
 
 ## Features
 
@@ -29,11 +29,11 @@ A simple, self-hosted expense splitting application. Built with Go (gRPC backend
 
 ## Architecture
 
-- **Backend**: Go with gRPC API
+- **Backend**: Go with REST API
 - **Frontend**: React with PWA capabilities
 - **Database**: SQLite
 - **Deployment**: Docker containers
-- **Communication**: gRPC-Web for frontend-backend communication
+- **Communication**: HTTP REST API for frontend-backend communication
 
 ## Quick Start
 
@@ -99,7 +99,7 @@ npm start
 
 ## API Endpoints
 
-The application provides the following gRPC services:
+The application provides the following REST API endpoints:
 
 ### Group Service
 - `GetGroup` - Get group and participants by URL slug
@@ -157,11 +157,11 @@ The application uses a greedy algorithm to minimize the number of transactions n
 
 ### Backend Development
 
-The backend uses Go modules and gRPC. Key files:
+The backend uses Go modules and REST API. Key files:
 - `rest_server.go` - REST API server entry point
-- `proto/expense.proto` - gRPC service definitions
+- `proto/expense.proto` - Protocol buffer definitions (used internally)
 - `internal/database/models.go` - Database models
-- `internal/server/` - gRPC service implementations
+- `internal/server/` - Service implementations
 
 ### Frontend Development
 
@@ -175,7 +175,7 @@ The frontend is a React PWA with TypeScript. Key files:
 
 1. Update the protobuf schema in `proto/expense.proto`
 2. Regenerate Go code: `protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/expense.proto`
-3. Implement the gRPC service in `internal/server/`
+3. Implement the service in `internal/server/`
 4. Update the frontend API client in `src/services/api.ts`
 5. Add UI components in `src/pages/`
 
