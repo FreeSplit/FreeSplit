@@ -3,13 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@grpc/grpc-js": "^1.9.0",
-    "@grpc/proto-loader": "^0.7.8",
     "autoprefixer": "^10.4.16",
     "axios": "^1.6.0",
     "clsx": "^2.0.0",
-    "google-protobuf": "^4.0.0",
-    "grpc-web": "^2.0.1",
     "lucide-react": "^0.294.0",
     "postcss": "^8.4.31",
     "react": "^18.2.0",

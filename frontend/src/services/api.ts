@@ -52,9 +52,9 @@ export interface Debt {
 
 // Group API
 export const getGroup = async (urlSlug: string): Promise<{group: Group, participants: Participant[]}> => {
-  const response = await axios.get(`${API_BASE_URL}/api/groups?url_slug=${urlSlug}`);
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}`);
   return {
-    group: response.data,
+    group: response.data.group,
     participants: response.data.participants || []
   };
 };
@@ -64,7 +64,7 @@ export const createGroup = async (data: {
   currency: string;
   participant_names: string[];
 }): Promise<Group> => {
-  const response = await axios.post(`${API_BASE_URL}/api/groups`, {
+  const response = await axios.post(`${API_BASE_URL}/api/group`, {
     name: data.name,
     currency: data.currency,
     participant_names: data.participant_names
@@ -77,7 +77,7 @@ export const updateGroup = async (data: {
   currency: string;
   participant_id: number;
 }): Promise<Group> => {
-  const response = await axios.put(`${API_BASE_URL}/api/groups/`, {
+  const response = await axios.put(`${API_BASE_URL}/api/group/`, {
     name: data.name,
     currency: data.currency,
     participant_id: data.participant_id
@@ -90,7 +90,7 @@ export const addParticipant = async (data: {
   name: string;
   group_id: number;
 }): Promise<Participant> => {
-  const response = await axios.post(`${API_BASE_URL}/api/participants`, {
+  const response = await axios.post(`${API_BASE_URL}/api/group/participants`, {
     name: data.name,
     group_id: data.group_id
   });
@@ -101,7 +101,7 @@ export const updateParticipant = async (data: {
   name: string;
   participant_id: number;
 }): Promise<Participant> => {
-  const response = await axios.put(`${API_BASE_URL}/api/participants`, {
+  const response = await axios.put(`${API_BASE_URL}/api/participants/`, {
     name: data.name,
     participant_id: data.participant_id
   });
@@ -109,12 +109,12 @@ export const updateParticipant = async (data: {
 };
 
 export const deleteParticipant = async (participantId: number): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/api/participants?participant_id=${participantId}`);
+  await axios.delete(`${API_BASE_URL}/api/participants/${participantId}`);
 };
 
 // Expense API
 export const getExpensesByGroup = async (groupId: number): Promise<Expense[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/expenses?group_id=${groupId}`);
+  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/expenses`);
   return response.data;
 };
 
@@ -124,15 +124,18 @@ export const getSplitsByParticipant = async (participantId: number): Promise<Spl
 };
 
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
-  // Simplified implementation for now
-  return { expense: {} as Expense, splits: [] };
+  const response = await axios.get(`${API_BASE_URL}/api/expense/${expenseId}`);
+  return {
+    expense: response.data.expense,
+    splits: response.data.splits
+  };
 };
 
 export const createExpense = async (data: {
   expense: Expense;
   splits: Split[];
 }): Promise<{expense: Expense, splits: Split[]}> => {
-  const response = await axios.post(`${API_BASE_URL}/api/expenses`, {
+  const response = await axios.post(`${API_BASE_URL}/api/group/${data.expense.group_id}/expenses`, {
     expense: data.expense,
     splits: data.splits
   });
@@ -145,23 +148,25 @@ export const createExpense = async (data: {
 export const updateExpense = async (data: {
   expense: Expense;
   splits: Split[];
-  participant_id: number;
-}): Promise<Expense> => {
-  // Simplified implementation for now
-  return data.expense;
+}): Promise<{expense: Expense, splits: Split[]}> => {
+  const response = await axios.put(`${API_BASE_URL}/api/expense/`, {
+    expense: data.expense,
+    splits: data.splits
+  });
+  return {
+    expense: response.data.expense,
+    splits: response.data.splits
+  };
 };
 
-export const deleteExpense = async (data: {
-  expense_id: number;
-  splits: Split[];
-}): Promise<void> => {
-  // Simplified implementation for now
-  return;
+export const deleteExpense = async (expenseId: number): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/api/expense/${expenseId}`);
 };
+
 
 // Debt API
 export const getDebts = async (groupId: number): Promise<Debt[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/debts?group_id=${groupId}`);
+  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/debts`);
   return response.data;
 };
 
@@ -169,7 +174,7 @@ export const updateDebtPaidAmount = async (data: {
   debt_id: number;
   paid_amount: number;
 }): Promise<Debt> => {
-  const response = await axios.put(`${API_BASE_URL}/api/debts`, {
+  const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
     debt_id: data.debt_id,
     paid_amount: data.paid_amount
   });

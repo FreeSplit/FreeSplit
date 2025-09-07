@@ -23,6 +23,3 @@ echo ""
 echo "Press Ctrl+C to stop both servers"
 echo "Backend PID: $BACKEND_PID"
 echo "Frontend PID: $FRONTEND_PID"
-
-# Wait for user to stop
-wait
