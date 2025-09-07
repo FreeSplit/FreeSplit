@@ -146,11 +146,10 @@ cd frontend && npm start
 
 ### Backend Development
 
-The backend uses Go modules and REST API. Key files:
+The backend uses Go modules with a clean REST API architecture. Key files:
 - `rest_server.go` - REST API server entry point
-- `proto/expense.proto` - Protocol buffer definitions (used internally)
-- `internal/database/models.go` - Database models
-- `internal/server/` - Service implementations
+- `internal/database/models.go` - Database models and migrations
+- `internal/services/` - Business logic service implementations
 
 ### Frontend Development
 
@@ -162,11 +161,12 @@ The frontend is a React PWA with TypeScript. Key files:
 
 ### Adding New Features
 
-1. Update the protobuf schema in `proto/expense.proto`
-2. Regenerate Go code: `protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/expense.proto`
-3. Implement the service in `internal/server/`
-4. Update the frontend API client in `src/services/api.ts`
-5. Add UI components in `src/pages/`
+1. Define new data types in `internal/services/types.go`
+2. Add service methods to the appropriate interface in `internal/services/interfaces.go`
+3. Implement the service methods in `internal/services/`
+4. Add REST endpoints in `rest_server.go`
+5. Update the frontend API client in `src/services/api.ts`
+6. Add UI components in `src/pages/`
 
 ## Deployment
 

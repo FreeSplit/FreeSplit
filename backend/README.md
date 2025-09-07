@@ -1,10 +1,10 @@
 # FreeSplit Backend
 
-REST API backend for the FreeSplit expense splitting application, built with Go and SQLite.
+Clean REST API backend for the FreeSplit expense splitting application, built with Go and SQLite.
 
 ## Overview
 
-The backend provides a REST API that handles all the core functionality for expense splitting, including group management, participant management, expense tracking, and debt calculations. It uses SQLite for data persistence and provides a clean REST interface for the frontend.
+The backend provides a simple REST API that handles all the core functionality for expense splitting, including group management, participant management, expense tracking, and debt calculations. It uses SQLite for data persistence and follows a clean architecture pattern with service layers for business logic.
 
 ## Database
 
@@ -510,17 +510,18 @@ Database migrations are automatically run when the server starts. The migration 
 
 ### Adding New Endpoints
 
-1. Define the endpoint in `rest_server.go`
-2. Implement the business logic in the appropriate service file
-3. Update the API documentation in this README
+1. Define request/response types in `internal/services/types.go`
+2. Add method to appropriate service interface in `internal/services/interfaces.go`
+3. Implement the method in the service implementation
+4. Add the REST endpoint handler in `rest_server.go`
+5. Update the API documentation in this README
 
 ## Architecture
 
 The backend follows a clean architecture pattern:
 
 - **REST Layer** (`rest_server.go`) - HTTP handlers and request/response handling
-- **Service Layer** (`internal/server/`) - Business logic and data processing
+- **Service Layer** (`internal/services/`) - Business logic interfaces and implementations
 - **Data Layer** (`internal/database/`) - Database models and migrations
-- **Protocol Buffers** (`proto/`) - Internal service communication
 
-The REST API acts as a facade over the internal gRPC services, providing a clean HTTP interface while maintaining the benefits of gRPC for internal communication.
+The architecture is simple and straightforward: REST endpoints call service methods directly, which interact with the database using GORM. No complex abstractions or unnecessary layers.

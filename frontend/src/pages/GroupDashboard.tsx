@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, getDebts, deleteExpense } from '../services/api';
@@ -11,16 +11,9 @@ const GroupDashboard: React.FC = () => {
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [debts, setDebts] = useState<Debt[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (urlSlug) {
-      loadGroupData();
-    }
-  }, [urlSlug]);
-
-  const loadGroupData = async () => {
+  const loadGroupData = useCallback(async () => {
     try {
       setLoading(true);
       const groupResponse = await getGroup(urlSlug!);
@@ -33,14 +26,20 @@ const GroupDashboard: React.FC = () => {
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
       setExpenses(expensesResponse);
-      setDebts(debtsResponse);
+      // Note: debts are loaded but not currently displayed in the UI
     } catch (error) {
-      toast.error('Failed to load group data');
       console.error('Error loading group data:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [urlSlug]);
+
+  useEffect(() => {
+    if (urlSlug) {
+      loadGroupData();
+    }
+  }, [urlSlug, loadGroupData]);
+
 
   const calculateTotalSpent = () => {
     return expenses.reduce((total, expense) => total + expense.cost, 0);
