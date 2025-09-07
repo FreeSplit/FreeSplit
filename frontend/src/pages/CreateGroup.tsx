@@ -156,10 +156,11 @@ const CreateGroup: React.FC = () => {
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="btn"
               >
                 Create Group
               </button>
+              
             </form>
           </div>
         </div>
