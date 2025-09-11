@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import Index from './pages/_index';
 import CreateGroup from './pages/CreateGroup';
 import GroupDashboard from './pages/GroupDashboard';
 import AddExpense from './pages/AddExpense';
@@ -15,7 +16,8 @@ function App() {
     <div className="App">
       <Router>
         <Routes>
-          <Route path="/" element={<CreateGroup />} />
+          <Route path="/" element={<Index />} />
+          <Route path="/create-a-group/" element={<CreateGroup />} />
           <Route path="/group/:urlSlug" element={<GroupDashboard />} />
           <Route path="/group/:urlSlug/expenses/add" element={<AddExpense />} />
           <Route path="/group/:urlSlug/expenses/:expenseId/edit" element={<EditExpense />} />
@@ -29,4 +31,3 @@ function App() {
 }
 
 export default App;
-
