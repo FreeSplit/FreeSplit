@@ -66,6 +66,17 @@ a {
   line-height: 1;
 }
 
+.a {
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  line-height: 1;
+}
+
+.a:disabled {
+  color: var(--color-muted);
+}
+
 h1 {
   font-family: var(--font-heading);
   font-size: var(--fs-xl);
@@ -128,6 +139,7 @@ p {
 
 .btn:disabled {
   background: var(--color-muted);
+  border-color: var(--color-muted);
   color: var(--color-bg);
 }
 

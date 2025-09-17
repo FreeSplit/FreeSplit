@@ -11,6 +11,9 @@ const CreateGroup: React.FC = () => {
     currency: 'USD',
     participants: [] // Managed by chips input
   });
+  // Derived form completeness state
+  const currentValidParticipants = formData.participants.filter(name => name.trim() !== '');
+  const isFormComplete = formData.name.trim() !== '' && currentValidParticipants.length >= 2;
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({
@@ -50,7 +53,12 @@ const CreateGroup: React.FC = () => {
       <div className="header">
         <a href="/">Cancel</a>
         <p>Create a group</p>
-        <a>Done</a>
+        <button 
+          className="a"
+          type="submit"
+          form="create-group-form"
+          disabled={!isFormComplete}>Done
+        </button>
       </div>
       <div className="section">
         <form onSubmit={handleSubmit} className="form" id="create-group-form">
@@ -100,6 +108,7 @@ const CreateGroup: React.FC = () => {
             type="submit"
             className="btn has-full-width"
             form="create-group-form"
+            disabled={!isFormComplete}
           >
             Create Group
           </button>
