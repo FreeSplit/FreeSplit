@@ -53,7 +53,7 @@ const CreateGroup: React.FC = () => {
         <a>Done</a>
       </div>
       <div className="section">
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleSubmit} className="form" id="create-group-form">
           
           <div className="form-item">
             <label htmlFor="groupName" className="form-label">
@@ -99,6 +99,7 @@ const CreateGroup: React.FC = () => {
         <button
             type="submit"
             className="btn has-full-width"
+            form="create-group-form"
           >
             Create Group
           </button>

@@ -78,7 +78,7 @@ h2 {
   line-height: 1.1;
 }
 
-.p {
+p {
   font-family: var(--font-body);
   font-size: var(--fs-md);
   color: var(--color-text);

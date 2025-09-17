@@ -16,10 +16,16 @@ export default function ParticipantsInput({
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // init from props once
+  // init from props once (avoid re-sync on each parent update)
+  const didInitRef = useRef(false);
   useEffect(() => {
+    if (didInitRef.current) return;
     if (initial.length) setNames(normalizeList(initial));
-  }, [initial]);
+    didInitRef.current = true;
+    // Intentionally only on mount; do not depend on `initial`
+    // to avoid re-initializing when parent updates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // bubble up whenever names change
   useEffect(() => {
@@ -93,7 +99,7 @@ export default function ParticipantsInput({
         aria-label="Participants"
       >
         {names.map((name, i) => (
-          <span key={`${name}-${i}`} className="chip" aria-label={name}>
+          <span key={name.toLowerCase()} className="chip" aria-label={name}>
             <span className="chip-text">
               {name}
               {i === 0 && " (you)"}
@@ -117,11 +123,10 @@ export default function ParticipantsInput({
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           onBlur={handleBlur}
-          placeholder={placeholder}
+          placeholder={names.length === 0 ? placeholder : ""}
           aria-label="Add participant"
         />
       </div>
     </div>
   );
 }
-
