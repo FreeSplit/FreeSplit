@@ -11,6 +11,8 @@ cd backend && go run rest_server.go &
 BACKEND_PID=$!
 
 # Go back to project root and start frontend
+echo "Installing frontend dependencies..."
+cd "$SCRIPT_DIR/frontend" && npm install
 echo "Starting frontend server on port 3000..."
 cd "$SCRIPT_DIR/frontend" && npm start &
 FRONTEND_PID=$!
