@@ -22,13 +22,18 @@ func main() {
 	if databaseURL == "" {
 		// Default to local PostgreSQL for development
 		databaseURL = "host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
+		log.Printf("🔧 Using local PostgreSQL for development")
+	} else {
+		log.Printf("🔧 Using DATABASE_URL from environment")
 	}
 
 	// Initialize database
+	log.Printf("🔄 Connecting to database...")
 	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	log.Printf("✅ Successfully connected to database")
 
 	// Run migrations
 	if err := database.Migrate(db); err != nil {
