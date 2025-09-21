@@ -27,12 +27,6 @@ fi
 export LOCAL_IP=$LOCAL_IP
 
 echo "🚀 Starting all services with Docker Compose..."
-echo ""
-echo "🌐 Access URLs:"
-echo "   📱 Frontend App: http://$LOCAL_IP:3001"
-echo "   🔧 Backend API:  http://$LOCAL_IP:8080"
-echo "   🗄️  PostgreSQL:   localhost:5432"
-echo ""
 
 if [ "$FOREGROUND" = true ]; then
     echo "🖥️  Running in foreground mode (logs will be shown)"
@@ -54,3 +48,10 @@ else
     echo "📊 To view logs: docker-compose logs -f"
     echo "🛑 To stop: ./stop-docker.sh"
 fi
+
+echo ""
+echo "🌐 Access URLs:"
+echo "   📱 Frontend App: http://$LOCAL_IP:3001"
+echo "   🔧 Backend API:  http://$LOCAL_IP:8080"
+echo "   🗄️  PostgreSQL:   localhost:5432"
+echo ""
