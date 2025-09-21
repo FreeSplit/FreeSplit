@@ -3,6 +3,16 @@ import axios from 'axios';
 // API configuration
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
+// Create axios instance with cache control
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+});
+
 // Types
 export interface Group {
   id: number;
@@ -52,7 +62,7 @@ export interface Debt {
 
 // Group API
 export const getGroup = async (urlSlug: string): Promise<{group: Group, participants: Participant[]}> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}`);
+  const response = await apiClient.get(`/api/group/${urlSlug}`);
   return {
     group: response.data.group,
     participants: response.data.participants || []
@@ -64,7 +74,7 @@ export const createGroup = async (data: {
   currency: string;
   participant_names: string[];
 }): Promise<Group> => {
-  const response = await axios.post(`${API_BASE_URL}/api/group`, {
+  const response = await apiClient.post(`/api/group`, {
     name: data.name,
     currency: data.currency,
     participant_names: data.participant_names
