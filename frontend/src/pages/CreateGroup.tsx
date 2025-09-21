@@ -1,48 +1,25 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Users, DollarSign } from 'lucide-react';
 import { createGroup } from '../services/api';
 import toast from 'react-hot-toast';
+import ParticipantsInput from "../forms/create-a-group";
 
 const CreateGroup: React.FC = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{ name: string; currency: string; participants: string[] }>({
     name: '',
     currency: 'USD',
-    participants: ['', '', ''] // Start with 3 empty participant fields
+    participants: [] // Managed by chips input
   });
+  // Derived form completeness state
+  const currentValidParticipants = formData.participants.filter(name => name.trim() !== '');
+  const isFormComplete = formData.name.trim() !== '' && currentValidParticipants.length >= 2;
 
   const handleInputChange = (field: string, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
-
-  const handleParticipantChange = (index: number, value: string) => {
-    const newParticipants = [...formData.participants];
-    newParticipants[index] = value;
-    setFormData(prev => ({
-      ...prev,
-      participants: newParticipants
-    }));
-  };
-
-  const addParticipant = () => {
-    setFormData(prev => ({
-      ...prev,
-      participants: [...prev.participants, '']
-    }));
-  };
-
-  const removeParticipant = (index: number) => {
-    if (formData.participants.length > 2) {
-      const newParticipants = formData.participants.filter((_, i) => i !== index);
-      setFormData(prev => ({
-        ...prev,
-        participants: newParticipants
-      }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -74,12 +51,18 @@ const CreateGroup: React.FC = () => {
   <div className="root">
     <div className="body">
       <div className="header">
-        <a>Cancel</a>
+        <a href="/">Cancel</a>
         <p>Create a group</p>
-        <a>Done</a>
+        <button 
+          className="a"
+          type="submit"
+          form="create-group-form"
+          disabled={!isFormComplete}>Done
+        </button>
       </div>
       <div className="section">
-        <form onSubmit={handleSubmit} className="form">
+        <form onSubmit={handleSubmit} className="form" id="create-group-form">
+          
           <div className="form-item">
             <label htmlFor="groupName" className="form-label">
               Group Name
@@ -90,7 +73,7 @@ const CreateGroup: React.FC = () => {
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
               className="form-input"
-              placeholder="e.g., Weekend Trip, House Expenses"
+              placeholder="Weekend Trip"
               required
             />
           </div>
@@ -113,56 +96,27 @@ const CreateGroup: React.FC = () => {
             </select>
           </div>
 
-          <div className="form-item">
-            <label className="form-label">
-              Participants
-            </label>
-            <div className="space-y-3">
-              {formData.participants.map((participant, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <input
-                    type="text"
-                    value={participant}
-                    onChange={(e) => handleParticipantChange(index, e.target.value)}
-                    className="form-input"
-                    placeholder={`Participant ${index + 1}`}
-                    required
-                  />
-                  {formData.participants.length > 2 && (
-                    <button
-                      type="button"
-                      onClick={() => removeParticipant(index)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg"
-                    >
-                      <Users className="w-5 h-5" />
-                    </button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={addParticipant}
-              className="mt-3 flex items-center space-x-2 text-blue-600 hover:text-blue-700 font-medium"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Add Participant</span>
-            </button>
-          </div>
-
-          <button
+          <ParticipantsInput
+            initial={formData.participants}
+            onChange={(list: string[]) => handleInputChange('participants', list)}
+          />
+  
+        </form>
+      </div>
+      <footer>
+        <button
             type="submit"
-            className="btn"
+            className="btn has-full-width"
+            form="create-group-form"
+            disabled={!isFormComplete}
           >
             Create Group
           </button>
-            
-        </form>
-      </div>
+      </footer>
+      
     </div>
   </div>    
   );
 };
 
 export default CreateGroup;
-

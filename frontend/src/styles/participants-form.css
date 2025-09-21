@@ -1,0 +1,78 @@
+/* Container + labels */
+.participants-field { width: 100%; }
+.pf-label {
+  display: block;
+  font-size: var(--fs-md);
+  color: var(--color-muted);
+  margin-bottom: 4px;
+}
+.pf-hint {
+  font-size: var(--fs-md);
+  color: var(--color-muted);
+  margin-bottom: 8px;
+  font: var(--font-body);
+}
+
+/* Input shell */
+.chips-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 8px;
+  border-bottom: 2px solid var(--color-muted);
+  background: transparent;
+  cursor: text;
+}
+
+.chips-input:focus-within {
+  border-color: var(--color-primary);
+}
+
+.chips-input.is-complete {
+  border-color: var(--color-text);
+}
+
+.chips-input.is-error,
+.chips-input.is-error:focus-within {
+  border-color: var(--color-error);
+}
+
+/* Pills */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: var(--color-bg);
+  font-weight: 600;
+  line-height: 1;
+}
+.chip-text { white-space: nowrap; }
+.chip-remove {
+  background: transparent;
+  border: 0;
+  color: var(--color-bg);
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-size: var(--fs-md);
+}
+.chip-remove:hover { opacity: 1; }
+
+/* Text input inside the chip row */
+.chips-input__control {
+  flex: 1 0 120px;
+  min-width: 120px;
+  border: 0;
+  outline: none;
+  font: var(--font-body);
+  padding: 6px 0;
+  background: transparent;
+  color: var(--color-text);
+}
+.chips-input__control::placeholder { 
+  color: var(--color-muted); 
+  font: var(--font-body);
+}
