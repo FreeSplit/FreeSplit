@@ -24,7 +24,7 @@ services:
       - "8080:8080"  # REST API
     environment:
       - DATABASE_URL=host=postgres user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable
-      - LOCAL_IP=${LOCAL_IP}
+      - LOCAL_IP=${LOCAL_IP:-localhost}
     depends_on:
       postgres:
         condition: service_healthy
@@ -37,7 +37,7 @@ services:
     ports:
       - "3001:3000"  # Map to 3001 for mobile access
     environment:
-      - REACT_APP_API_URL=http://${LOCAL_IP}:8080
+      - REACT_APP_API_URL=http://${LOCAL_IP:-localhost}:8080
     depends_on:
       - freesplit-backend
     restart: unless-stopped

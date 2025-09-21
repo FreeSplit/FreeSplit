@@ -27,7 +27,11 @@ fi
 export LOCAL_IP=$LOCAL_IP
 
 echo "🚀 Starting all services with Docker Compose..."
-echo "📱 Mobile access will be available at: http://$LOCAL_IP:3001"
+echo ""
+echo "🌐 Access URLs:"
+echo "   📱 Frontend App: http://$LOCAL_IP:3001"
+echo "   🔧 Backend API:  http://$LOCAL_IP:8080"
+echo "   🗄️  PostgreSQL:   localhost:5432"
 echo ""
 
 if [ "$FOREGROUND" = true ]; then
