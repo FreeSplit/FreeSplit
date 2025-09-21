@@ -1,13 +1,27 @@
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: freesplit
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    networks:
+      - freesplit-network
+
   freesplit-backend:
     build: ./backend
     ports:
       - "8080:8080"  # REST API
-    volumes:
-      - ./data:/data
     environment:
-      - DATABASE_PATH=/data/freesplit.db
+      - DATABASE_URL=host=postgres user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable
       - LOCAL_IP=${LOCAL_IP}
+    depends_on:
+      - postgres
     restart: unless-stopped
     networks:
       - freesplit-network
@@ -23,6 +37,9 @@ services:
     restart: unless-stopped
     networks:
       - freesplit-network
+
+volumes:
+  postgres_data:
 
 networks:
   freesplit-network:

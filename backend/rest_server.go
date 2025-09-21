@@ -5,19 +5,27 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"freesplit/internal/database"
 	"freesplit/internal/services"
 
-	"github.com/glebarez/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
+	// Get database URL from environment variable
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// Default to local PostgreSQL for development
+		databaseURL = "host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
+	}
+
 	// Initialize database
-	db, err := gorm.Open(sqlite.Open("freesplit.db"), &gorm.Config{})
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
