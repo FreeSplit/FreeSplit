@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import "../styles/participants-form.css";
 
 type Props = {
@@ -28,9 +28,13 @@ export default function ParticipantsInput({
   }, []);
 
   // bubble up whenever names change
+  const handleChange = useCallback((newNames: string[]) => {
+    onChange(newNames);
+  }, [onChange]);
+
   useEffect(() => {
-    onChange(names);
-  }, [names, onChange]);
+    handleChange(names);
+  }, [names, handleChange]);
 
   function normalizeList(list: string[]) {
     // trim, remove empties, de-dupe (case-insensitive)
