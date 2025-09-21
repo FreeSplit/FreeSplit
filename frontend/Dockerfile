@@ -15,16 +15,16 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:alpine
+FROM node:18-alpine
 
-# Copy built app to nginx
-COPY --from=builder /app/build /usr/share/nginx/html
+# Install serve for static file serving
+RUN npm install -g serve
 
-# Copy nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy built app
+COPY --from=builder /app/build /app/build
 
 # Expose port
 EXPOSE 3000
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start static file server
+CMD ["serve", "-s", "build", "-l", "3000"]
