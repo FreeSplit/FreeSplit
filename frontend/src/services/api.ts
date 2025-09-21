@@ -1,7 +1,18 @@
 import axios from 'axios';
 
-// API configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+// Force production URL if we're not on localhost
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocalhost ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'https://freesplit-backend.onrender.com');
+
+// Debug logging
+console.log('Environment variables:', {
+  REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+  NODE_ENV: process.env.NODE_ENV,
+  API_BASE_URL: API_BASE_URL,
+  isLocalhost: isLocalhost,
+  currentHostname: window.location.hostname
+});
 
 // Create axios instance with cache control
 const apiClient = axios.create({
