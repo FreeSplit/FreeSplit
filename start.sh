@@ -16,17 +16,149 @@ else
     echo "Detected local IP: $LOCAL_IP"
 fi
 
+# Function to install dependencies on macOS
+install_dependencies_macos() {
+    echo "📦 Installing dependencies via Homebrew..."
+    if ! command -v brew &> /dev/null; then
+        echo "❌ Homebrew not found. Please install Homebrew first:"
+        echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
+        exit 1
+    fi
+    
+    # Install PostgreSQL
+    brew install postgresql@15
+    brew services start postgresql@15
+    
+    # Install Go
+    brew install go
+    
+    # Install Node.js
+    brew install node
+    
+    # Add PostgreSQL to PATH
+    export PATH="/opt/homebrew/bin:$PATH"
+    if [ -f ~/.zshrc ]; then
+        echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
+    fi
+}
+
+# Function to install dependencies on Linux
+install_dependencies_linux() {
+    echo "📦 Installing dependencies via apt..."
+    sudo apt update
+    sudo apt install -y postgresql postgresql-contrib golang-go nodejs npm
+    sudo systemctl start postgresql
+    sudo systemctl enable postgresql
+}
+
+# Function to create database and user
+setup_postgresql() {
+    echo "🔧 Setting up PostgreSQL database..."
+    
+    # Create database if it doesn't exist
+    createdb freesplit 2>/dev/null || echo "Database 'freesplit' already exists or will be created"
+    
+    # Set password for postgres user (if not already set)
+    sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || echo "Password already set or user doesn't exist"
+}
+
+# Check if any dependencies are missing
+MISSING_DEPS=()
+
+if ! command -v psql &> /dev/null; then
+    MISSING_DEPS+=("PostgreSQL")
+fi
+
+if ! command -v go &> /dev/null; then
+    MISSING_DEPS+=("Go")
+fi
+
+if ! command -v node &> /dev/null; then
+    MISSING_DEPS+=("Node.js")
+fi
+
+# Install missing dependencies
+if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
+    echo "❌ Missing dependencies: ${MISSING_DEPS[*]}"
+    echo "🔄 Installing missing dependencies..."
+    
+    # Detect OS and install accordingly
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS
+        install_dependencies_macos
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        install_dependencies_linux
+    else
+        echo "❌ Unsupported operating system: $OSTYPE"
+        echo "Please install dependencies manually or use: ./start-docker.sh"
+        exit 1
+    fi
+fi
+
+# Function to check if PostgreSQL is running
+check_postgresql() {
+    # Try multiple ways to check if PostgreSQL is running
+    if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
+        return 0
+    elif pg_isready -h 127.0.0.1 -p 5432 > /dev/null 2>&1; then
+        return 0
+    elif pg_isready -h localhost -p 5433 > /dev/null 2>&1; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Check if PostgreSQL is running
-if ! pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
-    echo "❌ PostgreSQL is not running on localhost:5432"
-    echo "Please start PostgreSQL first:"
-    echo "  brew services start postgresql  # macOS with Homebrew"
-    echo "  sudo systemctl start postgresql # Linux"
-    echo "  Or use: ./start-docker.sh"
-    exit 1
+if ! check_postgresql; then
+    echo "❌ PostgreSQL is not running"
+    echo "🔄 Attempting to start PostgreSQL..."
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # macOS - try different service names
+        if brew services list | grep -q "postgresql@15"; then
+            brew services start postgresql@15
+        elif brew services list | grep -q "postgresql"; then
+            brew services start postgresql
+        else
+            echo "❌ No PostgreSQL service found. Installing..."
+            brew install postgresql@15
+            brew services start postgresql@15
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        # Linux
+        sudo systemctl start postgresql
+    fi
+    
+    # Wait a moment for PostgreSQL to start
+    echo "⏳ Waiting for PostgreSQL to start..."
+    sleep 5
+    
+    # Check again with multiple attempts
+    for i in {1..3}; do
+        if check_postgresql; then
+            break
+        fi
+        echo "⏳ Attempt $i/3: Waiting for PostgreSQL..."
+        sleep 2
+    done
+    
+    if ! check_postgresql; then
+        echo "❌ Failed to start PostgreSQL automatically"
+        echo "PostgreSQL might be running on a different port or configuration."
+        echo "Please check manually:"
+        echo "  brew services list | grep postgresql  # macOS"
+        echo "  sudo systemctl status postgresql      # Linux"
+        echo "  Or use: ./start-docker.sh"
+        exit 1
+    fi
 fi
 
 echo "✅ PostgreSQL is running"
+
+# Set up database
+setup_postgresql
 
 # Start backend
 echo "Starting backend server on port 8080..."
