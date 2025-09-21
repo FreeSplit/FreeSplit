@@ -18,37 +18,84 @@ fi
 
 # Function to install dependencies on macOS
 install_dependencies_macos() {
-    echo "📦 Installing dependencies via Homebrew..."
+    echo "📦 Installing missing dependencies via Homebrew..."
     if ! command -v brew &> /dev/null; then
         echo "❌ Homebrew not found. Please install Homebrew first:"
         echo "   /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\""
         exit 1
     fi
     
-    # Install PostgreSQL
-    brew install postgresql@15
-    brew services start postgresql@15
+    # Install PostgreSQL if not installed
+    if ! command -v psql &> /dev/null; then
+        echo "Installing PostgreSQL..."
+        brew install postgresql@15
+        brew services start postgresql@15
+    else
+        echo "✅ PostgreSQL already installed"
+        # Make sure it's running
+        if ! brew services list | grep postgresql@15 | grep -q "started"; then
+            echo "🔄 Starting PostgreSQL service..."
+            brew services start postgresql@15
+        fi
+    fi
     
-    # Install Go
-    brew install go
+    # Install Go if not installed
+    if ! command -v go &> /dev/null; then
+        echo "Installing Go..."
+        brew install go
+    else
+        echo "✅ Go already installed"
+    fi
     
-    # Install Node.js
-    brew install node
+    # Install Node.js if not installed
+    if ! command -v node &> /dev/null; then
+        echo "Installing Node.js..."
+        brew install node
+    else
+        echo "✅ Node.js already installed"
+    fi
     
-    # Add PostgreSQL to PATH
-    export PATH="/opt/homebrew/bin:$PATH"
-    if [ -f ~/.zshrc ]; then
-        echo 'export PATH="/opt/homebrew/bin:$PATH"' >> ~/.zshrc
+    # Add PostgreSQL to PATH - find the actual version
+    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname)
+    if [ -n "$POSTGRES_BIN_PATH" ]; then
+        export PATH="$POSTGRES_BIN_PATH:$PATH"
+        echo "✅ Added PostgreSQL to PATH: $POSTGRES_BIN_PATH"
+    else
+        echo "⚠️  Could not find PostgreSQL binaries, trying default path"
+        export PATH="/opt/homebrew/bin:$PATH"
     fi
 }
 
 # Function to install dependencies on Linux
 install_dependencies_linux() {
-    echo "📦 Installing dependencies via apt..."
+    echo "📦 Installing missing dependencies via apt..."
     sudo apt update
-    sudo apt install -y postgresql postgresql-contrib golang-go nodejs npm
-    sudo systemctl start postgresql
-    sudo systemctl enable postgresql
+    
+    # Install PostgreSQL if not installed
+    if ! command -v psql &> /dev/null; then
+        echo "Installing PostgreSQL..."
+        sudo apt install -y postgresql postgresql-contrib
+        sudo systemctl start postgresql
+        sudo systemctl enable postgresql
+    else
+        echo "✅ PostgreSQL already installed"
+    fi
+    
+    # Install Go if not installed
+    if ! command -v go &> /dev/null; then
+        echo "Installing Go..."
+        sudo apt install -y golang-go
+    else
+        echo "✅ Go already installed"
+    fi
+    
+    # Install Node.js if not installed
+    if ! command -v node &> /dev/null; then
+        echo "Installing Node.js..."
+        sudo apt install -y nodejs npm
+    else
+        echo "✅ Node.js already installed"
+    fi
 }
 
 # Function to create database and user
@@ -64,6 +111,15 @@ setup_postgresql() {
 
 # Check if any dependencies are missing
 MISSING_DEPS=()
+
+# Try to find PostgreSQL binaries if not in PATH
+if ! command -v psql &> /dev/null; then
+    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname 2>/dev/null)
+    if [ -n "$POSTGRES_BIN_PATH" ]; then
+        export PATH="$POSTGRES_BIN_PATH:$PATH"
+        echo "✅ Found PostgreSQL binaries at: $POSTGRES_BIN_PATH"
+    fi
+fi
 
 if ! command -v psql &> /dev/null; then
     MISSING_DEPS+=("PostgreSQL")
@@ -100,12 +156,20 @@ fi
 check_postgresql() {
     # Try multiple ways to check if PostgreSQL is running
     if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
+        echo "✅ PostgreSQL found on localhost:5432"
         return 0
     elif pg_isready -h 127.0.0.1 -p 5432 > /dev/null 2>&1; then
+        echo "✅ PostgreSQL found on 127.0.0.1:5432"
         return 0
     elif pg_isready -h localhost -p 5433 > /dev/null 2>&1; then
+        echo "✅ PostgreSQL found on localhost:5433"
         return 0
     else
+        # Debug: show what pg_isready is actually doing
+        echo "🔍 Debug: Checking PostgreSQL status..."
+        pg_isready -h localhost -p 5432 2>&1 || echo "  - localhost:5432 failed"
+        pg_isready -h 127.0.0.1 -p 5432 2>&1 || echo "  - 127.0.0.1:5432 failed"
+        pg_isready -h localhost -p 5433 2>&1 || echo "  - localhost:5433 failed"
         return 1
     fi
 }
@@ -172,7 +236,7 @@ echo "Setting up environment for network access..."
 cd "$SCRIPT_DIR/frontend" && echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
 echo "Starting frontend server on port 3001..."
 cd "$SCRIPT_DIR/frontend" && HOST=0.0.0.0 PORT=3001 npm start &
-FRONTEND_PID=$!
+FRONTEND_PID=$! 
 
 echo ""
 echo "✅ Both servers are starting..."

@@ -28,13 +28,9 @@ export default function ParticipantsInput({
   }, []);
 
   // bubble up whenever names change
-  const handleChange = useCallback((newNames: string[]) => {
-    onChange(newNames);
-  }, [onChange]);
-
   useEffect(() => {
-    handleChange(names);
-  }, [names, handleChange]);
+    onChange(names);
+  }, [names, onChange]);
 
   function normalizeList(list: string[]) {
     // trim, remove empties, de-dupe (case-insensitive)
