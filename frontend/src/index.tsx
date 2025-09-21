@@ -5,7 +5,7 @@ import './styles/global.css';
 import './styles/tokens.css';
 import './styles/components.css';
 import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+// import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
