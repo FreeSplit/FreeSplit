@@ -1,39 +1,51 @@
 # FreeSplit
 
-A simple, self-hosted expense splitting application. Built with Go (gRPC backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
+A simple, self-hosted expense splitting application that makes it easy to track and split expenses among friends, family, or any group. Built with Go (REST API backend) and React (PWA frontend), designed to be easily deployed and self-hosted.
+
+## What is FreeSplit?
+
+FreeSplit is a modern expense splitting application that eliminates the hassle of manually calculating who owes what. Whether you're splitting a dinner bill, managing shared household expenses, or organizing group trips, FreeSplit provides an intuitive interface to track expenses, calculate splits, and simplify debts.
+
+The application generates unique shareable links for each group, allowing multiple people to add expenses and view balances without requiring accounts or logins. All data is stored locally, giving you complete control over your financial information.
 
 ## Features
 
 ### MVP Features
 - ✅ Create groups with auto-generated unique links
-- ✅ Add/edit/delete expenses
-- ✅ Add/edit/delete members
-- ✅ Split expenses equally, by amount, or by shares/percentage
+- ✅ Add/edit/delete expenses with detailed tracking
+- ✅ Add/edit/delete group members
+- ✅ Multiple split types: Equal, Amount, Share, and Percentage
 - ✅ Calculate balances per member
 - ✅ Simplify debts (minimize number of transactions)
 - ✅ Shareable links (multi-user editing, no login required)
-- ✅ Cloud persistence (SQLite database)
-- ✅ Unlimited expenses, ad-free
+- ✅ Persistence with SQLite database
+- ✅ Unlimited expenses, completely ad-free
 - ✅ Spending totals (group + per member)
+- ✅ Real-time debt calculations
+- ✅ Responsive Progressive Web App (PWA)
 
-### Future Feature Ideas
-- Categorize expenses (Food, Travel, etc.)
-- Receipt photo uploads
-- Payment requests / reminders
-- Currency converter
-- Export to CSV/Excel
-- Import from CSV/Excel
-- Recurring transactions
+### Future Enhancement Ideas
+- Categorize expenses with custom categories
+- Receipt photo uploads and storage
+- Payment requests and reminders
+- Currency converter for international groups
+- Export/import to CSV/Excel
+- Recurring transactions for subscriptions
 - Multi-language support
-- Mobile offline entry
+- Mobile offline entry of expenses
 
-## Architecture
 
-- **Backend**: Go with gRPC API
-- **Frontend**: React with PWA capabilities
+
+## Technologies Used
+
+- **Backend**: Go with REST API
+- **Frontend**: React with TypeScript
 - **Database**: SQLite
 - **Deployment**: Docker containers
-- **Communication**: gRPC-Web for frontend-backend communication
+- **Communication**: HTTP REST API for frontend-backend communication
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Notifications**: React Hot Toast
 
 ## Quick Start
 
@@ -41,18 +53,24 @@ A simple, self-hosted expense splitting application. Built with Go (gRPC backend
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/tmfrsyth/freesplit.git
 cd freesplit
 ```
 
-2. Start the application:
+2. Run the setup script:
 ```bash
-docker-compose up -d
+chmod +x setup.sh
+./setup.sh
 ```
 
-3. Access the application:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8081
+3. Start the application:
+```bash
+./start.sh
+```
+
+4. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080
 
 ### Manual Setup
 
@@ -63,21 +81,14 @@ docker-compose up -d
 cd backend
 ```
 
-2. Install dependencies:
+2. Install Go dependencies:
 ```bash
-go mod download
+go mod tidy
 ```
 
-3. Generate protobuf files:
+3. Run the backend:
 ```bash
-protoc --go_out=. --go_opt=paths=source_relative \
-    --go-grpc_out=. --go-grpc_opt=paths=source_relative \
-    proto/expense.proto
-```
-
-4. Run the backend:
-```bash
-go run main.go
+go run rest_server.go
 ```
 
 #### Frontend Setup
@@ -97,71 +108,48 @@ npm install
 npm start
 ```
 
-## API Endpoints
+## Starting and Stopping the Project
 
-The application provides the following gRPC services:
+### Start the Application
+```bash
+./start.sh
+```
 
-### Group Service
-- `GetGroup` - Get group and participants by URL slug
-- `CreateGroup` - Create a new group with participants
-- `UpdateGroup` - Update group name and currency
+This script will:
+- Start the backend server on port 8080
+- Start the frontend development server on port 3000
+- Display helpful information about accessing the application
 
-### Participant Service
-- `AddParticipant` - Add a new participant to a group
-- `UpdateParticipant` - Update participant name
-- `DeleteParticipant` - Remove participant from group
+### Stop the Application
+```bash
+./stop.sh
+```
 
-### Expense Service
-- `GetExpensesByGroup` - Get all expenses for a group
-- `GetSplitsByParticipant` - Get all splits for a participant
-- `GetExpenseWithSplits` - Get expense details with splits
-- `CreateExpense` - Create a new expense with splits
-- `UpdateExpense` - Update an existing expense
-- `DeleteExpense` - Delete an expense
+This script will:
+- Stop the backend server
+- Stop the frontend development server
+- Clean up any running processes
 
-### Debt Service
-- `GetDebts` - Get simplified debts for a group
-- `UpdateDebtPaidAmount` - Update debt payment status
+### Individual Services
 
-## Database Schema
+To start only the backend:
+```bash
+cd backend && go run rest_server.go
+```
 
-### Groups
-- ID, URL slug, Name, Settle-up date, State, Currency
-- References to participants and expenses
-
-### Participants
-- ID, Name, Group ID
-- Unique constraint on name + group ID
-
-### Expenses
-- ID, Name, Cost, Emoji, Payer ID, Split type, Group ID
-- References to splits
-
-### Splits
-- Split ID, Group ID, Expense ID, Participant ID, Split amount
-
-### Debts
-- Debt ID, Group ID, Lender ID, Debtor ID, Debt amount, Paid amount
-- Unique constraint on group + lender + debtor
-
-## Debt Simplification Algorithm
-
-The application uses a greedy algorithm to minimize the number of transactions needed to settle all debts:
-
-1. Calculate net balance for each participant
-2. Separate creditors (negative balance) and debtors (positive balance)
-3. Use greedy matching to create simplified debts
-4. Only create debts for amounts > $0.01 to avoid floating-point issues
+To start only the frontend:
+```bash
+cd frontend && npm start
+```
 
 ## Development
 
 ### Backend Development
 
-The backend uses Go modules and gRPC. Key files:
-- `main.go` - Application entry point
-- `proto/expense.proto` - gRPC service definitions
-- `internal/database/models.go` - Database models
-- `internal/server/` - gRPC service implementations
+The backend uses Go modules with a clean REST API architecture. Key files:
+- `rest_server.go` - REST API server entry point
+- `internal/database/models.go` - Database models and migrations
+- `internal/services/` - Business logic service implementations
 
 ### Frontend Development
 
@@ -173,44 +161,34 @@ The frontend is a React PWA with TypeScript. Key files:
 
 ### Adding New Features
 
-1. Update the protobuf schema in `proto/expense.proto`
-2. Regenerate Go code: `protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/expense.proto`
-3. Implement the gRPC service in `internal/server/`
-4. Update the frontend API client in `src/services/api.ts`
-5. Add UI components in `src/pages/`
+1. Define new data types in `internal/services/types.go`
+2. Add service methods to the appropriate interface in `internal/services/interfaces.go`
+3. Implement the service methods in `internal/services/`
+4. Add REST endpoints in `rest_server.go`
+5. Update the frontend API client in `src/services/api.ts`
+6. Add UI components in `src/pages/`
 
 ## Deployment
 
 ### Docker Deployment
 
-The application is designed to be easily deployed using Docker:
-
+1. Build and run with Docker Compose:
 ```bash
-# Build and start all services
-docker-compose up -d
-
-# View logs
-docker-compose logs -f
-
-# Stop services
-docker-compose down
+docker-compose up --build
 ```
 
-### Production Considerations
+2. Access the application:
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8080
 
-1. **Database**: Consider using PostgreSQL or MySQL for production
-2. **Security**: Add authentication and authorization
-3. **Monitoring**: Add logging and metrics
-4. **Backup**: Implement database backup strategy
-5. **SSL**: Use HTTPS in production
+### Self-Hosting
 
-## Contributing
+The application is designed to be easily self-hosted. Simply run the setup script and start the services on your preferred server.
 
-1. Clone the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
+## Authors
+
+- **Thomas Forsyth** - *Team Captain: Initial work and architecture* - [tmfrsyth](https://github.com/tmfrsyth)
+- **Kris Sousa** - *Code Monkey: Development and implementation* - [KMFSousa](https://github.com/KMFSousa)
 
 ## License
 
