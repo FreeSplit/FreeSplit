@@ -22,6 +22,10 @@ const CreateGroup: React.FC = () => {
     }));
   }, []);
 
+  const handleParticipantsChange = useCallback((list: string[]) => {
+    handleInputChange('participants', list);
+  }, [handleInputChange]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -98,7 +102,7 @@ const CreateGroup: React.FC = () => {
 
           <ParticipantsInput
             initial={formData.participants}
-            onChange={(list: string[]) => handleInputChange('participants', list)}
+            onChange={handleParticipantsChange}
           />
   
         </form>
