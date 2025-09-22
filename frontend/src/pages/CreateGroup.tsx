@@ -52,7 +52,6 @@ const CreateGroup: React.FC = () => {
   };
 
   return (
-  <div className="root">
     <div className="body">
       <div className="header">
         <a href="/">Cancel</a>
@@ -118,8 +117,7 @@ const CreateGroup: React.FC = () => {
           </button>
       </footer>
       
-    </div>
-  </div>    
+    </div>   
   );
 };
 
