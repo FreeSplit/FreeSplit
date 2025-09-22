@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import toast from 'react-hot-toast';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faReceipt, faPlus, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -326,90 +328,86 @@ const AddExpense: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="body">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
-            <button
-              onClick={() => navigate(`/group/${urlSlug}`)}
-              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <h1 className="text-2xl font-bold text-gray-900">Add Expense</h1>
-          </div>
-        </div>
+      <div className="header">
+        <button 
+          onClick={() => navigate(`/group/${urlSlug}`)}
+          className="a"
+        >Cancel</button>
+        <p>Add an expense</p>
+        <button 
+          className="a"
+          type="submit"
+          form="create-group-form"
+          disabled={submitting || !validateSplits()}>Done
+        </button>
       </div>
-
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-lg shadow p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+      
+      <div className="section">
+          <form onSubmit={handleSubmit} className="form">
             {/* Basic Info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="form">
+              <div className="h-div">
               <div>
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
-                  Expense Name
+                <input
+                  type="text"
+                  id="emoji"
+                  value={formData.emoji}
+                  onChange={(e) => handleInputChange('emoji', e.target.value)}
+                  className="emoji-input"
+                  maxLength={2}
+                />
+              </div>
+
+              <div className="form-item">
+                <label htmlFor="name" className="form-label">
+                  Title
                 </label>
                 <input
                   type="text"
                   id="name"
                   value={formData.name}
                   onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="form-input"
                   placeholder="e.g., Dinner at Restaurant"
                   required
                 />
               </div>
+              </div>
 
-              <div>
-                <label htmlFor="cost" className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Cost
+              <div form-item>
+                <label htmlFor="cost" className="form-label">
+                  Cost
                 </label>
-                <div className="relative">
-                  <span className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm w-8">
+                <div className="h-div">
+                  <p className="p2 is-black">
                     {group.currency}
-                  </span>
+                  </p>
                   <input
                     type="number"
                     id="cost"
                     value={formData.cost}
                     onChange={(e) => handleInputChange('cost', e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-right"
+                    className="form-input"
                     placeholder="0.00"
                     step="0.01"
                     min="0"
                     required
-                    style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                   />
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="emoji" className="block text-sm font-medium text-gray-700 mb-2">
-                  Emoji
-                </label>
-                <input
-                  type="text"
-                  id="emoji"
-                  value={formData.emoji}
-                  onChange={(e) => handleInputChange('emoji', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl"
-                  maxLength={2}
-                />
-              </div>
-
-              <div>
-                <label htmlFor="payer" className="block text-sm font-medium text-gray-700 mb-2">
-                  Who Paid?
+              <div form-item>
+                <label htmlFor="payer" className="form-label">
+                  Paid by
                 </label>
                 <select
                   id="payer"
                   value={formData.payer_id}
                   onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="form-input"
                   required
                 >
                   <option value={0}>Select payer</option>
@@ -420,68 +418,33 @@ const AddExpense: React.FC = () => {
                   ))}
                 </select>
               </div>
-            </div>
 
             {/* Split Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                How to Split
+            <div className="h-div has-space-between">
+              <label htmlFor="split_type" className="form-label">
+                Split
               </label>
-              <div className="grid grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('split_type', 'equal')}
-                  className={`p-4 border rounded-lg text-center ${
-                    formData.split_type === 'equal'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Equal</div>
-                  <div className="text-sm text-gray-500">Split equally</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('split_type', 'amount')}
-                  className={`p-4 border rounded-lg text-center ${
-                    formData.split_type === 'amount'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Amount</div>
-                  <div className="text-sm text-gray-500">Custom amounts</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('split_type', 'shares')}
-                  className={`p-4 border rounded-lg text-center ${
-                    formData.split_type === 'shares'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Shares</div>
-                  <div className="text-sm text-gray-500">By shares (1 = equal)</div>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleInputChange('split_type', 'percentage')}
-                  className={`p-4 border rounded-lg text-center ${
-                    formData.split_type === 'percentage'
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-gray-300 hover:border-gray-400'
-                  }`}
-                >
-                  <div className="font-medium">Percentage</div>
-                  <div className="text-sm text-gray-500">By percentage</div>
-                </button>
+              <div className="select-wrapper">
+              <select
+                id="split_type"
+                className="split-dropdown"
+                value={formData.split_type}
+                onChange={(e) => handleInputChange('split_type', e.target.value)}
+              >
+                <option value="equal">Equal</option>
+                <option value="amount">Amount</option>
+                <option value="shares">Shares</option>
+                <option value="percentage">Percentage</option>
+              </select>
+              <span className="select-icon">
+                <FontAwesomeIcon icon={faChevronDown} />
+              </span>
               </div>
             </div>
 
             {/* Split Details */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-4">
+              <label className="form-label">
                 Split Details
               </label>
               <div className="space-y-3">
@@ -599,10 +562,8 @@ const AddExpense: React.FC = () => {
             </div>
           </form>
         </div>
-      </div>
     </div>
   );
 };
 
 export default AddExpense;
-
