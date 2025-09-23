@@ -360,6 +360,12 @@ const EditExpense: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!loading && !group && urlSlug) {
+      navigate(`/group/${urlSlug}`);
+    }
+  }, [loading, group, urlSlug, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -372,19 +378,7 @@ const EditExpense: React.FC = () => {
   }
 
   if (!group) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Group not found</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Create New Group
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (

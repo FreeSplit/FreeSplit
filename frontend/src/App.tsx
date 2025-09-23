@@ -10,6 +10,9 @@ import Members from './pages/Members';
 import Debts from './pages/Debts';
 import './styles/global.css';
 import './styles/tokens.css';
+import './styles/components.css';
+import './styles/participants-form.css';
+import './styles/split-breakdown.css';
 
 function App() {
   return (

@@ -4,6 +4,7 @@ import { ArrowLeft, DollarSign, Check } from 'lucide-react';
 import { getGroup, getDebts, updateDebtPaidAmount } from '../services/api';
 import { Group, Debt, Participant } from '../services/api';
 import toast from 'react-hot-toast';
+import NavBar from "../nav/nav-bar";
 
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -122,6 +123,12 @@ const Debts: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!loading && !group && urlSlug) {
+      navigate(`/group/${urlSlug}`);
+    }
+  }, [loading, group, urlSlug, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -134,45 +141,21 @@ const Debts: React.FC = () => {
   }
 
   if (!group) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Group not found</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Create New Group
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   const settledDebts = debts.filter(debt => getDebtStatus(debt) === 'settled');
   const pendingDebts = debts.filter(debt => getDebtStatus(debt) !== 'settled');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page">
+      <div className="body">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
-            <button
-              onClick={() => navigate(`/group/${urlSlug}`)}
-              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Debts & Settlements</h1>
-              <p className="text-gray-600">{group.name}</p>
+        <div className="header">
+              <p className="is-bold">Debts</p>
             </div>
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="content-section">
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-lg shadow p-6">
@@ -328,9 +311,11 @@ const Debts: React.FC = () => {
           </div>
         )}
       </div>
+            {/* Nav */}
+      <NavBar />
+    </div>
     </div>
   );
 };
 
 export default Debts;
-

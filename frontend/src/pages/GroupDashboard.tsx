@@ -6,9 +6,9 @@ import { Group, Expense, Debt, Participant } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import ShareLink from '../modals/share-link';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
-import FreesplitLogo from '../images/freesplit-logo.svg';
+import FreesplitLogo from '../images/FreeSplit.svg';
 
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -91,20 +91,22 @@ const GroupDashboard: React.FC = () => {
 
   if (!group) {
     return (
-      <div className="body">
-        <div className="logo-header">
-        <img src={FreesplitLogo} alt="Freesplit Logo" />
-        </div>
-        <div className="section content-v-centered">
-          <div className="content-container">
-            <h2>Group not found</h2>
-            <p>Please check the URL is correct, or click below to create a new group</p>
-            <button
-            onClick={() => navigate('/')}
-            className="btn"
-            >
-              Create new group
-            </button>
+      <div className="page">
+        <div className="body">
+          <div className="logo-header">
+            <img src={FreesplitLogo} alt="Freesplit Logo" />
+          </div>
+          <div className="content-section v-centered">
+            <div className="content-container">
+              <h2>Group not found</h2>
+              <p className="text-is-centered">Please check the URL is correct, or click below to create a new group.</p>
+              <button
+                onClick={() => navigate('/')}
+                className="btn"
+              >
+                Create a group
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -112,64 +114,73 @@ const GroupDashboard: React.FC = () => {
   }
 
   return (
-      <div className="body">
-        {/* Header */}
-          <div className="header">
-            <p>{group.name}</p>
-            <button className="a" onClick={() => setShareOpen(true)}>Share</button>
-          </div>
-        {/* Expenses */}
-          <div className="section">
-            {expenses.length === 0 ? (
-              <div className="content-container">
-                <FontAwesomeIcon icon={faReceipt} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-                <h2>No expenses</h2>
-                <p>Add an expense to track your group debts.</p>
-                <button
-                  onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-                  className="btn"
-                >
-                  <span>Add an expense</span>
-                  <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                </button>
-              </div>
-            ) : (
-              expenses.slice(0, 5).map((expense) => (
-                  <div key={expense.id} className="expenses-container">
-                    <button onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expense">
-                      <span className="expense-emoji">{expense.emoji}</span>
-                      <div className="expense-details">
-                        <p>{expense.name}</p>
-                        <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency} {expense.cost.toFixed(2)}</span></p>
-                      </div>
-                      <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+      <div className="page">
+        <div className="body">
+          {/* Header */}
+            <div className="header">
+              <p className="is-bold">{group.name}</p>
+              <button className="a" onClick={() => setShareOpen(true)}>Share</button>
+            </div>
+          {/* Expenses */}
+            <div className="content-section">
+              {expenses.length === 0 ? (
+                <div className="content-container">
+                  <FontAwesomeIcon icon={faReceipt} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
+                  <h2>No expenses</h2>
+                  <p>Add an expense to track your group debts.</p>
+                  <button
+                    onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                    className="btn"
+                  >
+                    <span>Add an expense</span>
+                    <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {expenses.slice(0, 5).map((expense) => (
+                    <div key={expense.id} className="expenses-container">
+                      <button onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expense">
+                        <span className="expense-emoji">{expense.emoji}</span>
+                        <div className="expense-details">
+                          <p>{expense.name}</p>
+                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{expense.cost.toFixed(2)}</span></p>
+                        </div>
+                        <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="expenses-container">
+                    <button
+                      onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                      className="add-expense"
+                    >
+                      <span className="link">Add a new expense</span>
+                      <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 20 }} aria-hidden="true" />
                     </button>
                   </div>
-              ))
-            )}
-          </div>
-          <div className="section">
-            <button
-              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-              className="btn"
-            >
-              <span>Add an expense</span>
-              <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-            </button>
-          </div>
+                </>
+              )}
+            </div>
 
-      {isShareOpen && (
-        <ShareLink group={group} onClose={() => setShareOpen(false)} />
-      )}
-      <button
-        type="button"
-        className="floating-action-button"
-        onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-        aria-label="Add an expense"
-      >
-        <Plus className="floating-action-button__icon" />
-      </button>
-      <NavBar />
+          {/* Share Modal */}
+            {isShareOpen && (
+              <ShareLink group={group} onClose={() => setShareOpen(false)} />
+            )}
+            
+          {/* FAB */}
+            <button
+              type="button"
+              className="floating-action-button"
+              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+              aria-label="Add an expense"
+            >
+              <Plus className="floating-action-button__icon" />
+            </button>
+      
+          {/* Nav */}
+            <NavBar />
+        </div>
       </div>
   );
 };
