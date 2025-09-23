@@ -5,7 +5,7 @@ import { getGroup, getExpensesByGroup, getDebts, deleteExpense } from '../servic
 import { Group, Expense, Debt, Participant } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
-import ShareLink from '../modals/share-link';
+import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
@@ -117,10 +117,7 @@ const GroupDashboard: React.FC = () => {
       <div className="page">
         <div className="body">
           {/* Header */}
-            <div className="header">
-              <p className="is-bold">{group.name}</p>
-              <button className="a" onClick={() => setShareOpen(true)}>Share</button>
-            </div>
+            <Header />
           {/* Expenses */}
             <div className="content-section">
               {expenses.length === 0 ? (
@@ -138,6 +135,7 @@ const GroupDashboard: React.FC = () => {
                 </div>
               ) : (
                 <>
+                <div className="list">
                   {expenses.slice(0, 5).map((expense) => (
                     <div key={expense.id} className="expenses-container">
                       <button onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expense">
@@ -150,36 +148,23 @@ const GroupDashboard: React.FC = () => {
                       </button>
                     </div>
                   ))}
-                  <div className="expenses-container">
-                    <button
-                      onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-                      className="add-expense"
-                    >
-                      <span className="link">Add a new expense</span>
-                      <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 20 }} aria-hidden="true" />
-                    </button>
-                  </div>
+                </div>
                 </>
               )}
             </div>
 
-          {/* Share Modal */}
-            {isShareOpen && (
-              <ShareLink group={group} onClose={() => setShareOpen(false)} />
-            )}
-            
-          {/* FAB */}
-            <button
-              type="button"
-              className="floating-action-button"
-              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-              aria-label="Add an expense"
-            >
-              <Plus className="floating-action-button__icon" />
-            </button>
-      
-          {/* Nav */}
-            <NavBar />
+          <div className="v-flex">
+            <div className="floating-cta-container">
+              <button 
+                className="btn"
+                onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+              >
+                <span>Add a new expense</span>
+                <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+              </button>
+            </div>
+            < NavBar />
+          </div>
         </div>
       </div>
   );

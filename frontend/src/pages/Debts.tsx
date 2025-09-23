@@ -5,6 +5,9 @@ import { getGroup, getDebts, updateDebtPaidAmount } from '../services/api';
 import { Group, Debt, Participant } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
+import Header from "../nav/header";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -146,167 +149,97 @@ const Debts: React.FC = () => {
 
   const settledDebts = debts.filter(debt => getDebtStatus(debt) === 'settled');
   const pendingDebts = debts.filter(debt => getDebtStatus(debt) !== 'settled');
+  const orderedDebts = [...pendingDebts, ...settledDebts];
 
   return (
     <div className="page">
       <div className="body">
       {/* Header */}
-        <div className="header">
-              <p className="is-bold">Debts</p>
-            </div>
+        <Header />
 
       <div className="content-section">
-        {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-red-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-red-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Debts</p>
-                <p className="text-2xl font-bold text-gray-900">{debts.length}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <DollarSign className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">{pendingDebts.length}</p>
-              </div>
-            </div>
-          </div>
+        <h1>Debts</h1>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <Check className="w-6 h-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Settled</p>
-                <p className="text-2xl font-bold text-gray-900">{settledDebts.length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Debts List */}
+        {orderedDebts.length > 0 && (
+          <div className="expenses-container">
+            {orderedDebts.map((debt) => {
+              const status = getDebtStatus(debt);
+              const remainingAmount = debt.debt_amount - debt.paid_amount;
+              const isSettled = status === 'settled';
 
-        {/* Pending Debts */}
-        {pendingDebts.length > 0 && (
-          <div className="bg-white rounded-lg shadow mb-8">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Pending Debts</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {pendingDebts.map((debt) => {
-                const status = getDebtStatus(debt);
-                const remainingAmount = debt.debt_amount - debt.paid_amount;
-                
-                return (
-                  <div key={debt.debt_id} className="px-6 py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <p className="font-medium text-gray-900">
-                              {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)}
-                            </p>
-                            <div className="flex items-center space-x-4 mt-1">
-                              <span className="text-sm text-gray-500">
-                                Total: {group.currency} {debt.debt_amount.toFixed(2)}
-                              </span>
-                              {debt.paid_amount > 0 && (
-                                <span className="text-sm text-gray-500">
-                                  Paid: {group.currency} {debt.paid_amount.toFixed(2)}
-                                </span>
-                              )}
-                              <span className="text-sm text-gray-500">
-                                Remaining: {group.currency} {remainingAmount.toFixed(2)}
-                              </span>
-                            </div>
-                          </div>
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                            {getStatusText(status)}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
+              return (
+                <div key={debt.debt_id} className="expense">
+                  <div className="expense-details">
+                    {isSettled ? (
+                      <>
+                        <p className="text-is-muted">
+                          {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{debt.debt_amount.toFixed(2)}
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p>
+                          {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)} {group.currency}{remainingAmount.toFixed(2)}
+                        </p>
                         {status === 'partial' && (
-                          <button
-                            onClick={() => {
-                              const amount = parseFloat(prompt(`Enter payment amount (max ${remainingAmount.toFixed(2)}):`) || '0');
-                              if (amount > 0 && amount <= remainingAmount) {
-                                handlePartialPayment(debt, debt.paid_amount + amount);
-                              }
-                            }}
-                            className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                            disabled={updating === debt.debt_id}
-                          >
-                            Add Payment
-                          </button>
+                          <p className="text-sm text-gray-500">
+                            Paid so far: {group.currency}{debt.paid_amount.toFixed(2)}
+                          </p>
                         )}
-                        <button
-                          onClick={() => handleSettleDebt(debt)}
-                          className="px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-1"
-                          disabled={updating === debt.debt_id}
-                        >
-                          <Check className="w-4 h-4" />
-                          <span>Settle</span>
-                        </button>
-                      </div>
-                    </div>
+                      </>
+                    )}
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Settled Debts */}
-        {settledDebts.length > 0 && (
-          <div className="bg-white rounded-lg shadow">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h2 className="text-lg font-medium text-gray-900">Settled Debts</h2>
-            </div>
-            <div className="divide-y divide-gray-200">
-              {settledDebts.map((debt) => (
-                <div key={debt.debt_id} className="px-6 py-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium text-gray-900">
-                        {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        {group.currency} {debt.debt_amount.toFixed(2)}
-                      </p>
-                    </div>
-                    <span className="px-2 py-1 rounded-full text-xs font-medium text-green-600 bg-green-100">
-                      Settled
-                    </span>
+                  <div className="flex items-center space-x-2">
+                    {status === 'partial' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const amount = parseFloat(prompt(`Enter payment amount (max ${remainingAmount.toFixed(2)}):`) || '0');
+                          if (!Number.isNaN(amount) && amount > 0 && amount <= remainingAmount) {
+                            handlePartialPayment(debt, debt.paid_amount + amount);
+                          }
+                        }}
+                        className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                        disabled={updating === debt.debt_id}
+                      >
+                        Add Payment
+                      </button>
+                    )}
+                    {isSettled ? (
+                      <span className="link" style={{ color: 'var(--color-muted)', cursor: 'default' }}>
+                        Settled
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="link"
+                        onClick={() => handleSettleDebt(debt)}
+                        disabled={updating === debt.debt_id}
+                      >
+                        Settle
+                      </button>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
 
         {/* No Debts */}
         {debts.length === 0 && (
-          <div className="bg-white rounded-lg shadow p-8 text-center">
-            <DollarSign className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Debts Yet</h3>
-            <p className="text-gray-500 mb-4">
-              Add some expenses to see simplified debts between members.
-            </p>
+          <div className="content-container">
+            <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
+            <h2>No debts</h2>
+            <p>Add an expense to track your group debts.</p>
             <button
-              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-              className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-            >
-              Add First Expense
+               onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+              className="btn"
+             >
+              <span>Add an expense</span>
+              <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
             </button>
           </div>
         )}

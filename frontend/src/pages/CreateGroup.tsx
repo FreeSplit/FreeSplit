@@ -8,7 +8,7 @@ const CreateGroup: React.FC = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState<{ name: string; currency: string; participants: string[] }>({
     name: '',
-    currency: 'USD',
+    currency: '',
     participants: [] // Managed by chips input
   });
   // Derived form completeness state

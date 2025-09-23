@@ -12,14 +12,16 @@ function Index() {
           <img src={FreesplitLogo} alt="Freesplit Logo" />
         </div>
         <div className="content-section v-centered">
-          <p>Settle group expenses for free.</p>
-          <Link to="/create-a-group/" className="btn">
-            Create a group
-          </Link>
-          <div className="bullet-list">
-            <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Track & split debts</p></div>
-            <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Simplify transactions</p></div>
-            <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Unlimited expenses</p></div>
+          <div className="content-container">
+            <p>Settle group expenses for free.</p>
+            <Link to="/create-a-group/" className="btn">
+              Create a group
+            </Link>
+            <div className="bullet-list">
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Track & split debts</p></div>
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Simplify transactions</p></div>
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Unlimited expenses</p></div>
+            </div>
           </div>
         </div>
         <footer>

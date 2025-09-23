@@ -121,6 +121,8 @@
     display: flex;
     padding: 2px 6px;
     align-items: flex-start;
+    border: none;
+    background: transparent;
     text-align: center;
     font-family: var(--font-body);
     font-size: var(--fs-sm);
