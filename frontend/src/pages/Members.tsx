@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Edit2, Trash2 } from 'lucide-react';
-import { getGroup, addParticipant, updateParticipant, deleteParticipant } from '../services/api';
+import { getGroup, deleteParticipant } from '../services/api';
 import { Group, Participant } from '../services/api';
 import toast from 'react-hot-toast';
-import NavBar from "../nav/nav-bar";
+import NavBar from '../nav/nav-bar';
+import Header from "../nav/header";
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight, faPlus, faUserXmark } from '@fortawesome/free-solid-svg-icons';
+import AddMemberModal from '../modals/add-member';
+import EditMemberModal from '../modals/edit-member';
 
 const Members: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -12,10 +16,9 @@ const Members: React.FC = () => {
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [editingId, setEditingId] = useState<number | null>(null);
-  const [newMemberName, setNewMemberName] = useState('');
-  const [editName, setEditName] = useState('');
+  const [isAddMemberOpen, setAddMemberOpen] = useState(false);
+  const [isEditMemberOpen, setEditMemberOpen] = useState(false);
+  const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
 
   const loadGroupData = useCallback(async () => {
     try {
@@ -37,47 +40,6 @@ const Members: React.FC = () => {
     }
   }, [urlSlug, loadGroupData]);
 
-  const handleAddMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMemberName.trim()) return;
-
-    try {
-      const response = await addParticipant({
-        name: newMemberName.trim(),
-        group_id: group!.id
-      });
-      
-      setParticipants(prev => [...prev, response]);
-      setNewMemberName('');
-      setShowAddForm(false);
-      toast.success('Member added successfully!');
-    } catch (error) {
-      toast.error('Failed to add member');
-      console.error('Error adding member:', error);
-    }
-  };
-
-  const handleEditMember = async (participantId: number) => {
-    if (!editName.trim()) return;
-
-    try {
-      const response = await updateParticipant({
-        name: editName.trim(),
-        participant_id: participantId
-      });
-      
-      setParticipants(prev => 
-        prev.map(p => p.id === participantId ? response : p)
-      );
-      setEditingId(null);
-      setEditName('');
-      toast.success('Member updated successfully!');
-    } catch (error) {
-      toast.error('Failed to update member');
-      console.error('Error updating member:', error);
-    }
-  };
-
   const handleDeleteMember = async (participantId: number) => {
     if (!window.confirm('Are you sure you want to delete this member? This will also delete all their expenses and splits.')) {
       return;
@@ -85,7 +47,7 @@ const Members: React.FC = () => {
 
     try {
       await deleteParticipant(participantId);
-      setParticipants(prev => prev.filter(p => p.id !== participantId));
+      setParticipants((prev) => prev.filter((p) => p.id !== participantId));
       toast.success('Member deleted successfully!');
     } catch (error) {
       toast.error('Failed to delete member');
@@ -93,14 +55,18 @@ const Members: React.FC = () => {
     }
   };
 
-  const startEditing = (participant: Participant) => {
-    setEditingId(participant.id);
-    setEditName(participant.name);
+  const handleMemberAdded = (participant: Participant) => {
+    setParticipants((prev) => [...prev, participant]);
   };
 
-  const cancelEditing = () => {
-    setEditingId(null);
-    setEditName('');
+  const handleMemberUpdated = (participant: Participant) => {
+    setParticipants((prev) =>
+      prev.map((existing) => (existing.id === participant.id ? participant : existing))
+    );
+  };
+
+  const handleMemberDeleted = (participantId: number) => {
+    setParticipants((prev) => prev.filter((p) => p.id !== participantId));
   };
 
   useEffect(() => {
@@ -124,116 +90,82 @@ const Members: React.FC = () => {
     return null;
   }
 
+  const openEditModal = (participant: Participant) => {
+    setSelectedParticipant(participant);
+    setEditMemberOpen(true);
+  };
+
   return (
     <div className="page">
-    <div className="body">
-      {/* Header */}
-            <div className="header">
-              <p className="is-bold">Members</p>
-              <button className="a" onClick={() => setShowAddForm(true)}>Add member</button>
-            </div>
+      <div className="body">
+        <Header />
 
-      {/* Content */}
         <div className="content-section">
-        
-        {/* Add Member Form */}
-        {showAddForm && (
-          <div className="bg-white rounded-lg shadow p-6 mb-6">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Add New Member</h2>
-            <form onSubmit={handleAddMember} className="flex space-x-4">
-              <input
-                type="text"
-                value={newMemberName}
-                onChange={(e) => setNewMemberName(e.target.value)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter member name"
-                required
-              />
-              <button
-                type="submit"
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-              >
-                Add
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowAddForm(false)}
-                className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Members List */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-medium text-gray-900">
-              Members ({participants.length})
-            </h2>
-          </div>
-          <div className="divide-y divide-gray-200">
+          <h1>Members ({participants.length})</h1>
+          <div className="list">
             {participants.length === 0 ? (
-              <div className="px-6 py-8 text-center text-gray-500">
-                <p>No members yet. Add your first member to get started!</p>
+              <div className="content-container">
+                <FontAwesomeIcon icon={faUserXmark} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
+                <h2>No members</h2>
+                <p>I'm not sure how you've done this. Try add some people.</p>
+                <button onClick={() => setAddMemberOpen(true)} className="btn">
+                  <span>Add a member</span>
+                  <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                </button>
               </div>
             ) : (
               participants.map((participant) => (
-                <div key={participant.id} className="px-6 py-4">
-                  {editingId === participant.id ? (
-                    <div className="flex items-center space-x-4">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        autoFocus
-                      />
-                      <button
-                        onClick={() => handleEditMember(participant.id)}
-                        className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={cancelEditing}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-gray-900">{participant.name}</h3>
-                        <p className="text-sm text-gray-500">Member since creation</p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => startEditing(participant)}
-                          className="p-2 text-gray-400 hover:text-blue-600"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMember(participant.id)}
-                          className="p-2 text-gray-400 hover:text-red-600"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                <div key={participant.id} className="list">
+                  <button 
+                    className="list-item"
+                    onClick={() => openEditModal(participant)}
+                  >
+                    <p>{participant.name}</p>
+                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                  </button>
                 </div>
               ))
             )}
           </div>
         </div>
+
+        {isAddMemberOpen && (
+          <AddMemberModal
+            group={group}
+            onClose={() => setAddMemberOpen(false)}
+            onMemberAdded={handleMemberAdded}
+          />
+        )}
+
+        {isEditMemberOpen && selectedParticipant && (
+          <EditMemberModal
+            participant={selectedParticipant}
+            onClose={() => {
+              setEditMemberOpen(false);
+              setSelectedParticipant(null);
+            }}
+            onMemberUpdated={handleMemberUpdated}
+            onMemberDeleted={(id) => {
+              handleMemberDeleted(id);
+              setEditMemberOpen(false);
+              setSelectedParticipant(null);
+            }}
+          />
+        )}
+
+        <div className="v-flex">
+            <div className="floating-cta-container">
+              <button 
+                className="btn"
+                onClick={() => setAddMemberOpen(true)}
+              >
+                <span>Add a new member</span>
+                <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+              </button>
+            </div>
+            < NavBar />
+          </div>
       </div>
-      {/* Nav */}
-      <NavBar />
-    </div>
     </div>
   );
 };
