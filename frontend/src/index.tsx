@@ -7,7 +7,7 @@ import './styles/components.css';
 import './styles/participants-form.css';
 import './styles/split-breakdown.css';
 import App from './App';
-import * as serviceWorkerRegistration from './serviceWorkerRegistration';
+// import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -19,4 +19,4 @@ root.render(
 );
 
 // Register service worker for PWA
-serviceWorkerRegistration.register();
+// serviceWorkerRegistration.register(); // Disabled to prevent caching issues

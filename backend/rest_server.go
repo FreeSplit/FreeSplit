@@ -5,22 +5,35 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 
 	"freesplit/internal/database"
 	"freesplit/internal/services"
 
-	"github.com/glebarez/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
+	// Get database URL from environment variable
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// Default to local PostgreSQL for development
+		databaseURL = "host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
+		log.Printf("🔧 Using local PostgreSQL for development")
+	} else {
+		log.Printf("🔧 Using DATABASE_URL from environment")
+	}
+
 	// Initialize database
-	db, err := gorm.Open(sqlite.Open("freesplit.db"), &gorm.Config{})
+	log.Printf("🔄 Connecting to database...")
+	db, err := gorm.Open(postgres.Open(databaseURL), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to database: %v", err)
 	}
+	log.Printf("✅ Successfully connected to database")
 
 	// Run migrations
 	if err := database.Migrate(db); err != nil {
@@ -36,11 +49,14 @@ func main() {
 	// CORS middleware
 	corsMiddleware := func(next http.HandlerFunc) http.HandlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
+			log.Printf("🌐 [CORS] %s %s from %s", r.Method, r.URL.Path, r.RemoteAddr)
+
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Cache-Control, Pragma, Expires")
 
 			if r.Method == "OPTIONS" {
+				log.Printf("✅ [CORS] Handling preflight request for %s", r.URL.Path)
 				w.WriteHeader(http.StatusOK)
 				return
 			}
@@ -139,6 +155,8 @@ func main() {
 
 // Group handlers
 func createGroup(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
+	log.Printf("🚀 [CREATE_GROUP] Starting group creation request from %s", r.RemoteAddr)
+
 	var req struct {
 		Name             string   `json:"name"`
 		Currency         string   `json:"currency"`
@@ -146,9 +164,12 @@ func createGroup(w http.ResponseWriter, r *http.Request, groupService services.G
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("❌ [CREATE_GROUP] Failed to decode JSON: %v", err)
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
 	}
+
+	log.Printf("📝 [CREATE_GROUP] Request data - Name: %s, Currency: %s, Participants: %v", req.Name, req.Currency, req.ParticipantNames)
 
 	serviceReq := &services.CreateGroupRequest{
 		Name:             req.Name,
@@ -158,18 +179,26 @@ func createGroup(w http.ResponseWriter, r *http.Request, groupService services.G
 
 	resp, err := groupService.CreateGroup(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error creating group: %v", err)
+		log.Printf("❌ [CREATE_GROUP] Error creating group: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("❌ [CREATE_GROUP] Error encoding response: %v", err)
+		return
+	}
+
+	log.Printf("✅ [CREATE_GROUP] Successfully created and returned group with ID: %d, URL: %s", resp.Group.Id, resp.Group.UrlSlug)
 }
 
 func getGroup(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
 	urlSlug := strings.TrimPrefix(r.URL.Path, "/api/group/")
+	log.Printf("🚀 [GET_GROUP] Starting group retrieval request for URL slug: %s from %s", urlSlug, r.RemoteAddr)
+
 	if urlSlug == "" {
+		log.Printf("❌ [GET_GROUP] Missing url_slug parameter")
 		http.Error(w, "url_slug parameter required", http.StatusBadRequest)
 		return
 	}
@@ -177,13 +206,18 @@ func getGroup(w http.ResponseWriter, r *http.Request, groupService services.Grou
 	serviceReq := &services.GetGroupRequest{UrlSlug: urlSlug}
 	resp, err := groupService.GetGroup(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error getting group: %v", err)
+		log.Printf("❌ [GET_GROUP] Error getting group %s: %v", urlSlug, err)
 		http.Error(w, "Group not found", http.StatusNotFound)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp)
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		log.Printf("❌ [GET_GROUP] Error encoding response for group %s: %v", urlSlug, err)
+		return
+	}
+
+	log.Printf("✅ [GET_GROUP] Successfully retrieved and returned group %s with %d participants", urlSlug, len(resp.Participants))
 }
 
 func updateGroup(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
