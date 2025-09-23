@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import "../styles/participants-form.css";
 
 type Props = {
@@ -30,7 +30,11 @@ export default function ParticipantsInput({
   }, []);
 
   // bubble up whenever names change
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+  
   useEffect(() => {
+
     onChange(names);
     // intentionally exclude onChange to avoid re-triggering when parent re-renders
     // eslint-disable-next-line react-hooks/exhaustive-deps

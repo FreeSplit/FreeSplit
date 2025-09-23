@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createGroup } from '../services/api';
 import toast from 'react-hot-toast';
@@ -15,12 +15,16 @@ const CreateGroup: React.FC = () => {
   const currentValidParticipants = formData.participants.filter(name => name.trim() !== '');
   const isFormComplete = formData.name.trim() !== '' && currentValidParticipants.length >= 2;
 
-  const handleInputChange = (field: string, value: string | string[]) => {
+  const handleInputChange = useCallback((field: string, value: string | string[]) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-  };
+  }, []);
+
+  const handleParticipantsChange = useCallback((list: string[]) => {
+    handleInputChange('participants', list);
+  }, [handleInputChange]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

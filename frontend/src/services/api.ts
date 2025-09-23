@@ -1,7 +1,52 @@
 import axios from 'axios';
 
-// API configuration
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
+// Force production URL if we're not on localhost
+const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+const API_BASE_URL = isLocalhost ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'https://freesplit-backend.onrender.com');
+
+// Debug logging
+console.log('Environment variables:', {
+  REACT_APP_API_URL: process.env.REACT_APP_API_URL,
+  NODE_ENV: process.env.NODE_ENV,
+  API_BASE_URL: API_BASE_URL,
+  isLocalhost: isLocalhost,
+  currentHostname: window.location.hostname
+});
+
+// Create axios instance with cache control
+const apiClient = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    'Cache-Control': 'no-cache, no-store, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  }
+});
+
+// Add request interceptor for debugging
+apiClient.interceptors.request.use(
+  (config) => {
+    console.log('API Request:', config.method?.toUpperCase(), config.url);
+    return config;
+  },
+  (error) => {
+    console.error('API Request Error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for debugging
+apiClient.interceptors.response.use(
+  (response) => {
+    console.log('API Response:', response.status, response.config.url);
+    return response;
+  },
+  (error) => {
+    console.error('API Response Error:', error.response?.status, error.config?.url, error.message);
+    return Promise.reject(error);
+  }
+);
 
 // Types
 export interface Group {
@@ -52,7 +97,7 @@ export interface Debt {
 
 // Group API
 export const getGroup = async (urlSlug: string): Promise<{group: Group, participants: Participant[]}> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}`);
+  const response = await apiClient.get(`/api/group/${urlSlug}`);
   return {
     group: response.data.group,
     participants: response.data.participants || []
@@ -64,7 +109,7 @@ export const createGroup = async (data: {
   currency: string;
   participant_names: string[];
 }): Promise<Group> => {
-  const response = await axios.post(`${API_BASE_URL}/api/group`, {
+  const response = await apiClient.post(`/api/group`, {
     name: data.name,
     currency: data.currency,
     participant_names: data.participant_names
