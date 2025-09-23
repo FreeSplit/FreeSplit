@@ -76,6 +76,7 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
         <p>Share the link below with your friends to invite them to the group.</p>
         <div
           className="link-share-container"
+          title={window.location.href}
           onClick={handleCopy}
         >
           <p>{window.location.href}</p>

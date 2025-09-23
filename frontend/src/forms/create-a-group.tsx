@@ -10,11 +10,13 @@ type Props = {
 export default function ParticipantsInput({
   initial = [],
   onChange = () => {},
-  placeholder = "Use a comma to separate names.",
+  placeholder = "Use enter to separate names.",
 }: Props) {
   const [names, setNames] = useState<string[]>([]);
   const [value, setValue] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const errorTimerRef = useRef<number | null>(null);
 
   // init from props once (avoid re-sync on each parent update)
   const didInitRef = useRef(false);
@@ -32,8 +34,30 @@ export default function ParticipantsInput({
   onChangeRef.current = onChange;
   
   useEffect(() => {
-    onChangeRef.current(names);
+
+    onChange(names);
+    // intentionally exclude onChange to avoid re-triggering when parent re-renders
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [names]);
+
+  useEffect(() => {
+    return () => {
+      if (errorTimerRef.current) {
+        window.clearTimeout(errorTimerRef.current);
+      }
+    };
+  }, []);
+
+  const showError = (message: string) => {
+    setError(message);
+    if (errorTimerRef.current) {
+      window.clearTimeout(errorTimerRef.current);
+    }
+    errorTimerRef.current = window.setTimeout(() => {
+      setError(null);
+      errorTimerRef.current = null;
+    }, 2000);
+  };
 
   function normalizeList(list: string[]) {
     // trim, remove empties, de-dupe (case-insensitive)
@@ -52,7 +76,31 @@ export default function ParticipantsInput({
   function addFromString(str: string) {
     const items = str.split(",").map((s) => s.trim()).filter(Boolean);
     if (!items.length) return;
-    setNames((prev) => normalizeList([...prev, ...items]));
+    const currentKeys = new Set(names.map((n) => n.toLowerCase()));
+    const addedKeys = new Set<string>();
+    const uniqueItems: string[] = [];
+    let foundDuplicate = false;
+
+    items.forEach((item) => {
+      const normalized = item.replace(/,+/g, " ").trim();
+      if (!normalized) return;
+      const key = normalized.toLowerCase();
+      if (currentKeys.has(key) || addedKeys.has(key)) {
+        foundDuplicate = true;
+        return;
+      }
+      addedKeys.add(key);
+      uniqueItems.push(normalized);
+    });
+
+    if (uniqueItems.length) {
+      setNames((prev) => normalizeList([...prev, ...uniqueItems]));
+      setError(null);
+    }
+
+    if (foundDuplicate) {
+      showError("Participants must have a unique name.");
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
@@ -103,10 +151,7 @@ export default function ParticipantsInput({
       >
         {names.map((name, i) => (
           <span key={name.toLowerCase()} className="chip" aria-label={name}>
-            <span className="chip-text">
-              {name}
-              {i === 0 && " (you)"}
-            </span>
+            <span className="chip-text">{name}</span>
             <button
               type="button"
               className="chip-remove"
@@ -130,6 +175,11 @@ export default function ParticipantsInput({
           aria-label="Add participant"
         />
       </div>
+      {error && (
+        <p className="form-error" role="alert">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

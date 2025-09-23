@@ -4,6 +4,8 @@ import './index.css';
 import './styles/global.css';
 import './styles/tokens.css';
 import './styles/components.css';
+import './styles/participants-form.css';
+import './styles/split-breakdown.css';
 import App from './App';
 // import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 

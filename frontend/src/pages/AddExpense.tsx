@@ -5,7 +5,7 @@ import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faReceipt, faPlus, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus, faChevronDown } from '@fortawesome/free-solid-svg-icons';
 
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -26,6 +26,12 @@ const AddExpense: React.FC = () => {
   const [splits, setSplits] = useState<{ [key: number]: number }>({});
   const [shares, setShares] = useState<{ [key: number]: number }>({});
   const [percentages, setPercentages] = useState<{ [key: number]: number }>({});
+
+  const adjustShare = (participantId: number, delta: number) => {
+    const current = shares[participantId] || 1;
+    const next = Math.max(1, current + delta);
+    handleShareChange(participantId, String(next));
+  };
 
   // Helper function to round to 2 decimal places
   const roundToTwoDecimals = (num: number): number => {
@@ -300,6 +306,12 @@ const AddExpense: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    if (!loading && !group && urlSlug) {
+      navigate(`/group/${urlSlug}`);
+    }
+  }, [loading, group, urlSlug, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -312,256 +324,279 @@ const AddExpense: React.FC = () => {
   }
 
   if (!group) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Group not found</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Create New Group
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
+  const totalAssigned = Object.values(splits).reduce((sum, amount) => sum + amount, 0);
+  const remainingAmount = (parseFloat(formData.cost) || 0) - totalAssigned;
+
   return (
-    <div className="body">
-      {/* Header */}
-      <div className="header">
-        <button 
-          onClick={() => navigate(`/group/${urlSlug}`)}
-          className="a"
-        >Cancel</button>
-        <p>Add an expense</p>
-        <button 
-          className="a"
-          type="submit"
-          form="create-group-form"
-          disabled={submitting || !validateSplits()}>Done
-        </button>
-      </div>
-      
-      <div className="section">
-          <form onSubmit={handleSubmit} className="form">
-            {/* Basic Info */}
-            <div className="form">
-              <div className="h-div">
-              <div>
-                <input
-                  type="text"
-                  id="emoji"
-                  value={formData.emoji}
-                  onChange={(e) => handleInputChange('emoji', e.target.value)}
-                  className="emoji-input"
-                  maxLength={2}
-                />
-              </div>
+    <div className="page">
+      <div className="body">
 
-              <div className="form-item">
-                <label htmlFor="name" className="form-label">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="form-input"
-                  placeholder="e.g., Dinner at Restaurant"
-                  required
-                />
-              </div>
-              </div>
+        {/* Header */}
+          <div className="header">
+            <button 
+              onClick={() => navigate(`/group/${urlSlug}`)}
+              className="a"
+            >
+              Cancel
+            </button>
+            <p className="is-bold">Add an expense</p>
+            <button 
+              className="a"
+              type="submit"
+              form="add-expense"
+              disabled={submitting || !validateSplits()}
+            >
+              Add
+            </button>
+          </div>
 
-              <div form-item>
-                <label htmlFor="cost" className="form-label">
-                  Cost
-                </label>
-                <div className="h-div">
-                  <p className="p2 is-black">
-                    {group.currency}
-                  </p>
-                  <input
-                    type="number"
-                    id="cost"
-                    value={formData.cost}
-                    onChange={(e) => handleInputChange('cost', e.target.value)}
-                    className="form-input"
-                    placeholder="0.00"
-                    step="0.01"
-                    min="0"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-
-              <div form-item>
-                <label htmlFor="payer" className="form-label">
-                  Paid by
-                </label>
-                <select
-                  id="payer"
-                  value={formData.payer_id}
-                  onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
-                  className="form-input"
-                  required
-                >
-                  <option value={0}>Select payer</option>
-                  {participants.map(participant => (
-                    <option key={participant.id} value={participant.id}>
-                      {participant.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-            {/* Split Type */}
-            <div className="h-div has-space-between">
-              <label htmlFor="split_type" className="form-label">
-                Split
-              </label>
-              <div className="select-wrapper">
-              <select
-                id="split_type"
-                className="split-dropdown"
-                value={formData.split_type}
-                onChange={(e) => handleInputChange('split_type', e.target.value)}
-              >
-                <option value="equal">Equal</option>
-                <option value="amount">Amount</option>
-                <option value="shares">Shares</option>
-                <option value="percentage">Percentage</option>
-              </select>
-              <span className="select-icon">
-                <FontAwesomeIcon icon={faChevronDown} />
-              </span>
-              </div>
-            </div>
-
-            {/* Split Details */}
-            <div>
-              <label className="form-label">
-                Split Details
-              </label>
-              <div className="space-y-3">
-                {participants.map(participant => (
-                  <div key={participant.id} className="flex items-center space-x-4">
-                    <div className="flex-1">
-                      <label className="block text-sm font-medium text-gray-700">
-                        {participant.name}
-                      </label>
-                    </div>
-                    
-                    {/* Amount Input */}
-                    <div className="w-36">
-                      <div className="relative">
-                        <span className="absolute left-0 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm w-8">
-                          {group.currency}
-                        </span>
-                        <input
-                          type="number"
-                          value={splits[participant.id] || 0}
-                          onChange={(e) => handleSplitChange(participant.id, e.target.value)}
-                          className={`w-full pl-10 pr-4 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right ${
-                            formData.split_type === 'shares' || formData.split_type === 'percentage' 
-                              ? 'text-gray-500 cursor-not-allowed' 
-                              : ''
-                          }`}
-                          step="0.01"
-                          min="0"
-                          disabled={formData.split_type === 'equal' || formData.split_type === 'shares' || formData.split_type === 'percentage'}
-                          readOnly={formData.split_type === 'shares' || formData.split_type === 'percentage'}
-                          style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                        />
-                      </div>
-                    </div>
-                    
-                    {/* Shares Input */}
-                    {formData.split_type === 'shares' && (
-                      <div className="w-28">
-                        <div className="flex items-center justify-end">
-                          <input
-                            type="number"
-                            value={shares[participant.id] || 1}
-                            onChange={(e) => handleShareChange(participant.id, e.target.value)}
-                            className="w-16 px-2 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right"
-                            min="1"
-                            step="1"
-                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                          />
-                          <span className="ml-2 text-sm text-gray-600">shares</span>
-                        </div>
-                      </div>
-                    )}
-                    
-                    {/* Percentage Input */}
-                    {formData.split_type === 'percentage' && (
-                      <div className="w-28">
-                        <div className="flex items-center justify-end">
-                          <input
-                            type="number"
-                            value={percentages[participant.id] || 0}
-                            onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
-                            className="w-16 px-2 py-2 border-b-2 border-gray-300 focus:border-blue-500 focus:outline-none bg-transparent text-right"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                          />
-                          <span className="ml-2 text-sm text-gray-600">%</span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+          {/* Form */}
+          <div className="content-section">
+            <form onSubmit={handleSubmit} className="form" id="add-expense">
               
-              {/* Summary */}
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Total:</span>
-                  <span className="font-bold text-lg">
-                    {group.currency} {Object.values(splits).reduce((sum, amount) => sum + amount, 0).toFixed(2)}
-                  </span>
+              {/* Basic Info */}
+                <div className="h-div">
+                  <div>
+                    <input
+                      type="text"
+                      id="emoji"
+                      value={formData.emoji}
+                      onChange={(e) => handleInputChange('emoji', e.target.value)}
+                      className="emoji-input"
+                      maxLength={2}
+                    />
+                  </div>
+                  <div className="form-item">
+                    <label htmlFor="name" className="form-label">
+                      Title
+                    </label>
+                    <div className="form-input-container">
+                      <input
+                        type="text"
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleInputChange('name', e.target.value)}
+                        className="form-input"
+                        placeholder="e.g., Dinner at Restaurant"
+                        required
+                      />
+                    </div>
+                  </div>
                 </div>
-                {formData.split_type === 'shares' && (
-                  <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                    <span>Total Shares:</span>
-                    <span>{Object.values(shares).reduce((sum, share) => sum + share, 0)}</span>
-                  </div>
-                )}
-                {formData.split_type === 'percentage' && (
-                  <div className="flex justify-between items-center mt-2 text-sm text-gray-600">
-                    <span>Total Percentage:</span>
-                    <span>{Object.values(percentages).reduce((sum, pct) => sum + pct, 0).toFixed(2)}%</span>
-                  </div>
-                )}
-              </div>
-            </div>
 
-            {/* Submit Button */}
-            <div className="flex justify-end space-x-4">
+                <div form-item>
+                  <label htmlFor="cost" className="form-label">
+                    Cost
+                  </label>
+                  <div className="h-div">
+                    <p className="p2 is-black">
+                      {group.currency}
+                    </p>
+                    <div className="form-input-container">
+                      <input
+                        type="number"
+                        id="cost"
+                        value={formData.cost}
+                        onChange={(e) => handleInputChange('cost', e.target.value)}
+                        className="form-input"
+                        placeholder="0.00"
+                        step="0.01"
+                        min="0"
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div form-item>
+                  <label htmlFor="payer" className="form-label">
+                    Paid by
+                  </label>
+                  <div className="form-input-container">
+                    <select
+                      id="payer"
+                      value={formData.payer_id}
+                      onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
+                      className="form-input"
+                      required
+                    >
+                    <option value={0}>Select payer</option>
+                      {participants.map(participant => (
+                        <option key={participant.id} value={participant.id}>
+                          {participant.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+              {/* Split Type */}
+                <div className="split-breakdown-container">
+                  <div className="split-breakdown-header">
+                    <label htmlFor="split_type" className="form-label">
+                      Split
+                    </label>
+                    <div className="split-breakdown-dropdown">
+                      <select
+                        id="split_type"
+                        className="split-breakdown-dropdown"
+                        value={formData.split_type}
+                        onChange={(e) => handleInputChange('split_type', e.target.value)}
+                      >
+                        <option value="equal">Equal</option>
+                        <option value="amount">Amount</option>
+                        <option value="shares">Shares</option>
+                        <option value="percentage">Percentage</option>
+                      </select>
+                      <span className="select-icon">
+                        <FontAwesomeIcon icon={faChevronDown} />
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Split Details */}
+                    {participants.map(participant => (
+                      <div key={participant.id} className="split-breakdown-participant-container">
+                        <div className="split-breakdown-details-container">
+                          <div className="checkbox">
+                            A
+                          </div>
+                          <div className="split-breakdown-participant-details">
+                            <p>
+                              {participant.name}
+                            </p>
+                            <p className="p2">{group.currency}{(splits[participant.id] ?? 0).toFixed(2)}</p>
+                          </div>
+                        </div>
+
+                        {/* Equal Input */}
+                          {formData.split_type === 'equal' && (
+                            <div className="split-breakdown-even-split-container">
+                              <span>
+                                {group.currency}{(splits[participant.id] ?? 0).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+
+                        {/* Amount Input */}
+                          {formData.split_type === 'amount' && (
+                            <div className="split-breakdown-amount-split-container">
+                              <p>
+                                {group.currency}
+                              </p>
+                              <input
+                                type="number"
+                                value={(splits[participant.id] ?? 0).toFixed(2)}
+                                onChange={(e) => handleSplitChange(participant.id, e.target.value)}
+                                className="form-input"
+                                step="0.01"
+                                min="0"
+                              />
+                            </div>
+                          )}
+                      
+                        {/* Shares Input */}
+                          {formData.split_type === 'shares' && (
+                            <div className="share-adjust">
+                              <button
+                                type="button"
+                                className="share-adjust__button"
+                                onClick={() => adjustShare(participant.id, -1)}
+                                disabled={(shares[participant.id] || 1) <= 1}
+                                aria-label={`Decrease shares for ${participant.name}`}
+                              >
+                                <FontAwesomeIcon icon={faMinus} />
+                              </button>
+                              <input
+                                type="number"
+                                value={shares[participant.id] || 1}
+                                onChange={(e) => handleShareChange(participant.id, e.target.value)}
+                                className="share-adjust__input"
+                                min="1"
+                                step="1"
+                                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                              />
+                              <button
+                                type="button"
+                                className="share-adjust__button"
+                                onClick={() => adjustShare(participant.id, 1)}
+                                aria-label={`Increase shares for ${participant.name}`}
+                              >
+                                <FontAwesomeIcon icon={faPlus} />
+                              </button>
+                            </div>
+                          )}
+                      
+                        {/* Percentage Input */}
+                          {formData.split_type === 'percentage' && (
+                            <div className="split-breakdown-amount-split-container">
+                                <input
+                                  type="number"
+                                  value={(percentages[participant.id] ?? 0).toFixed(2)}
+                                  onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
+                                  className="form-input right-align-text"
+                                  min="0"
+                                  max="99.99"
+                                  step="0.01"
+                                  style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                />
+                                <p>%</p>
+                            </div>
+                          )}
+                      </div>
+                    ))}
+              
+                  {/* Summary */}
+                  
+                </div>
+            </form>
+          </div>
+          <footer className="has-gradient-bg">
+            <div className="breakdown-container">
+              <div className="breakdown-details">
+                <p>Total Attributed: </p>
+                <h2>
+                  {group.currency}{totalAssigned.toFixed(2)}
+                </h2>
+              </div>
+              {formData.split_type === 'amount' && (
+                <div className="p2">
+                  Remaining: {group.currency}{remainingAmount.toFixed(2)}
+                </div>
+              )}
+              {formData.split_type === 'shares' && (
+                <div className="p2">
+                  Total Shares: {Object.values(shares).reduce((sum, share) => sum + share, 0)}
+                </div>
+              )}
+              {formData.split_type === 'percentage' && (
+                <div className="p2">
+                  Total Percentage: {Object.values(percentages).reduce((sum, pct) => sum + pct, 0).toFixed(2)}%
+                </div>
+              )}
+            </div>
+            <div className="footer-two-buttons">
               <button
                 type="button"
                 onClick={() => navigate(`/group/${urlSlug}`)}
-                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+                className="btn--secondary has-full-width"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                disabled={submitting || !validateSplits()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                form="add-expense"
+                disabled={submitting || !validateSplits()} 
+                className="btn has-full-width"
               >
-                {submitting ? 'Adding...' : 'Add Expense'}
+                Add
               </button>
             </div>
-          </form>
-        </div>
+          </footer>
+      </div>
     </div>
   );
 };

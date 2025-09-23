@@ -4,6 +4,7 @@ import { ArrowLeft, Plus, Edit2, Trash2 } from 'lucide-react';
 import { getGroup, addParticipant, updateParticipant, deleteParticipant } from '../services/api';
 import { Group, Participant } from '../services/api';
 import toast from 'react-hot-toast';
+import NavBar from "../nav/nav-bar";
 
 const Members: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -102,6 +103,12 @@ const Members: React.FC = () => {
     setEditName('');
   };
 
+  useEffect(() => {
+    if (!loading && !group && urlSlug) {
+      navigate(`/group/${urlSlug}`);
+    }
+  }, [loading, group, urlSlug, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -114,49 +121,21 @@ const Members: React.FC = () => {
   }
 
   if (!group) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Group not found</h1>
-          <button
-            onClick={() => navigate('/')}
-            className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
-          >
-            Create New Group
-          </button>
-        </div>
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="page">
+    <div className="body">
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center py-4">
-            <button
-              onClick={() => navigate(`/group/${urlSlug}`)}
-              className="mr-4 p-2 text-gray-400 hover:text-gray-600"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900">Members</h1>
-              <p className="text-gray-600">{group.name}</p>
+            <div className="header">
+              <p className="is-bold">Members</p>
+              <button className="a" onClick={() => setShowAddForm(true)}>Add member</button>
             </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center space-x-2"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Add Member</span>
-            </button>
-          </div>
-        </div>
-      </div>
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Content */}
+        <div className="content-section">
+        
         {/* Add Member Form */}
         {showAddForm && (
           <div className="bg-white rounded-lg shadow p-6 mb-6">
@@ -252,9 +231,11 @@ const Members: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* Nav */}
+      <NavBar />
+    </div>
     </div>
   );
 };
 
 export default Members;
-

@@ -52,62 +52,66 @@ const CreateGroup: React.FC = () => {
   };
 
   return (
-    <div className="body">
-      <div className="header">
-        <a href="/">Cancel</a>
-        <p>Create a group</p>
-        <button 
-          className="a"
-          type="submit"
-          form="create-group-form"
-          disabled={!isFormComplete}>Done
-        </button>
-      </div>
-      <div className="section">
-        <form onSubmit={handleSubmit} className="form" id="create-group-form">
-          
-          <div className="form-item">
-            <label htmlFor="groupName" className="form-label">
-              Group Name
-            </label>
-            <input
-              type="text"
-              id="groupName"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              className="form-input"
-              placeholder="Weekend Trip"
-              required
+    <div className="page">
+      <div className="body">
+        <div className="header">
+          <a href="/">Cancel</a>
+          <p className="is-bold">Create a group</p>
+          <button 
+            className="a"
+            type="submit"
+            form="create-group-form"
+            disabled={!isFormComplete}>
+              Done
+          </button>
+        </div>
+        <div className="content-section">
+          <form onSubmit={handleSubmit} className="form" id="create-group-form">
+            <div className="form-item">
+              <label htmlFor="groupName" className="form-label">
+                Group Name
+              </label>
+              <div className="form-input-container">
+                <input
+                  type="text"
+                  id="groupName"
+                  value={formData.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className={`form-input${formData.name.trim() ? ' is-complete' : ''}`}
+                  placeholder="Weekend Trip"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="form-item">
+              <label htmlFor="currency" className="form-label">
+                Currency
+              </label>
+              <div className="form-input-container">
+                <input
+                  type="text"
+                  id="currency"
+                  value={formData.currency}
+                  onChange={(e) => handleInputChange('currency', e.target.value)}
+                  className={`form-input${formData.currency.trim() ? ' is-complete' : ''}`}
+                  maxLength={3}
+                  pattern="[$€£¥]|[A-Za-z]{2,3}"
+                  placeholder="e.g. $, kr, or USD"
+                  required
+                />
+              </div>
+            </div>
+
+            <ParticipantsInput
+              initial={formData.participants}
+              onChange={(list: string[]) => handleInputChange('participants', list)}
             />
-          </div>
-
-          <div className="form-item">
-            <label htmlFor="currency" className="form-label">
-              Currency
-            </label>
-            <select
-              id="currency"
-              value={formData.currency}
-              onChange={(e) => handleInputChange('currency', e.target.value)}
-              className="form-input"
-            >
-              <option className="form-input" value="USD">USD ($)</option>
-              <option className="form-input" value="EUR">EUR (€)</option>
-              <option className="form-input" value="GBP">GBP (£)</option>
-              <option className="form-input" value="CAD">CAD (C$)</option>
-              <option className="form-input" value="AUD">AUD (A$)</option>
-            </select>
-          </div>
-
-          <ParticipantsInput
-            initial={formData.participants}
-            onChange={handleParticipantsChange}
-          />
   
-        </form>
-      </div>
-      <footer>
-        <button
+          </form>
+        </div>
+        <footer>
+          <button
             type="submit"
             className="btn has-full-width"
             form="create-group-form"
@@ -115,8 +119,8 @@ const CreateGroup: React.FC = () => {
           >
             Create Group
           </button>
-      </footer>
-      
+        </footer>
+      </div>
     </div>   
   );
 };
