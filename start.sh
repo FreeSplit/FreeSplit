@@ -55,15 +55,7 @@ install_dependencies_macos() {
         echo "✅ Node.js already installed"
     fi
     
-    # Add PostgreSQL to PATH - find the actual version
-    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname)
-    if [ -n "$POSTGRES_BIN_PATH" ]; then
-        export PATH="$POSTGRES_BIN_PATH:$PATH"
-        echo "✅ Added PostgreSQL to PATH: $POSTGRES_BIN_PATH"
-    else
-        echo "⚠️  Could not find PostgreSQL binaries, trying default path"
-        export PATH="/opt/homebrew/bin:$PATH"
-    fi
+    ensure_postgres_path
 }
 
 # Function to install dependencies on Linux
@@ -98,6 +90,54 @@ install_dependencies_linux() {
     fi
 }
 
+# Ensure PostgreSQL binaries are available on PATH
+ensure_postgres_path() {
+    if command -v pg_isready >/dev/null 2>&1 && command -v psql >/dev/null 2>&1; then
+        return
+    fi
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        local default_prefix="/opt/homebrew/opt/postgresql@15"
+        if [ -d "$default_prefix/bin" ]; then
+            case ":$PATH:" in
+                *":$default_prefix/bin:"*) ;;
+                *)
+                    export PATH="$default_prefix/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $default_prefix/bin"
+                ;;
+            esac
+        fi
+
+        local brew_prefix
+        brew_prefix=$(brew --prefix postgresql@15 2>/dev/null)
+        if [ -z "$brew_prefix" ]; then
+            brew_prefix=$(brew --prefix postgresql 2>/dev/null)
+        fi
+        if [ -n "$brew_prefix" ]; then
+            case ":$PATH:" in
+                *":$brew_prefix/bin:"*) ;;
+                *)
+                    export PATH="$brew_prefix/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $brew_prefix/bin"
+                ;;
+            esac
+        fi
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ]; then
+                case ":$PATH:" in
+                    *":$candidate:"*) ;;
+                    *)
+                        export PATH="$candidate:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                    ;;
+                esac
+                break
+            fi
+        done
+    fi
+}
+
 # Function to create database and user
 setup_postgresql() {
     echo "🔧 Setting up PostgreSQL database..."
@@ -112,14 +152,8 @@ setup_postgresql() {
 # Check if any dependencies are missing
 MISSING_DEPS=()
 
-# Try to find PostgreSQL binaries if not in PATH
-if ! command -v psql &> /dev/null; then
-    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname 2>/dev/null)
-    if [ -n "$POSTGRES_BIN_PATH" ]; then
-        export PATH="$POSTGRES_BIN_PATH:$PATH"
-        echo "✅ Found PostgreSQL binaries at: $POSTGRES_BIN_PATH"
-    fi
-fi
+# Try to locate PostgreSQL binaries if they aren't already available
+ensure_postgres_path
 
 if ! command -v psql &> /dev/null; then
     MISSING_DEPS+=("PostgreSQL")
@@ -152,8 +186,16 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     fi
 fi
 
+# Make sure newly installed binaries are on PATH
+ensure_postgres_path
+
 # Function to check if PostgreSQL is running
 check_postgresql() {
+    if ! command -v pg_isready >/dev/null 2>&1; then
+        echo "⚠️  pg_isready not found; skipping readiness probe"
+        return 0
+    fi
+
     # Try multiple ways to check if PostgreSQL is running
     if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
         echo "✅ PostgreSQL found on localhost:5432"
