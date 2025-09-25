@@ -326,6 +326,14 @@ func deleteParticipant(w http.ResponseWriter, r *http.Request, participantServic
 	err = participantService.DeleteParticipant(context.TODO(), serviceReq)
 	if err != nil {
 		log.Printf("Error deleting participant: %v", err)
+
+		// Check if it's a business logic error (participant has active expenses/splits/debts)
+		if strings.Contains(err.Error(), "cannot delete participant") {
+			http.Error(w, err.Error(), http.StatusConflict)
+			return
+		}
+
+		// For other errors, return internal server error
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}

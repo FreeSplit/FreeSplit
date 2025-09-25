@@ -62,8 +62,10 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
       toast.success('Member deleted');
       onMemberDeleted?.(participant.id);
       onClose();
-    } catch (error) {
-      toast.error('Failed to delete member');
+    } catch (error: any) {
+      // Display the specific error message from the backend
+      const errorMessage = error.message || 'Failed to delete member';
+      toast.error(errorMessage);
       console.error('Error deleting member:', error);
     } finally {
       setDeleting(false);

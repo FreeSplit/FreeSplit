@@ -154,7 +154,15 @@ export const updateParticipant = async (data: {
 };
 
 export const deleteParticipant = async (participantId: number): Promise<void> => {
-  await axios.delete(`${API_BASE_URL}/api/participants/${participantId}`);
+  try {
+    await axios.delete(`${API_BASE_URL}/api/participants/${participantId}`);
+  } catch (error: any) {
+    // Extract error message from response if available
+    if (error.response?.data) {
+      throw new Error(error.response.data);
+    }
+    throw error;
+  }
 };
 
 // Expense API
