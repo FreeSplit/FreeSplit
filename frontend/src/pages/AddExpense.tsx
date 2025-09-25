@@ -122,7 +122,8 @@ const AddExpense: React.FC = () => {
       [field]: value
     }));
 
-    const cost = parseFloat(formData.cost) || 0;
+    // Use the new value for cost calculations, not the old formData.cost
+    const cost = field === 'cost' ? parseFloat(value as string) || 0 : parseFloat(formData.cost) || 0;
     
     // Handle split type changes with seamless conversion
     if (field === 'split_type') {
