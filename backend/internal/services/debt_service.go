@@ -34,12 +34,26 @@ func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetD
 }
 
 func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error) {
+	// Validate input
+	if req.DebtId <= 0 {
+		return nil, fmt.Errorf("invalid debt ID")
+	}
+
+	if req.PaidAmount < 0 {
+		return nil, fmt.Errorf("paid amount cannot be negative")
+	}
+
 	var debt database.Debt
 	if err := s.db.First(&debt, req.DebtId).Error; err != nil {
 		if err == gorm.ErrRecordNotFound {
 			return nil, fmt.Errorf("debt not found")
 		}
 		return nil, fmt.Errorf("failed to get debt: %v", err)
+	}
+
+	// Validate that paid amount doesn't exceed debt amount
+	if req.PaidAmount > debt.DebtAmount {
+		return nil, fmt.Errorf("paid amount (%.2f) cannot exceed debt amount (%.2f)", req.PaidAmount, debt.DebtAmount)
 	}
 
 	debt.PaidAmount = req.PaidAmount

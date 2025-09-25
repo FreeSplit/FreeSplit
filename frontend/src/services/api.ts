@@ -235,9 +235,17 @@ export const updateDebtPaidAmount = async (data: {
   debt_id: number;
   paid_amount: number;
 }): Promise<Debt> => {
-  const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
-    debt_id: data.debt_id,
-    paid_amount: data.paid_amount
-  });
-  return response.data;
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
+      debt_id: data.debt_id,
+      paid_amount: data.paid_amount
+    });
+    return response.data.debt;
+  } catch (error: any) {
+    // Extract error message from response if available
+    if (error.response?.data) {
+      throw new Error(error.response.data);
+    }
+    throw error;
+  }
 };

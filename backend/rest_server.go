@@ -588,7 +588,19 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService se
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		log.Printf("Invalid JSON in debt update request: %v", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if req.DebtID <= 0 {
+		http.Error(w, "Invalid debt ID", http.StatusBadRequest)
+		return
+	}
+
+	if req.PaidAmount < 0 {
+		http.Error(w, "Paid amount cannot be negative", http.StatusBadRequest)
 		return
 	}
 
@@ -599,7 +611,15 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService se
 
 	resp, err := debtService.UpdateDebtPaidAmount(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error updating debt: %v", err)
+		log.Printf("Error updating debt %d: %v", req.DebtID, err)
+
+		// Check if it's a business logic error
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		// For other errors, return internal server error
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}

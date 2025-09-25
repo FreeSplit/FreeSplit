@@ -63,8 +63,10 @@ const Debts: React.FC = () => {
         )
       );
       toast.success('Debt settled successfully!');
-    } catch (error) {
-      toast.error('Failed to settle debt');
+    } catch (error: any) {
+      // Display the specific error message from the backend
+      const errorMessage = error.message || 'Failed to settle debt';
+      toast.error(errorMessage);
       console.error('Error settling debt:', error);
     } finally {
       setUpdating(null);
@@ -87,8 +89,10 @@ const Debts: React.FC = () => {
         )
       );
       toast.success('Payment updated successfully!');
-    } catch (error) {
-      toast.error('Failed to update payment');
+    } catch (error: any) {
+      // Display the specific error message from the backend
+      const errorMessage = error.message || 'Failed to update payment';
+      toast.error(errorMessage);
       console.error('Error updating payment:', error);
     } finally {
       setUpdating(null);
