@@ -100,7 +100,7 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -170,7 +170,7 @@ func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -223,7 +223,7 @@ func (s *expenseService) DeleteExpense(ctx context.Context, req *DeleteExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -272,7 +272,30 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 	}
 
-	// Clear existing debts for this group
+	// Factor in existing debt settlements (paid amounts) BEFORE clearing debts
+	var existingDebts []database.Debt
+	if err := tx.Where("group_id = ?", groupID).Find(&existingDebts).Error; err != nil {
+		return err
+	}
+
+	// Calculate total paid amounts per participant pair (regardless of current debt structure)
+	paidAmounts := make(map[string]float64) // key: "debtorID-lenderID", value: total paid amount
+	for _, debt := range existingDebts {
+		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
+		paidAmounts[key] += debt.PaidAmount
+	}
+
+	// Subtract paid amounts from balances (reduce what debtors owe)
+	for key, paidAmount := range paidAmounts {
+		var debtorID, lenderID uint
+		fmt.Sscanf(key, "%d-%d", &debtorID, &lenderID)
+		// The debtor has paid some amount, so reduce their debt
+		balances[debtorID] += paidAmount
+		// The lender has received some payment, so reduce what they're owed
+		balances[lenderID] -= paidAmount
+	}
+
+	// Clear existing debts for this group AFTER factoring in paid amounts
 	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
 		return err
 	}
@@ -316,12 +339,16 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 
 		// Create debt record
+		// Check if there was a previous debt between these participants with paid amount
+		key := fmt.Sprintf("%d-%d", debtor.ID, creditor.ID)
+		totalPaidAmount := paidAmounts[key]
+
 		debt := database.Debt{
 			GroupID:    groupID,
 			LenderID:   creditor.ID,
 			DebtorID:   debtor.ID,
 			DebtAmount: settleAmount,
-			PaidAmount: 0,
+			PaidAmount: totalPaidAmount,
 		}
 
 		if err := tx.Create(&debt).Error; err != nil {
@@ -338,6 +365,46 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 		if debtor.Balance <= 0.01 {
 			debtorIdx++
+		}
+	}
+
+	return nil
+}
+
+// updateDebts updates debts using the new calculation method
+func (s *expenseService) updateDebts(tx *gorm.DB, groupID uint) error {
+	// Get existing debts to preserve paid amounts
+	var existingDebts []database.Debt
+	if err := tx.Where("group_id = ?", groupID).Find(&existingDebts).Error; err != nil {
+		return err
+	}
+
+	// Create a map of paid amounts by participant pair
+	paidAmounts := make(map[string]float64)
+	for _, debt := range existingDebts {
+		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
+		paidAmounts[key] = debt.PaidAmount
+	}
+
+	// Calculate new debts using the improved algorithm
+	newDebts, err := CalculateNetDebts(tx, groupID)
+	if err != nil {
+		return err
+	}
+
+	// Clear existing debts
+	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
+		return err
+	}
+
+	// Create new debts with preserved paid amounts
+	for _, debt := range newDebts {
+		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
+		if paidAmount, exists := paidAmounts[key]; exists {
+			debt.PaidAmount = paidAmount
+		}
+		if err := tx.Create(&debt).Error; err != nil {
+			return err
 		}
 	}
 

@@ -19,8 +19,7 @@ func NewDebtService(db *gorm.DB) DebtService {
 
 func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error) {
 	var debts []database.Debt
-	if err := s.db.Where("group_id = ? AND debt_amount > paid_amount", req.GroupId).Find(&debts).Error; err != nil {
-		return nil, fmt.Errorf("failed to get debts: %v", err)
+	if err := s.db.Where("group_id = ? AND debt_amount > paid_amount", req.GroupId).Find(&debts).Error; err != nil 		return nil, fmt.Errorf("failed to get debts: %v", err)
 	}
 
 	responseDebts := make([]*Debt, len(debts))
@@ -56,9 +55,27 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 		return nil, fmt.Errorf("paid amount (%.2f) cannot exceed debt amount (%.2f)", req.PaidAmount, debt.DebtAmount)
 	}
 
+	// Calculate the payment amount (difference between old and new paid amount)
+	paymentAmount := req.PaidAmount - debt.PaidAmount
+
+	// Update the debt
 	debt.PaidAmount = req.PaidAmount
 	if err := s.db.Save(&debt).Error; err != nil {
 		return nil, fmt.Errorf("failed to update debt: %v", err)
+	}
+
+	// Record the payment if there's a payment amount
+	if paymentAmount > 0 {
+		payment := database.Payment{
+			GroupID: debt.GroupID,
+			PayerID: debt.DebtorID,
+			PayeeID: debt.LenderID,
+			Amount:  paymentAmount,
+		}
+		if err := s.db.Create(&payment).Error; err != nil {
+			// Log error but don't fail the debt update
+			fmt.Printf("Warning: Failed to record payment: %v\n", err)
+		}
 	}
 
 	return &UpdateDebtPaidAmountResponse{
