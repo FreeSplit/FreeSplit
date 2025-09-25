@@ -387,7 +387,7 @@ const AddExpense: React.FC = () => {
                   </div>
                 </div>
 
-                <div form-item>
+                <div className="form-item">
                   <label htmlFor="cost" className="form-label">
                     Cost
                   </label>
@@ -411,7 +411,7 @@ const AddExpense: React.FC = () => {
                   </div>
                 </div>
 
-                <div form-item>
+                <div className="form-item">
                   <label htmlFor="payer" className="form-label">
                     Paid by
                   </label>
