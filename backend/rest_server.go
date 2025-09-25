@@ -619,6 +619,12 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService se
 			return
 		}
 
+		// Check if it's a validation error (overpayment, etc.)
+		if strings.Contains(err.Error(), "cannot exceed") || strings.Contains(err.Error(), "cannot be negative") || strings.Contains(err.Error(), "invalid debt ID") {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
 		// For other errors, return internal server error
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return

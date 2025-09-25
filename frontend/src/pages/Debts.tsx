@@ -168,13 +168,13 @@ const Debts: React.FC = () => {
         {/* Debts List */}
         {orderedDebts.length > 0 && (
           <div className="expenses-container">
-            {orderedDebts.map((debt) => {
+            {orderedDebts.map((debt, index) => {
               const status = getDebtStatus(debt);
               const remainingAmount = debt.debt_amount - debt.paid_amount;
               const isSettled = status === 'settled';
 
               return (
-                <div key={debt.debt_id} className="expense">
+                <div key={debt.debt_id || `debt-${index}`} className="expense">
                   <div className="expense-details">
                     {isSettled ? (
                       <>
