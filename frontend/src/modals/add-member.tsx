@@ -83,7 +83,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
             Cancel
           </button>
           <button type="submit" className="btn has-full-width" form="new-member" disabled={submitting}>
-            {submitting ? 'Adding…' : 'Add member'}
+            {submitting ? 'Adding....' : 'Add member'}
           </button>
         </div> 
       </div>
