@@ -329,6 +329,9 @@ echo "✅ PostgreSQL is running"
 # Set up database
 setup_postgresql
 
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
 # Start backend
 echo "Installing backend dependencies..."
 cd backend
@@ -383,8 +386,6 @@ echo "Setting up environment for network access..."
 echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
 
 echo "Starting frontend server on port 3001..."
-# Create logs directory if it doesn't exist
-mkdir -p "$SCRIPT_DIR/logs"
 
 # Start frontend with error logging
 echo "🌐 Frontend starting... (check for errors above)"
