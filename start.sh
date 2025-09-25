@@ -205,11 +205,72 @@ ensure_postgres_path() {
 setup_postgresql() {
     echo "🔧 Setting up PostgreSQL database..."
     
-    # Create database if it doesn't exist
-    createdb freesplit 2>/dev/null || echo "Database 'freesplit' already exists or will be created"
+    # Detect the current PostgreSQL user
+    CURRENT_USER=$(whoami)
+    echo "🔍 Detected current user: $CURRENT_USER"
     
-    # Set password for postgres user (if not already set)
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || echo "Password already set or user doesn't exist"
+    # Try to determine the PostgreSQL superuser
+    POSTGRES_SUPERUSER=""
+    
+    # Check if postgres user exists
+    if psql -U postgres -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="postgres"
+        echo "✅ Found 'postgres' superuser"
+    # Check if current user is a superuser
+    elif psql -U "$CURRENT_USER" -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="$CURRENT_USER"
+        echo "✅ Using current user '$CURRENT_USER' as superuser"
+    else
+        echo "❌ Cannot connect to PostgreSQL with either 'postgres' or '$CURRENT_USER'"
+        echo "🔧 Attempting to create 'postgres' user..."
+        
+        # Try to create postgres user using current user
+        if psql -U "$CURRENT_USER" -c "CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';" >/dev/null 2>&1; then
+            POSTGRES_SUPERUSER="postgres"
+            echo "✅ Created 'postgres' superuser"
+        else
+            echo "❌ Failed to create 'postgres' user"
+            echo "Please run the following commands manually:"
+            echo "  psql -U $CURRENT_USER -c \"CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';\""
+            echo "  createdb -U postgres freesplit"
+            exit 1
+        fi
+    fi
+    
+    # Create database if it doesn't exist
+    echo "📁 Creating database 'freesplit'..."
+    if createdb -U "$POSTGRES_SUPERUSER" freesplit 2>/dev/null; then
+        echo "✅ Database 'freesplit' created successfully"
+    else
+        echo "ℹ️  Database 'freesplit' already exists or creation failed"
+    fi
+    
+    # Set password for postgres user (if using postgres user)
+    if [ "$POSTGRES_SUPERUSER" = "postgres" ]; then
+        echo "🔐 Setting password for postgres user..."
+        psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';" >/dev/null 2>&1 || echo "ℹ️  Password already set or user doesn't exist"
+    fi
+    
+    # Test the connection with the postgres user
+    echo "🧪 Testing database connection..."
+    if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+        echo "✅ Database connection successful with postgres user"
+    else
+        echo "⚠️  Database connection failed with postgres user"
+        echo "🔧 Trying to fix connection..."
+        
+        # Grant permissions to postgres user on the database
+        psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL PRIVILEGES ON DATABASE freesplit TO postgres;" >/dev/null 2>&1 || true
+        psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL ON SCHEMA public TO postgres;" >/dev/null 2>&1 || true
+        
+        # Test again
+        if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ Database connection now successful"
+        else
+            echo "❌ Still cannot connect with postgres user"
+            echo "Please check your PostgreSQL setup manually"
+        fi
+    fi
 }
 
 # Check if any dependencies are missing
