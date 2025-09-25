@@ -1,5 +1,10 @@
 #!/bin/bash
+
+# Prevent terminal clearing and preserve output
+exec 2>&1  # Redirect stderr to stdout to preserve error messages
+
 echo "Stopping FreeSplit servers..."
+echo "============================="
 
 # Stop backend
 echo "Stopping backend server..."

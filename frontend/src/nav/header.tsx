@@ -33,7 +33,7 @@ const Header: React.FC = () => {
         onClick={() => setShareOpen(true)}
         aria-label="Share group"
       >
-        <FontAwesomeIcon icon={faShareNodes} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+        <FontAwesomeIcon icon={faShareNodes} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
       </button>
 
       {isShareOpen && group && (

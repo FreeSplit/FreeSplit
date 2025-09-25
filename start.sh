@@ -1,9 +1,72 @@
 #!/bin/bash
+
+# Prevent terminal clearing and preserve output
+set -e  # Exit on any error
+exec 2>&1  # Redirect stderr to stdout to preserve error messages
+
 echo "Starting FreeSplit servers with PostgreSQL..."
+echo "============================================="
+echo "📝 All output will be preserved - scroll up to see any errors"
+echo ""
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# Function to setup PATH variables for Go and PostgreSQL
+setup_path_variables() {
+    echo "🔧 Setting up PATH variables..."
+    
+    # Setup Go PATH
+    if command -v go &> /dev/null; then
+        GO_BIN_PATH=$(go env GOROOT)/bin
+        if [ -d "$GO_BIN_PATH" ] && [[ ":$PATH:" != *":$GO_BIN_PATH:"* ]]; then
+            export PATH="$GO_BIN_PATH:$PATH"
+            echo "✅ Added Go binaries to PATH: $GO_BIN_PATH"
+        fi
+        
+        # Setup GOPATH
+        if [ -z "$GOPATH" ]; then
+            export GOPATH="$HOME/go"
+            echo "✅ Set GOPATH: $GOPATH"
+        fi
+        
+        # Add GOPATH/bin to PATH
+        if [ -d "$GOPATH/bin" ] && [[ ":$PATH:" != *":$GOPATH/bin:"* ]]; then
+            export PATH="$GOPATH/bin:$PATH"
+            echo "✅ Added GOPATH/bin to PATH: $GOPATH/bin"
+        fi
+    fi
+    
+    # Setup PostgreSQL PATH (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try Homebrew PostgreSQL paths
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            BREW_PREFIX=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$BREW_PREFIX" ] && [ -d "$BREW_PREFIX/bin" ]; then
+                if [[ ":$PATH:" != *":$BREW_PREFIX/bin:"* ]]; then
+                    export PATH="$BREW_PREFIX/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $BREW_PREFIX/bin"
+                fi
+                break
+            fi
+        done
+    fi
+    
+    # Setup PostgreSQL PATH (Linux)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ] && [[ ":$PATH:" != *":$candidate:"* ]]; then
+                export PATH="$candidate:$PATH"
+                echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                break
+            fi
+        done
+    fi
+}
+
+# Setup PATH variables first
+setup_path_variables
 
 # Get the local IP address dynamically
 LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
@@ -55,15 +118,7 @@ install_dependencies_macos() {
         echo "✅ Node.js already installed"
     fi
     
-    # Add PostgreSQL to PATH - find the actual version
-    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname)
-    if [ -n "$POSTGRES_BIN_PATH" ]; then
-        export PATH="$POSTGRES_BIN_PATH:$PATH"
-        echo "✅ Added PostgreSQL to PATH: $POSTGRES_BIN_PATH"
-    else
-        echo "⚠️  Could not find PostgreSQL binaries, trying default path"
-        export PATH="/opt/homebrew/bin:$PATH"
-    fi
+    ensure_postgres_path
 }
 
 # Function to install dependencies on Linux
@@ -98,31 +153,162 @@ install_dependencies_linux() {
     fi
 }
 
+# Ensure PostgreSQL binaries are available on PATH
+ensure_postgres_path() {
+    if command -v pg_isready >/dev/null 2>&1 && command -v psql >/dev/null 2>&1; then
+        echo "✅ PostgreSQL binaries already in PATH"
+        return
+    fi
+
+    echo "🔍 Searching for PostgreSQL binaries..."
+
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try multiple Homebrew PostgreSQL versions
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            local brew_prefix
+            brew_prefix=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$brew_prefix" ] && [ -d "$brew_prefix/bin" ]; then
+                case ":$PATH:" in
+                    *":$brew_prefix/bin:"*) ;;
+                    *)
+                        export PATH="$brew_prefix/bin:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $brew_prefix/bin"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
+                    ;;
+                esac
+            fi
+        done
+        
+        # Try common Homebrew paths
+        for path in "/opt/homebrew/opt/postgresql@15/bin" "/opt/homebrew/opt/postgresql/bin" "/usr/local/opt/postgresql@15/bin" "/usr/local/opt/postgresql/bin"; do
+            if [ -d "$path" ]; then
+                case ":$PATH:" in
+                    *":$path:"*) ;;
+                    *)
+                        export PATH="$path:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $path"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
+                    ;;
+                esac
+            fi
+        done
+    elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ]; then
+                case ":$PATH:" in
+                    *":$candidate:"*) ;;
+                    *)
+                        export PATH="$candidate:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
+                    ;;
+                esac
+            fi
+        done
+    fi
+    
+    # If we get here, psql still isn't found
+    echo "❌ PostgreSQL binaries not found in common locations"
+    echo "Please ensure PostgreSQL is installed and add it to your PATH"
+}
+
 # Function to create database and user
 setup_postgresql() {
     echo "🔧 Setting up PostgreSQL database..."
     
-    # Create database if it doesn't exist
-    createdb freesplit 2>/dev/null || echo "Database 'freesplit' already exists or will be created"
+    # Detect the current PostgreSQL user
+    CURRENT_USER=$(whoami)
+    echo "🔍 Detected current user: $CURRENT_USER"
     
-    # Set password for postgres user (if not already set)
-    sudo -u postgres psql -c "ALTER USER postgres PASSWORD 'postgres';" 2>/dev/null || echo "Password already set or user doesn't exist"
+    # Try to determine the PostgreSQL superuser
+    POSTGRES_SUPERUSER=""
+    
+    # Check if postgres user exists
+    if psql -U postgres -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="postgres"
+        echo "✅ Found 'postgres' superuser"
+    # Check if current user is a superuser
+    elif psql -U "$CURRENT_USER" -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="$CURRENT_USER"
+        echo "✅ Using current user '$CURRENT_USER' as superuser"
+    else
+        echo "❌ Cannot connect to PostgreSQL with either 'postgres' or '$CURRENT_USER'"
+        echo "🔧 Attempting to create 'postgres' user..."
+        
+        # Try to create postgres user using current user
+        if psql -U "$CURRENT_USER" -c "CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';" >/dev/null 2>&1; then
+            POSTGRES_SUPERUSER="postgres"
+            echo "✅ Created 'postgres' superuser"
+        else
+            echo "❌ Failed to create 'postgres' user"
+            echo "Please run the following commands manually:"
+            echo "  psql -U $CURRENT_USER -c \"CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';\""
+            echo "  createdb -U postgres freesplit"
+            exit 1
+        fi
+    fi
+    
+    # Create database if it doesn't exist
+    echo "📁 Creating database 'freesplit'..."
+    if createdb -U "$POSTGRES_SUPERUSER" freesplit 2>/dev/null; then
+        echo "✅ Database 'freesplit' created successfully"
+    else
+        echo "ℹ️  Database 'freesplit' already exists or creation failed"
+    fi
+    
+    # Set password for postgres user (if using postgres user)
+    if [ "$POSTGRES_SUPERUSER" = "postgres" ]; then
+        echo "🔐 Setting password for postgres user..."
+        psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';" >/dev/null 2>&1 || echo "ℹ️  Password already set or user doesn't exist"
+    fi
+    
+    # Test the connection with the postgres user
+    echo "🧪 Testing database connection..."
+    if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+        echo "✅ Database connection successful with postgres user"
+    else
+        echo "⚠️  Database connection failed with postgres user"
+        echo "🔧 Trying to fix connection..."
+        
+        # Grant permissions to postgres user on the database
+        psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL PRIVILEGES ON DATABASE freesplit TO postgres;" >/dev/null 2>&1 || true
+        psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL ON SCHEMA public TO postgres;" >/dev/null 2>&1 || true
+        
+        # Test again
+        if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ Database connection now successful"
+        else
+            echo "❌ Still cannot connect with postgres user"
+            echo "Please check your PostgreSQL setup manually"
+        fi
+    fi
 }
 
 # Check if any dependencies are missing
 MISSING_DEPS=()
 
-# Try to find PostgreSQL binaries if not in PATH
-if ! command -v psql &> /dev/null; then
-    POSTGRES_BIN_PATH=$(find /opt/homebrew/Cellar/postgresql@15 -name "psql" -type f | head -1 | xargs dirname 2>/dev/null)
-    if [ -n "$POSTGRES_BIN_PATH" ]; then
-        export PATH="$POSTGRES_BIN_PATH:$PATH"
-        echo "✅ Found PostgreSQL binaries at: $POSTGRES_BIN_PATH"
-    fi
-fi
+# Try to locate PostgreSQL binaries if they aren't already available
+ensure_postgres_path
 
+# Check if psql is available after PATH setup
 if ! command -v psql &> /dev/null; then
+    echo "❌ psql command not found after PATH setup"
+    echo "🔧 Attempting to install PostgreSQL..."
     MISSING_DEPS+=("PostgreSQL")
+else
+    echo "✅ psql command found: $(which psql)"
 fi
 
 if ! command -v go &> /dev/null; then
@@ -152,8 +338,16 @@ if [ ${#MISSING_DEPS[@]} -gt 0 ]; then
     fi
 fi
 
+# Make sure newly installed binaries are on PATH
+ensure_postgres_path
+
 # Function to check if PostgreSQL is running
 check_postgresql() {
+    if ! command -v pg_isready >/dev/null 2>&1; then
+        echo "⚠️  pg_isready not found; skipping readiness probe"
+        return 0
+    fi
+
     # Try multiple ways to check if PostgreSQL is running
     if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
         echo "✅ PostgreSQL found on localhost:5432"
@@ -224,33 +418,80 @@ echo "✅ PostgreSQL is running"
 # Set up database
 setup_postgresql
 
+# Create logs directory if it doesn't exist
+mkdir -p logs
+
 # Start backend
 echo "Installing backend dependencies..."
 cd backend
 if ! go mod download; then
     echo "❌ Failed to download Go dependencies"
     echo "Please check your Go installation and internet connection"
+    echo "Try running: go clean -modcache && go mod download"
     exit 1
 fi
 echo "✅ Backend dependencies installed successfully"
 
 echo "Starting backend server on port 8080..."
 export DATABASE_URL="host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
-go run rest_server.go &
+
+# Start backend with error logging
+echo "🔧 Backend starting... (check for errors above)"
+go run rest_server.go > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
 
-# Wait a moment for backend to start
+# Wait a moment for backend to start and check if it's running
 echo "⏳ Waiting for backend to start..."
 sleep 3
 
+# Check if backend is actually running
+if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "❌ Backend failed to start. Check logs:"
+    echo "📄 Backend logs:"
+    cat ../logs/backend.log 2>/dev/null || echo "No log file found"
+    exit 1
+fi
+
+# Check if backend is responding
+if ! curl -s http://localhost:8080/health >/dev/null 2>&1; then
+    echo "⚠️  Backend started but not responding on port 8080"
+    echo "📄 Backend logs:"
+    cat ../logs/backend.log 2>/dev/null || echo "No log file found"
+    echo "⏳ Waiting a bit more for backend to fully start..."
+    sleep 5
+fi
+
 # Go back to project root and start frontend
 echo "Installing frontend dependencies..."
-cd "$SCRIPT_DIR/frontend" && npm install
+cd "$SCRIPT_DIR/frontend"
+if ! npm install; then
+    echo "❌ Failed to install frontend dependencies"
+    echo "Try running: npm cache clean --force && npm install"
+    exit 1
+fi
+echo "✅ Frontend dependencies installed successfully"
+
 echo "Setting up environment for network access..."
-cd "$SCRIPT_DIR/frontend" && echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
+echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
+
 echo "Starting frontend server on port 3001..."
-cd "$SCRIPT_DIR/frontend" && HOST=0.0.0.0 PORT=3001 npm start &
-FRONTEND_PID=$! 
+
+# Start frontend with error logging
+echo "🌐 Frontend starting... (check for errors above)"
+HOST=0.0.0.0 PORT=3001 npm start > "$SCRIPT_DIR/logs/frontend.log" 2>&1 &
+FRONTEND_PID=$!
+
+# Wait a moment for frontend to start and check if it's running
+echo "⏳ Waiting for frontend to start..."
+sleep 5
+
+# Check if frontend is actually running
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+    echo "❌ Frontend failed to start. Check logs:"
+    echo "📄 Frontend logs:"
+    cat "$SCRIPT_DIR/logs/frontend.log" 2>/dev/null || echo "No log file found"
+    exit 1
+fi 
 
 echo ""
 echo "✅ Both servers are starting..."
@@ -258,6 +499,12 @@ echo "🔧 Backend API: http://$LOCAL_IP:8080"
 echo "🌐 Frontend App: http://$LOCAL_IP:3001"
 echo "🗄️  PostgreSQL: localhost:5432"
 echo ""
+echo "📄 Log files (scroll up to see any errors):"
+echo "   Backend logs: logs/backend.log"
+echo "   Frontend logs: logs/frontend.log"
+echo ""
 echo "Press Ctrl+C to stop both servers"
 echo "Backend PID: $BACKEND_PID"
 echo "Frontend PID: $FRONTEND_PID"
+echo ""
+echo "💡 If you see errors, check the log files above or scroll up in this terminal"

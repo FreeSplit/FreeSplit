@@ -163,8 +163,6 @@ const Debts: React.FC = () => {
 
       <div className="content-section">
 
-        <h1>Debts</h1>
-
         {/* Debts List */}
         {orderedDebts.length > 0 && (
           <div className="expenses-container">
@@ -184,6 +182,7 @@ const Debts: React.FC = () => {
                       </>
                     ) : (
                       <>
+                        <h1>Debts</h1>
                         <p>
                           {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)} {group.currency}{remainingAmount.toFixed(2)}
                         </p>
@@ -234,16 +233,18 @@ const Debts: React.FC = () => {
 
         {/* No Debts */}
         {debts.length === 0 && (
-          <div className="content-container">
+          <div className="content-container text-is-centered">
             <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-            <h2>No debts</h2>
-            <p>Add an expense to track your group debts.</p>
+            <div className="v-flex gap-8px">
+              <h2>No debts</h2>
+              <p>Add an expense to track your group debts.</p>
+            </div>
             <button
-               onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
               className="btn"
              >
               <span>Add an expense</span>
-              <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+              <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
             </button>
           </div>
         )}

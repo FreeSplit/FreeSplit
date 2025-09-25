@@ -1,15 +1,22 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
 import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMinus, faPlus, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus, faChevronDown, faXmark } from '@fortawesome/free-solid-svg-icons';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  type FormErrors = {
+    name?: string;
+    cost?: string;
+    payer?: string;
+  };
+
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +36,86 @@ const AddExpense: React.FC = () => {
   const [customSplits, setCustomSplits] = useState<{ [key: number]: number }>({});
   const [customShares, setCustomShares] = useState<{ [key: number]: number }>({});
   const [customPercentages, setCustomPercentages] = useState<{ [key: number]: number }>({});
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+
+  const nameHasError = Boolean(errors.name);
+  const costHasError = Boolean(errors.cost);
+  const payerHasError = Boolean(errors.payer);
+
+  const nameContainerClasses = ['form-input-container'];
+  if (nameHasError) {
+    nameContainerClasses.push('is-error');
+  } else if (formData.name.trim()) {
+    nameContainerClasses.push('is-complete');
+  }
+
+  const costContainerClasses = ['form-input-container'];
+  if (costHasError) {
+    costContainerClasses.push('is-error');
+  } else if (formData.cost.trim()) {
+    costContainerClasses.push('is-complete');
+  }
+
+  const payerContainerClasses = ['form-input-container'];
+  if (payerHasError) {
+    payerContainerClasses.push('is-error');
+  } else if (formData.payer_id) {
+    payerContainerClasses.push('is-complete');
+  }
+
+  const openEmojiPicker = useCallback(() => {
+    setEmojiPickerOpen(true);
+  }, [setEmojiPickerOpen]);
+
+  const closeEmojiPicker = useCallback(() => {
+    setEmojiPickerOpen(false);
+  }, [setEmojiPickerOpen]);
+
+  const handleEmojiSelect = useCallback((emoji: { native?: string }) => {
+    const nextEmoji = emoji?.native;
+    if (!nextEmoji) {
+      setEmojiPickerOpen(false);
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      emoji: nextEmoji
+    }));
+    setEmojiPickerOpen(false);
+  }, [setEmojiPickerOpen, setFormData]);
+
+  useEffect(() => {
+    if (!isEmojiPickerOpen) {
+      return;
+    }
+
+    let frame: number | null = null;
+
+    const applyHostStyles = () => {
+      const host = emojiPickerRef.current?.querySelector<HTMLElement>('em-emoji-picker');
+
+      if (!host) {
+        frame = requestAnimationFrame(applyHostStyles);
+        return;
+      }
+
+      host.style.width = '100%';
+      host.style.maxWidth = '100%';
+      host.style.display = 'block';
+      host.style.minWidth = '100%';
+    };
+
+    applyHostStyles();
+
+    return () => {
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [isEmojiPickerOpen]);
 
   const adjustShare = (participantId: number, delta: number) => {
     const current = shares[participantId] || 1;
@@ -136,7 +223,40 @@ const AddExpense: React.FC = () => {
 
     // Use the new value for cost calculations, not the old formData.cost
     const cost = field === 'cost' ? parseFloat(value as string) || 0 : parseFloat(formData.cost) || 0;
-    
+
+    setErrors(prev => {
+      if (field === 'name' && typeof value === 'string') {
+        if (!value.trim() || !prev.name) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next.name;
+        return next;
+      }
+
+      if (field === 'cost') {
+        const stringValue = typeof value === 'string' ? value : String(value);
+        if (!stringValue.trim() || !prev.cost) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next.cost;
+        return next;
+      }
+
+      if (field === 'payer_id') {
+        const numericValue = typeof value === 'number' ? value : parseInt(value as string, 10);
+        if (numericValue > 0 && prev.payer) {
+          const next = { ...prev };
+          delete next.payer;
+          return next;
+        }
+        return prev;
+      }
+
+      return prev;
+    });
+
     // Handle split type changes with seamless conversion
     if (field === 'split_type') {
       const newSplitType = value as string;
@@ -368,19 +488,40 @@ const AddExpense: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const trimmedName = formData.name.trim();
+    const costValue = formData.cost.trim();
+    const nextErrors: FormErrors = {};
+
+    if (!trimmedName) {
+      nextErrors.name = 'Please enter a title for this expense.';
+    }
+
+    if (!costValue) {
+      nextErrors.cost = 'Please enter the expense cost.';
+    }
+
+    if (formData.payer_id === 0) {
+      nextErrors.payer = 'Please select who paid for this expense.';
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      const firstError = nextErrors.name || nextErrors.cost || nextErrors.payer;
+      if (firstError) {
+        toast.error(firstError);
+      }
+      return;
+    }
+
     if (!validateSplits()) {
       toast.error('Split amounts must equal the total cost');
       return;
     }
 
-    if (formData.payer_id === 0) {
-      toast.error('Please select who paid for this expense');
-      return;
-    }
-
     try {
       setSubmitting(true);
+      setErrors({});
       
       const expense: Expense = {
         id: 0, // Will be set by backend
@@ -462,59 +603,61 @@ const AddExpense: React.FC = () => {
   const remainingAmount = (parseFloat(formData.cost) || 0) - totalAssigned;
 
   return (
-    <div className="page">
-      <div className="body">
+    <>
+      <div className="page">
+        <div className="body">
+        <div className="content-section">
 
-        {/* Header */}
-          <div className="header">
-            <button 
-              onClick={() => navigate(`/group/${urlSlug}`)}
-              className="a"
-            >
-              Cancel
-            </button>
-            <p className="is-bold">Add an expense</p>
-            <button 
-              className="a"
-              type="submit"
-              form="add-expense"
-              disabled={submitting || !validateSplits()}
-            >
-              Add
-            </button>
-          </div>
+          {/* Header */}
+            <div className="modal-header">
+              <h2>Add an expense</h2>
+              <Link
+                to={`/group/${urlSlug}`}
+                aria-label="Close add an expense"
+                className="is-black"
+              >
+                <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} className="is-black"/>
+              </Link>
+            </div>
 
           {/* Form */}
-          <div className="content-section">
-            <form onSubmit={handleSubmit} className="form" id="add-expense">
+            <form onSubmit={handleSubmit} className="form" id="add-expense" noValidate>
               
               {/* Basic Info */}
-                <div className="h-div">
+                <div className="h-flex align-center gap-8px">
                   <div>
-                    <input
-                      type="text"
+                    <button
+                      type="button"
                       id="emoji"
-                      value={formData.emoji}
-                      onChange={(e) => handleInputChange('emoji', e.target.value)}
                       className="emoji-input"
-                      maxLength={2}
-                    />
+                      onClick={openEmojiPicker}
+                      aria-label="Choose an emoji for the expense"
+                    >
+                      <span aria-hidden="true">{formData.emoji}</span>
+                    </button>
                   </div>
                   <div className="form-item">
                     <label htmlFor="name" className="form-label">
                       Title
                     </label>
-                    <div className="form-input-container">
+                    <div className={nameContainerClasses.join(' ')}>
                       <input
                         type="text"
                         id="name"
                         value={formData.name}
                         onChange={(e) => handleInputChange('name', e.target.value)}
                         className="form-input"
-                        placeholder="e.g., Dinner at Restaurant"
+                        placeholder="Dinner at restaurant"
+                        aria-invalid={nameHasError}
+                        aria-describedby={nameHasError ? 'add-expense-name-error' : undefined}
                         required
                       />
                     </div>
+                    {nameHasError && (
+                      <p className="form-error" id="add-expense-name-error" role="alert">
+                        {errors.name}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -522,11 +665,10 @@ const AddExpense: React.FC = () => {
                   <label htmlFor="cost" className="form-label">
                     Cost
                   </label>
-                  <div className="h-div">
-                    <p className="p2 is-black">
-                      {group.currency}
-                    </p>
-                    <div className="form-input-container">
+                    <div className={costContainerClasses.join(' ')}>
+                      <p className="p2 is-black">
+                        {group.currency}
+                      </p>
                       <input
                         type="number"
                         id="cost"
@@ -536,25 +678,33 @@ const AddExpense: React.FC = () => {
                         placeholder="0.00"
                         step="0.01"
                         min="0"
+                        aria-invalid={costHasError}
+                        aria-describedby={costHasError ? 'add-expense-cost-error' : undefined}
                         required
                       />
                     </div>
-                  </div>
+                  {costHasError && (
+                    <p className="form-error" id="add-expense-cost-error" role="alert">
+                      {errors.cost}
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-item">
                   <label htmlFor="payer" className="form-label">
                     Paid by
                   </label>
-                  <div className="form-input-container">
+                  <div className={payerContainerClasses.join(' ')}>
                     <select
                       id="payer"
                       value={formData.payer_id}
                       onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
                       className="form-input"
+                      aria-invalid={payerHasError}
+                      aria-describedby={payerHasError ? 'add-expense-payer-error' : undefined}
                       required
                     >
-                    <option value={0}>Select payer</option>
+                    <option value={0} disabled hidden>Select payer</option>
                       {participants.map(participant => (
                         <option key={participant.id} value={participant.id}>
                           {participant.name}
@@ -562,6 +712,11 @@ const AddExpense: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                  {payerHasError && (
+                    <p className="form-error" id="add-expense-payer-error" role="alert">
+                      {errors.payer}
+                    </p>
+                  )}
                 </div>
 
               {/* Split Type */}
@@ -684,8 +839,8 @@ const AddExpense: React.FC = () => {
                   
                 </div>
             </form>
-          </div>
-          <footer className="has-gradient-bg">
+        </div>
+        <footer className="has-gradient-bg">
             <div className="breakdown-container">
               <div className="breakdown-details">
                 <p>Total Attributed: </p>
@@ -727,8 +882,35 @@ const AddExpense: React.FC = () => {
               </button>
             </div>
           </footer>
+        </div>
       </div>
-    </div>
+
+      {isEmojiPickerOpen && (
+        <div
+          className="emoji-picker-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Choose emoji"
+          onClick={closeEmojiPicker}
+        >
+          <div
+            className="emoji-picker-container"
+            role="document"
+            onClick={(event) => event.stopPropagation()}
+            ref={emojiPickerRef}
+          >
+            <Picker
+              data={data}
+              onEmojiSelect={handleEmojiSelect}
+              previewPosition="none"
+              skinTonePosition="none"
+              className="has-full-width"
+              set="native"
+            />
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

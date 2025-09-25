@@ -171,6 +171,13 @@ p {
   line-height: 1.25; 
 }
 
+.p {
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  color: var(--color-text);
+  line-height: 1.25; 
+}
+
 .p2 {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
@@ -216,15 +223,39 @@ p {
   width: 100%;
 }
 
-.form-input {
-  color: var(--color-text);
+.has-color-muted {
+  color: var(--color-muted);
+}
+
+.form-input .is-placeholder {
+  color: var(--color-muted);
+}
+
+
+.form-input-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   width: 100%;
   background: transparent;
   cursor: text;
   transition: border-color 120ms ease;
   outline: none;
   border-bottom: 2px solid var(--color-muted);
+  border-radius: 0; -webkit-appearance: none;
+}
+
+.form-input {
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  width: 100%;
+  background: transparent;
+  cursor: text;
+  outline: none;
   padding: 8px 8px;
+  border-radius: 0; -webkit-appearance: none;
+  line-height: 1.25;
 }
 
 .form-input::placeholder {
@@ -234,13 +265,13 @@ p {
 .emoji-input {
   border: 2px solid var(--color-muted);
   border-radius: 4px;
-  width: 50px;
-  height: 50px;
+  width: 59.5px;
+  height: 59.5px;
   background: transparent;
-  cursor: text;
+  cursor: pointer;
   transition: border-color 120ms ease;
   outline: none;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-xl);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -268,19 +299,23 @@ p {
 }
 
 
-.emoji-input:focus-within {
-  border-color: var(--color-primary);
-}
-
-.form-input:focus-within {
-  border-color: var(--color-primary);
-}
-
-.form-input.is-complete:not(:focus-within) {
+.emoji-input:hover {
   border-color: var(--color-text);
 }
 
-.form-input.is-complete:focus-within {
+.emoji-input:focus-visible {
+  border-color: var(--color-primary);
+}
+
+.form-input-container:focus-within {
+  border-color: var(--color-primary);
+}
+
+.form-input-container.is-complete:not(:focus-within) {
+  border-color: var(--color-text);
+}
+
+.form-input-container.is-complete:focus-within {
   border-color: var(--color-primary);
 }
 
@@ -288,8 +323,8 @@ p {
   color: var(--color-error);
 }
 
-.form-input.is-error,
-.form-input.is-error:focus-within {
+.form-input-container.is-error,
+.form-input-container.is-error:focus-within {
   border-color: var(--color-error);
 }
 
@@ -396,6 +431,46 @@ p {
   padding: 16px;
 }
 
+.emoji-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 120;
+}
+
+.emoji-picker-container {
+  width: 100%;
+  max-width: 672px;
+  max-height: 80vh;
+  display: flex;
+  justify-content: center;
+}
+
+.emoji-picker-container > div {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.emoji-picker-container section#root {
+  width: 100% !important;
+}
+
+.emoji-picker-container .em-emoji-picker {
+  --epr-picker-width: 100%;
+  width: 100% !important;
+  max-width: none !important;
+  box-shadow: none;
+  border: 0;
+  border-radius: 16px 16px 0 0;
+}
+
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
@@ -415,9 +490,9 @@ p {
 }
 
 .expense-emoji {
-  font-size: 32px;
-  height: 32px;
-  width: 32px;
+  font-size: 44px;
+  height: 44px;
+  width: 44px;
   line-height: 100%;
 }
 
