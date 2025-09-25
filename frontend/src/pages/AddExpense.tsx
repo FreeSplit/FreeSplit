@@ -26,6 +26,9 @@ const AddExpense: React.FC = () => {
   const [splits, setSplits] = useState<{ [key: number]: number }>({});
   const [shares, setShares] = useState<{ [key: number]: number }>({});
   const [percentages, setPercentages] = useState<{ [key: number]: number }>({});
+  const [customSplits, setCustomSplits] = useState<{ [key: number]: number }>({});
+  const [customShares, setCustomShares] = useState<{ [key: number]: number }>({});
+  const [customPercentages, setCustomPercentages] = useState<{ [key: number]: number }>({});
 
   const adjustShare = (participantId: number, delta: number) => {
     const current = shares[participantId] || 1;
@@ -92,16 +95,25 @@ const AddExpense: React.FC = () => {
       const initialSplits: { [key: number]: number } = {};
       const initialShares: { [key: number]: number } = {};
       const initialPercentages: { [key: number]: number } = {};
+      const initialCustomSplits: { [key: number]: number } = {};
+      const initialCustomShares: { [key: number]: number } = {};
+      const initialCustomPercentages: { [key: number]: number } = {};
       
       response.participants.forEach((participant: any) => {
         initialSplits[participant.id] = equalAmount;
         initialShares[participant.id] = 1; // Default to 1 share each
         initialPercentages[participant.id] = 0; // Will be calculated
+        initialCustomSplits[participant.id] = equalAmount;
+        initialCustomShares[participant.id] = 1;
+        initialCustomPercentages[participant.id] = 0;
       });
       
       setSplits(initialSplits);
       setShares(initialShares);
       setPercentages(initialPercentages);
+      setCustomSplits(initialCustomSplits);
+      setCustomShares(initialCustomShares);
+      setCustomPercentages(initialCustomPercentages);
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);
@@ -130,6 +142,7 @@ const AddExpense: React.FC = () => {
       const newSplitType = value as string;
       
       if (newSplitType === 'equal') {
+        // Always show equal distribution, don't affect custom splits
         const equalAmount = participants.length > 0 ? cost / participants.length : 0;
         const newSplits: { [key: number]: number } = {};
         participants.forEach(participant => {
@@ -137,34 +150,60 @@ const AddExpense: React.FC = () => {
         });
         setSplits(newSplits);
       } else if (newSplitType === 'shares') {
-        // Convert current amounts to shares
-        const newShares: { [key: number]: number } = {};
-        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-        participants.forEach(participant => {
-          const amount = splits[participant.id] || 0;
-          newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
-        });
-        setShares(newShares);
-      } else if (newSplitType === 'percentage') {
-        // Convert current amounts to percentages
-        const newPercentages: { [key: number]: number } = {};
-        participants.forEach(participant => {
-          const amount = splits[participant.id] || 0;
-          newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-        });
-        setPercentages(newPercentages);
-      } else if (newSplitType === 'amount') {
-        // Keep current amounts but ensure they sum to cost
-        const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
-        if (currentTotal > 0 && cost > 0) {
-          const multiplier = cost / currentTotal;
-          const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
-          const distributed = distributeWithRemainder(amounts, cost);
-          const newSplits: { [key: number]: number } = {};
-          participants.forEach((participant, index) => {
-            newSplits[participant.id] = distributed[index];
+        // Restore custom shares or convert from current amounts
+        if (Object.keys(customShares).length > 0 && Object.values(customShares).some(v => v > 0)) {
+          setShares(customShares);
+          const newAmounts = calculateAmountsFromShares(customShares, cost);
+          setSplits(newAmounts);
+        } else {
+          // Convert current amounts to shares
+          const newShares: { [key: number]: number } = {};
+          const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+          participants.forEach(participant => {
+            const amount = splits[participant.id] || 0;
+            newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
           });
-          setSplits(newSplits);
+          setShares(newShares);
+          setCustomShares(newShares);
+          const newAmounts = calculateAmountsFromShares(newShares, cost);
+          setSplits(newAmounts);
+        }
+      } else if (newSplitType === 'percentage') {
+        // Restore custom percentages or convert from current amounts
+        if (Object.keys(customPercentages).length > 0 && Object.values(customPercentages).some(v => v > 0)) {
+          setPercentages(customPercentages);
+          const newAmounts = calculateAmountsFromPercentages(customPercentages, cost);
+          setSplits(newAmounts);
+        } else {
+          // Convert current amounts to percentages
+          const newPercentages: { [key: number]: number } = {};
+          participants.forEach(participant => {
+            const amount = splits[participant.id] || 0;
+            newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
+          });
+          setPercentages(newPercentages);
+          setCustomPercentages(newPercentages);
+          const newAmounts = calculateAmountsFromPercentages(newPercentages, cost);
+          setSplits(newAmounts);
+        }
+      } else if (newSplitType === 'amount') {
+        // Restore custom amounts or keep current amounts
+        if (Object.keys(customSplits).length > 0 && Object.values(customSplits).some(v => v > 0)) {
+          setSplits(customSplits);
+        } else {
+          // Keep current amounts but ensure they sum to cost
+          const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
+          if (currentTotal > 0 && cost > 0) {
+            const multiplier = cost / currentTotal;
+            const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
+            const distributed = distributeWithRemainder(amounts, cost);
+            const newSplits: { [key: number]: number } = {};
+            participants.forEach((participant, index) => {
+              newSplits[participant.id] = distributed[index];
+            });
+            setSplits(newSplits);
+            setCustomSplits(newSplits);
+          }
         }
       }
     }
@@ -185,17 +224,18 @@ const AddExpense: React.FC = () => {
         const newAmounts = calculateAmountsFromPercentages(percentages, cost);
         setSplits(newAmounts);
       } else if (formData.split_type === 'amount') {
-        // Scale existing amounts proportionally to match the new cost
-        const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
+        // Scale custom amounts proportionally to match the new cost
+        const currentTotal = Object.values(customSplits).reduce((sum, val) => sum + val, 0);
         if (currentTotal > 0 && cost > 0) {
           const multiplier = cost / currentTotal;
-          const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
+          const amounts = participants.map(p => (customSplits[p.id] || 0) * multiplier);
           const distributed = distributeWithRemainder(amounts, cost);
           const newSplits: { [key: number]: number } = {};
           participants.forEach((participant, index) => {
             newSplits[participant.id] = distributed[index];
           });
           setSplits(newSplits);
+          setCustomSplits(newSplits);
         } else if (cost > 0) {
           // If no existing amounts, distribute equally
           const equalAmount = participants.length > 0 ? cost / participants.length : 0;
@@ -204,6 +244,7 @@ const AddExpense: React.FC = () => {
             newSplits[participant.id] = equalAmount;
           });
           setSplits(newSplits);
+          setCustomSplits(newSplits);
         }
       }
     }
@@ -211,38 +252,106 @@ const AddExpense: React.FC = () => {
 
   const handleSplitChange = (participantId: number, amount: string) => {
     const value = parseFloat(amount) || 0;
+    const cost = parseFloat(formData.cost) || 0;
+    
+    // Update the splits
     setSplits(prev => ({
       ...prev,
       [participantId]: value
     }));
+    
+    // Update custom splits
+    setCustomSplits(prev => ({
+      ...prev,
+      [participantId]: value
+    }));
+    
+    // Update shares and percentages to reflect the new amounts
+    if (cost > 0) {
+      // Convert amounts to shares
+      const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+      const newShares: { [key: number]: number } = {};
+      participants.forEach(participant => {
+        const amount = participant.id === participantId ? value : (splits[participant.id] || 0);
+        newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+      });
+      setShares(newShares);
+      setCustomShares(newShares);
+      
+      // Convert amounts to percentages
+      const newPercentages: { [key: number]: number } = {};
+      participants.forEach(participant => {
+        const amount = participant.id === participantId ? value : (splits[participant.id] || 0);
+        newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
+      });
+      setPercentages(newPercentages);
+      setCustomPercentages(newPercentages);
+    }
   };
 
   const handleShareChange = (participantId: number, share: string) => {
     const value = Math.max(1, Math.round(parseFloat(share) || 1));
+    const cost = parseFloat(formData.cost) || 0;
+    
+    // Update shares
     setShares(prev => ({
       ...prev,
       [participantId]: value
     }));
     
+    // Update custom shares
+    setCustomShares(prev => ({
+      ...prev,
+      [participantId]: value
+    }));
+    
     // Recalculate amounts from shares
-    const cost = parseFloat(formData.cost) || 0;
     const newShares = { ...shares, [participantId]: value };
     const newAmounts = calculateAmountsFromShares(newShares, cost);
     setSplits(newAmounts);
+    setCustomSplits(newAmounts);
+    
+    // Update percentages to reflect the new amounts
+    const newPercentages: { [key: number]: number } = {};
+    participants.forEach(participant => {
+      const amount = newAmounts[participant.id] || 0;
+      newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
+    });
+    setPercentages(newPercentages);
+    setCustomPercentages(newPercentages);
   };
 
   const handlePercentageChange = (participantId: number, percentage: string) => {
     const value = Math.max(0, Math.min(100, roundToTwoDecimals(parseFloat(percentage) || 0)));
+    const cost = parseFloat(formData.cost) || 0;
+    
+    // Update percentages
     setPercentages(prev => ({
       ...prev,
       [participantId]: value
     }));
     
+    // Update custom percentages
+    setCustomPercentages(prev => ({
+      ...prev,
+      [participantId]: value
+    }));
+    
     // Recalculate amounts from percentages
-    const cost = parseFloat(formData.cost) || 0;
     const newPercentages = { ...percentages, [participantId]: value };
     const newAmounts = calculateAmountsFromPercentages(newPercentages, cost);
     setSplits(newAmounts);
+    setCustomSplits(newAmounts);
+    
+    // Update shares to reflect the new amounts
+    const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+    const newShares: { [key: number]: number } = {};
+    participants.forEach(participant => {
+      const amount = newAmounts[participant.id] || 0;
+      newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+    });
+    setShares(newShares);
+    setCustomShares(newShares);
   };
 
   const validateSplits = () => {
