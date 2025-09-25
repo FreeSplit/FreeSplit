@@ -184,6 +184,27 @@ const AddExpense: React.FC = () => {
       } else if (formData.split_type === 'percentage') {
         const newAmounts = calculateAmountsFromPercentages(percentages, cost);
         setSplits(newAmounts);
+      } else if (formData.split_type === 'amount') {
+        // Scale existing amounts proportionally to match the new cost
+        const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
+        if (currentTotal > 0 && cost > 0) {
+          const multiplier = cost / currentTotal;
+          const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
+          const distributed = distributeWithRemainder(amounts, cost);
+          const newSplits: { [key: number]: number } = {};
+          participants.forEach((participant, index) => {
+            newSplits[participant.id] = distributed[index];
+          });
+          setSplits(newSplits);
+        } else if (cost > 0) {
+          // If no existing amounts, distribute equally
+          const equalAmount = participants.length > 0 ? cost / participants.length : 0;
+          const newSplits: { [key: number]: number } = {};
+          participants.forEach(participant => {
+            newSplits[participant.id] = equalAmount;
+          });
+          setSplits(newSplits);
+        }
       }
     }
   };
