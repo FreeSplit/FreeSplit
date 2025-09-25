@@ -235,8 +235,13 @@ fi
 echo "✅ Backend dependencies installed successfully"
 
 echo "Starting backend server on port 8080..."
-cd backend && DATABASE_URL="host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable" go run rest_server.go &
+export DATABASE_URL="host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
+go run rest_server.go &
 BACKEND_PID=$!
+
+# Wait a moment for backend to start
+echo "⏳ Waiting for backend to start..."
+sleep 3
 
 # Go back to project root and start frontend
 echo "Installing frontend dependencies..."
