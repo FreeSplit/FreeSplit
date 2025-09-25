@@ -36,19 +36,30 @@ const CreateGroup: React.FC = () => {
   const currencyHasError = Boolean(errors.currency);
   const participantsHaveError = Boolean(errors.participants) || Boolean(participantError);
 
-  const nameInputClasses = ['form-input'];
+  const nameContainerClasses = ['form-input-container'];
   if (nameHasError) {
-    nameInputClasses.push('is-error');
+    nameContainerClasses.push('is-error');
   } else if (formData.name.trim()) {
-    nameInputClasses.push('is-complete');
+    nameContainerClasses.push('is-complete');
   }
 
-  const currencyInputClasses = ['form-input'];
+  const currencyContainerClasses = ['form-input-container'];
   if (currencyHasError) {
-    currencyInputClasses.push('is-error');
+    currencyContainerClasses.push('is-error');
   } else if (formData.currency.trim()) {
-    currencyInputClasses.push('is-complete');
+    currencyContainerClasses.push('is-complete');
   }
+
+  const participantContainerClasses = ['form-input-container'];
+  if (participantsHaveError) {
+    participantContainerClasses.push('is-error');
+  } else if (hasEnoughParticipants) {
+    participantContainerClasses.push('is-complete');
+  }
+
+  const nameInputClasses = ['form-input'];
+
+  const currencyInputClasses = ['form-input'];
 
   const participantInputClasses = ['form-input', 'chips-input'];
   if (participantsHaveError) {
@@ -323,6 +334,7 @@ const CreateGroup: React.FC = () => {
               <label htmlFor="groupName" className="form-label">
                 Group Name
               </label>
+              <div className={nameContainerClasses.join(' ')}>
                 <input
                   type="text"
                   id="groupName"
@@ -332,6 +344,7 @@ const CreateGroup: React.FC = () => {
                   aria-invalid={nameHasError}
                   placeholder="Weekend Trip"
                 />
+              </div>
               {nameHasError && (
                 <p className="form-error" role="alert">
                   {errors.name}
@@ -343,6 +356,7 @@ const CreateGroup: React.FC = () => {
               <label htmlFor="currency" className="form-label">
                 Currency
               </label>
+              <div className={currencyContainerClasses.join(' ')}>
                 <input
                   type="text"
                   id="currency"
@@ -354,6 +368,7 @@ const CreateGroup: React.FC = () => {
                   pattern="[$€£¥]|[A-Za-z]{2,3}"
                   placeholder="$, kr, or USD"
                 />
+              </div>
               {currencyHasError && (
                 <p className="form-error" role="alert">
                   {errors.currency}
@@ -363,6 +378,7 @@ const CreateGroup: React.FC = () => {
 
             <div className="form-item">
               <label className="form-label">Participants</label>
+              <div className={participantContainerClasses.join(' ')}>
               <div
                 className={participantInputClasses.join(' ')}
                 onClick={() => participantInputRef.current?.focus()}
@@ -394,6 +410,7 @@ const CreateGroup: React.FC = () => {
                   aria-label="Add participant"
                   aria-invalid={participantsHaveError}
                 />
+              </div>
               </div>
               {participantError && (
                 <p className="form-error" role="alert">

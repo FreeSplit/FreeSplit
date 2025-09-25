@@ -121,17 +121,12 @@ const GroupDashboard: React.FC = () => {
           {/* Expenses */}
             <div className="content-section">
               {expenses.length === 0 ? (
-                <div className="content-container">
+                <div className="content-container text-is-centered">
                   <FontAwesomeIcon icon={faReceipt} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-                  <h2>No expenses</h2>
-                  <p>Add an expense to track your group debts.</p>
-                  <button
-                    onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-                    className="btn"
-                  >
-                    <span>Add an expense</span>
-                    <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                  </button>
+                  <div className="v-flex gap-8px">
+                    <h2>No expenses</h2>
+                    <p>Add an expense to track your group debts.</p>
+                  </div>
                 </div>
               ) : (
                 <>
