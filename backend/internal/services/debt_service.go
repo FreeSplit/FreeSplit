@@ -13,13 +13,22 @@ type debtService struct {
 	db *gorm.DB
 }
 
+// NewDebtService creates a new instance of the debt service with database connection.
+// Input: gorm.DB database connection
+// Output: DebtService interface implementation
+// Description: Initializes debt service with database dependency injection
 func NewDebtService(db *gorm.DB) DebtService {
 	return &debtService{db: db}
 }
 
+// GetDebts retrieves all unpaid debts for a specific group from the database.
+// Input: GetDebtsRequest containing GroupId
+// Output: GetDebtsResponse with list of debts where debt_amount > paid_amount
+// Description: Fetches all outstanding debts for a group, excluding fully paid debts
 func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error) {
 	var debts []database.Debt
-	if err := s.db.Where("group_id = ? AND debt_amount > paid_amount", req.GroupId).Find(&debts).Error; err != nil 		return nil, fmt.Errorf("failed to get debts: %v", err)
+	if err := s.db.Where("group_id = ? AND debt_amount > paid_amount", req.GroupId).Find(&debts).Error; err != nil {
+		return nil, fmt.Errorf("failed to get debts: %v", err)
 	}
 
 	responseDebts := make([]*Debt, len(debts))
@@ -32,6 +41,10 @@ func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetD
 	}, nil
 }
 
+// UpdateDebtPaidAmount updates the paid amount for a specific debt and records payment history.
+// Input: UpdateDebtPaidAmountRequest with DebtId and PaidAmount
+// Output: UpdateDebtPaidAmountResponse with updated debt information
+// Description: Updates debt paid amount, validates input, and records payment in history
 func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error) {
 	// Validate input
 	if req.DebtId <= 0 {

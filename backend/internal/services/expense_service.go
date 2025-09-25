@@ -13,10 +13,18 @@ type expenseService struct {
 	db *gorm.DB
 }
 
+// NewExpenseService creates a new instance of the expense service with database connection.
+// Input: gorm.DB database connection
+// Output: ExpenseService interface implementation
+// Description: Initializes expense service with database dependency injection
 func NewExpenseService(db *gorm.DB) ExpenseService {
 	return &expenseService{db: db}
 }
 
+// GetExpensesByGroup retrieves all expenses for a specific group ordered by creation date.
+// Input: GetExpensesByGroupRequest containing GroupId
+// Output: GetExpensesByGroupResponse with list of expenses
+// Description: Fetches all expenses for a group in descending order by creation date
 func (s *expenseService) GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error) {
 	var expenses []database.Expense
 	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Find(&expenses).Error; err != nil {
@@ -58,6 +66,10 @@ func (s *expenseService) GetExpenseWithSplits(ctx context.Context, req *GetExpen
 	}, nil
 }
 
+// CreateExpense creates a new expense with splits and recalculates group debts.
+// Input: CreateExpenseRequest with expense and splits data
+// Output: CreateExpenseResponse with created expense and splits
+// Description: Creates expense, saves splits, and recalculates simplified debts for the group
 func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRequest) (*CreateExpenseResponse, error) {
 	// Start transaction
 	tx := s.db.Begin()
@@ -121,6 +133,10 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRe
 	}, nil
 }
 
+// UpdateExpense updates an existing expense and its splits, then recalculates group debts.
+// Input: UpdateExpenseRequest with expense ID and updated data
+// Output: UpdateExpenseResponse with updated expense and splits
+// Description: Updates expense, replaces splits, and recalculates simplified debts
 func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRequest) (*UpdateExpenseResponse, error) {
 	// Start transaction
 	tx := s.db.Begin()
@@ -191,6 +207,10 @@ func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRe
 	}, nil
 }
 
+// DeleteExpense deletes an expense and its splits, then recalculates group debts.
+// Input: DeleteExpenseRequest with expense ID
+// Output: error if deletion fails
+// Description: Removes expense, deletes associated splits, and recalculates debts
 func (s *expenseService) DeleteExpense(ctx context.Context, req *DeleteExpenseRequest) error {
 	// Start transaction
 	tx := s.db.Begin()
@@ -371,7 +391,10 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 	return nil
 }
 
-// updateDebts updates debts using the new calculation method
+// updateDebts updates debts using the new calculation method and preserves paid amounts.
+// Input: gorm.DB transaction and groupID
+// Output: error if debt calculation fails
+// Description: Calculates new debts, preserves existing paid amounts, and updates database
 func (s *expenseService) updateDebts(tx *gorm.DB, groupID uint) error {
 	// Get existing debts to preserve paid amounts
 	var existingDebts []database.Debt

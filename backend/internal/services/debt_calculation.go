@@ -7,7 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// CalculateNetDebts calculates net debts for a group, factoring in all settlements
+// CalculateNetDebts calculates net debts for a group, factoring in all settlements and payments.
+// Input: gorm.DB database connection and groupID
+// Output: []database.Debt list of calculated debts and error
+// Description: Calculates simplified debts based on expenses, splits, and historical payments
 func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 	// Get all participants in the group
 	var participants []database.Participant

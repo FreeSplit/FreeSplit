@@ -13,10 +13,18 @@ type participantService struct {
 	db *gorm.DB
 }
 
+// NewParticipantService creates a new instance of the participant service with database connection.
+// Input: gorm.DB database connection
+// Output: ParticipantService interface implementation
+// Description: Initializes participant service with database dependency injection
 func NewParticipantService(db *gorm.DB) ParticipantService {
 	return &participantService{db: db}
 }
 
+// AddParticipant creates a new participant in a group.
+// Input: AddParticipantRequest with Name and GroupId
+// Output: AddParticipantResponse with created participant
+// Description: Creates a new participant and associates them with the specified group
 func (s *participantService) AddParticipant(ctx context.Context, req *AddParticipantRequest) (*AddParticipantResponse, error) {
 	participant := database.Participant{
 		Name:    req.Name,
@@ -32,6 +40,10 @@ func (s *participantService) AddParticipant(ctx context.Context, req *AddPartici
 	}, nil
 }
 
+// UpdateParticipant updates an existing participant's information.
+// Input: UpdateParticipantRequest with ParticipantId and Name
+// Output: UpdateParticipantResponse with updated participant
+// Description: Updates participant name and returns the modified participant data
 func (s *participantService) UpdateParticipant(ctx context.Context, req *UpdateParticipantRequest) (*UpdateParticipantResponse, error) {
 	var participant database.Participant
 	if err := s.db.First(&participant, req.ParticipantId).Error; err != nil {
@@ -48,6 +60,10 @@ func (s *participantService) UpdateParticipant(ctx context.Context, req *UpdateP
 	}, nil
 }
 
+// DeleteParticipant deletes a participant after validating they have no active expenses or debts.
+// Input: DeleteParticipantRequest with ParticipantId
+// Output: error if deletion fails or participant has active records
+// Description: Validates participant can be safely deleted and removes them from the group
 func (s *participantService) DeleteParticipant(ctx context.Context, req *DeleteParticipantRequest) error {
 	// Check if participant exists
 	var participant database.Participant

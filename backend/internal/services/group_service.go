@@ -15,10 +15,18 @@ type groupService struct {
 	db *gorm.DB
 }
 
+// NewGroupService creates a new instance of the group service with database connection.
+// Input: gorm.DB database connection
+// Output: GroupService interface implementation
+// Description: Initializes group service with database dependency injection
 func NewGroupService(db *gorm.DB) GroupService {
 	return &groupService{db: db}
 }
 
+// GetGroup retrieves a group by URL slug with all participants and expenses.
+// Input: GetGroupRequest with UrlSlug
+// Output: GetGroupResponse with group data including participants and expenses
+// Description: Fetches group by URL slug and preloads all related participants and expenses
 func (s *groupService) GetGroup(ctx context.Context, req *GetGroupRequest) (*GetGroupResponse, error) {
 	var group database.Group
 	if err := s.db.Preload("Participants").Preload("Expenses").Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
@@ -40,6 +48,10 @@ func (s *groupService) GetGroup(ctx context.Context, req *GetGroupRequest) (*Get
 	}, nil
 }
 
+// CreateGroup creates a new group with a unique URL slug and initial participants.
+// Input: CreateGroupRequest with Name and initial participants
+// Output: CreateGroupResponse with created group data
+// Description: Creates group, generates unique URL slug, and adds initial participants
 func (s *groupService) CreateGroup(ctx context.Context, req *CreateGroupRequest) (*CreateGroupResponse, error) {
 	// Generate URL slug
 	urlSlug, err := generateURLSlug()
@@ -103,6 +115,10 @@ func (s *groupService) UpdateGroup(ctx context.Context, req *UpdateGroupRequest)
 	}, nil
 }
 
+// generateURLSlug generates a unique 32-character hexadecimal URL slug for groups.
+// Input: none
+// Output: string URL slug and error
+// Description: Creates cryptographically secure random 32-character hex string for group URLs
 func generateURLSlug() (string, error) {
 	bytes := make([]byte, 16)
 	if _, err := rand.Read(bytes); err != nil {
