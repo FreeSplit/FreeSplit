@@ -30,7 +30,7 @@ setup_path_variables() {
     
     # Setup PostgreSQL PATH (macOS)
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        # Try Homebrew PostgreSQL paths
+        # Try multiple Homebrew PostgreSQL versions
         for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
             BREW_PREFIX=$(brew --prefix "$version" 2>/dev/null)
             if [ -n "$BREW_PREFIX" ] && [ -d "$BREW_PREFIX/bin" ]; then
@@ -38,9 +38,28 @@ setup_path_variables() {
                     export PATH="$BREW_PREFIX/bin:$PATH"
                     echo "✅ Added PostgreSQL binaries to PATH: $BREW_PREFIX/bin"
                 fi
-                break
+                # Test if psql is now available
+                if command -v psql >/dev/null 2>&1; then
+                    echo "✅ psql command now available"
+                    break
+                fi
             fi
         done
+        
+        # Try common Homebrew paths if still not found
+        if ! command -v psql >/dev/null 2>&1; then
+            for path in "/opt/homebrew/opt/postgresql@15/bin" "/opt/homebrew/opt/postgresql/bin" "/usr/local/opt/postgresql@15/bin" "/usr/local/opt/postgresql/bin"; do
+                if [ -d "$path" ] && [[ ":$PATH:" != *":$path:"* ]]; then
+                    export PATH="$path:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $path"
+                    # Test if psql is now available
+                    if command -v psql >/dev/null 2>&1; then
+                        echo "✅ psql command now available"
+                        break
+                    fi
+                fi
+            done
+        fi
     fi
     
     # Setup PostgreSQL PATH (Linux)
@@ -49,7 +68,11 @@ setup_path_variables() {
             if [ -d "$candidate" ] && [[ ":$PATH:" != *":$candidate:"* ]]; then
                 export PATH="$candidate:$PATH"
                 echo "✅ Added PostgreSQL binaries to PATH: $candidate"
-                break
+                # Test if psql is now available
+                if command -v psql >/dev/null 2>&1; then
+                    echo "✅ psql command now available"
+                    break
+                fi
             fi
         done
     fi
@@ -82,6 +105,17 @@ fi
 if [ "$SETUP_MODE" = "local" ]; then
     # Setup PATH variables first
     setup_path_variables
+    
+    # Check if psql is available after PATH setup
+    if ! command -v psql &> /dev/null; then
+        echo "❌ psql command not found after PATH setup"
+        echo "Please ensure PostgreSQL is installed and try again"
+        echo "On macOS: brew install postgresql@15"
+        echo "On Linux: sudo apt install postgresql postgresql-contrib"
+        exit 1
+    else
+        echo "✅ psql command found: $(which psql)"
+    fi
     
     # Check if Go is installed
     if ! command -v go &> /dev/null; then

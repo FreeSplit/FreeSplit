@@ -156,35 +156,50 @@ install_dependencies_linux() {
 # Ensure PostgreSQL binaries are available on PATH
 ensure_postgres_path() {
     if command -v pg_isready >/dev/null 2>&1 && command -v psql >/dev/null 2>&1; then
+        echo "✅ PostgreSQL binaries already in PATH"
         return
     fi
 
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        local default_prefix="/opt/homebrew/opt/postgresql@15"
-        if [ -d "$default_prefix/bin" ]; then
-            case ":$PATH:" in
-                *":$default_prefix/bin:"*) ;;
-                *)
-                    export PATH="$default_prefix/bin:$PATH"
-                    echo "✅ Added PostgreSQL binaries to PATH: $default_prefix/bin"
-                ;;
-            esac
-        fi
+    echo "🔍 Searching for PostgreSQL binaries..."
 
-        local brew_prefix
-        brew_prefix=$(brew --prefix postgresql@15 2>/dev/null)
-        if [ -z "$brew_prefix" ]; then
-            brew_prefix=$(brew --prefix postgresql 2>/dev/null)
-        fi
-        if [ -n "$brew_prefix" ]; then
-            case ":$PATH:" in
-                *":$brew_prefix/bin:"*) ;;
-                *)
-                    export PATH="$brew_prefix/bin:$PATH"
-                    echo "✅ Added PostgreSQL binaries to PATH: $brew_prefix/bin"
-                ;;
-            esac
-        fi
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try multiple Homebrew PostgreSQL versions
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            local brew_prefix
+            brew_prefix=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$brew_prefix" ] && [ -d "$brew_prefix/bin" ]; then
+                case ":$PATH:" in
+                    *":$brew_prefix/bin:"*) ;;
+                    *)
+                        export PATH="$brew_prefix/bin:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $brew_prefix/bin"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
+                    ;;
+                esac
+            fi
+        done
+        
+        # Try common Homebrew paths
+        for path in "/opt/homebrew/opt/postgresql@15/bin" "/opt/homebrew/opt/postgresql/bin" "/usr/local/opt/postgresql@15/bin" "/usr/local/opt/postgresql/bin"; do
+            if [ -d "$path" ]; then
+                case ":$PATH:" in
+                    *":$path:"*) ;;
+                    *)
+                        export PATH="$path:$PATH"
+                        echo "✅ Added PostgreSQL binaries to PATH: $path"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
+                    ;;
+                esac
+            fi
+        done
     elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
         for candidate in /usr/lib/postgresql/*/bin; do
             if [ -d "$candidate" ]; then
@@ -193,12 +208,20 @@ ensure_postgres_path() {
                     *)
                         export PATH="$candidate:$PATH"
                         echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                        # Test if psql is now available
+                        if command -v psql >/dev/null 2>&1; then
+                            echo "✅ psql command now available"
+                            return
+                        fi
                     ;;
                 esac
-                break
             fi
         done
     fi
+    
+    # If we get here, psql still isn't found
+    echo "❌ PostgreSQL binaries not found in common locations"
+    echo "Please ensure PostgreSQL is installed and add it to your PATH"
 }
 
 # Function to create database and user
@@ -279,8 +302,13 @@ MISSING_DEPS=()
 # Try to locate PostgreSQL binaries if they aren't already available
 ensure_postgres_path
 
+# Check if psql is available after PATH setup
 if ! command -v psql &> /dev/null; then
+    echo "❌ psql command not found after PATH setup"
+    echo "🔧 Attempting to install PostgreSQL..."
     MISSING_DEPS+=("PostgreSQL")
+else
+    echo "✅ psql command found: $(which psql)"
 fi
 
 if ! command -v go &> /dev/null; then
