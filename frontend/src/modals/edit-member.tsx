@@ -43,8 +43,10 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
       toast.success('Member updated successfully');
       onMemberUpdated?.(updated);
       onClose();
-    } catch (error) {
-      toast.error('Failed to update member');
+    } catch (error: any) {
+      // Display the specific error message from the backend
+      const errorMessage = error.message || 'Failed to update member';
+      toast.error(errorMessage);
       console.error('Error updating member:', error);
     } finally {
       setSubmitting(false);

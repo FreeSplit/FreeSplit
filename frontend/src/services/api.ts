@@ -146,11 +146,19 @@ export const updateParticipant = async (data: {
   name: string;
   participant_id: number;
 }): Promise<Participant> => {
-  const response = await axios.put(`${API_BASE_URL}/api/participants/`, {
-    name: data.name,
-    participant_id: data.participant_id
-  });
-  return response.data;
+  try {
+    const response = await axios.put(`${API_BASE_URL}/api/participants/${data.participant_id}`, {
+      name: data.name,
+      participant_id: data.participant_id
+    });
+    return response.data;
+  } catch (error: any) {
+    // Extract error message from response if available
+    if (error.response?.data) {
+      throw new Error(error.response.data);
+    }
+    throw error;
+  }
 };
 
 export const deleteParticipant = async (participantId: number): Promise<void> => {

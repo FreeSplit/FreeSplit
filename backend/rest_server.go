@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -278,10 +279,18 @@ func addParticipant(w http.ResponseWriter, r *http.Request, participantService s
 }
 
 func updateParticipant(w http.ResponseWriter, r *http.Request, participantService services.ParticipantService) {
-	participantIDStr := strings.TrimPrefix(r.URL.Path, "/api/participants/")
+	// Extract participant ID from URL path
+	pathParts := strings.Split(strings.Trim(r.URL.Path, "/"), "/")
+	if len(pathParts) < 3 || pathParts[0] != "api" || pathParts[1] != "participants" {
+		http.Error(w, "Invalid URL format", http.StatusBadRequest)
+		return
+	}
+
+	participantIDStr := pathParts[2]
 	participantID, err := strconv.Atoi(participantIDStr)
 	if err != nil {
-		http.Error(w, "Invalid participant ID", http.StatusBadRequest)
+		log.Printf("Invalid participant ID '%s': %v", participantIDStr, err)
+		http.Error(w, fmt.Sprintf("Invalid participant ID: %s", participantIDStr), http.StatusBadRequest)
 		return
 	}
 
@@ -291,18 +300,33 @@ func updateParticipant(w http.ResponseWriter, r *http.Request, participantServic
 	}
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		log.Printf("Invalid JSON in update participant request: %v", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// Validate name
+	if strings.TrimSpace(req.Name) == "" {
+		http.Error(w, "Name cannot be empty", http.StatusBadRequest)
 		return
 	}
 
 	serviceReq := &services.UpdateParticipantRequest{
-		Name:          req.Name,
+		Name:          strings.TrimSpace(req.Name),
 		ParticipantId: int32(participantID),
 	}
 
 	resp, err := participantService.UpdateParticipant(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error updating participant: %v", err)
+		log.Printf("Error updating participant %d: %v", participantID, err)
+
+		// Check if it's a business logic error (participant not found, etc.)
+		if strings.Contains(err.Error(), "not found") {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
+		// For other errors, return internal server error
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
