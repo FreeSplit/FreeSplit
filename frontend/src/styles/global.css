@@ -32,14 +32,13 @@
   width: 100%;
   padding: 16px;
   background: var(--color-bg);
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
   position: sticky; top: 0; z-index: 10;
 }
 
 .content-section {
   display: flex;
-  padding: 16px;
-  gap: 16px;
+  padding: 32px 16px;
+  gap: 24px;
   flex-direction: column;
   align-items: flex-start;
   flex: 1 0 0;
@@ -72,6 +71,11 @@ footer {
 
 footer.has-gradient-bg {
   background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 10%);
+}
+
+.keyboard-aware-footer {
+  transition: transform 180ms ease;
+  will-change: transform;
 }
 
 .footer-two-buttons {
@@ -183,7 +187,6 @@ p {
 
 .form-item {
   display: flex;
-  gap: 4px;
   flex-direction: column;
   width: 100%;
 }
@@ -209,46 +212,8 @@ p {
   max-width: 640px;
 }
 
-.btn {
-  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
-  padding: 8px 16px; border-radius: var(--radius-l); border: 2px solid var(--color-primary);
-  background: var(--color-primary); color: var(--color-card); font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-}
-
 .has-full-width {
   width: 100%;
-}
-
-.btn:disabled {
-  background: var(--color-muted);
-  border-color: var(--color-muted);
-  color: var(--color-bg);
-}
-
-.btn--secondary { 
-  display: inline-flex; align-items: center; justify-content: center;
-  padding: 8px 16px; border-radius: var(--radius-l); border: 2px solid var(--color-primary);
-  background: var(--color-bg);
-  color: var(--color-primary); font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-}
-
-.btn--secondary:disabled {
-  border-color: var(--color-muted);
-  color: var(--color-muted);
-}
-
-.form-input-container {
-  border-bottom: 2px solid var(--color-muted);
-  padding: 8px 8px;
-  width: 100%;
-  background: transparent;
-  cursor: text;
-  transition: border-color 120ms ease;
-  outline: none;
 }
 
 .form-input {
@@ -258,6 +223,8 @@ p {
   cursor: text;
   transition: border-color 120ms ease;
   outline: none;
+  border-bottom: 2px solid var(--color-muted);
+  padding: 8px 8px;
 }
 
 .form-input::placeholder {
@@ -309,8 +276,12 @@ p {
   border-color: var(--color-primary);
 }
 
-.form-input.is-complete {
+.form-input.is-complete:not(:focus-within) {
   border-color: var(--color-text);
+}
+
+.form-input.is-complete:focus-within {
+  border-color: var(--color-primary);
 }
 
 .text-is-red {
@@ -511,6 +482,10 @@ p {
 
 .gap-4px {
   gap: 4px;
+}
+
+.gap-8px {
+  gap: 8px;
 }
 
 .floating-cta-container {

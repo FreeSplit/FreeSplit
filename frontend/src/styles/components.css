@@ -18,3 +18,62 @@
   align-items: center;
   gap: 8px; 
 }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 8px 16px; border-radius: var(--radius-l); border: 2px solid var(--color-primary);
+  background: var(--color-primary); color: var(--color-card); font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+  font-family: var(--font-body); font-size: var(--fs-md); line-height: 100%;
+}
+
+.btn:disabled,
+.btn[aria-disabled=\"true\"],
+.btn.is-disabled {
+  background: var(--color-muted);
+  border-color: var(--color-muted);
+  color: var(--color-card);
+  cursor: not-allowed;
+}
+
+.btn[aria-disabled=\"true\"],
+.btn.is-disabled {
+  opacity: 0.8;
+}
+
+.btn:hover:not(:disabled):not([aria-disabled=\"true\"]):not(.is-disabled) {
+  background: var(--color-primary-dark);
+  border-color: var(--color-primary-dark);
+}
+
+.btn:active:not(:disabled):not([aria-disabled=\"true\"]):not(.is-disabled),
+.btn:focus-visible:not([aria-disabled=\"true\"]):not(.is-disabled) {
+  outline: none;
+  background: var(--color-primary-darkest);
+}
+
+.btn--secondary { 
+  display: inline-flex; align-items: center; justify-content: center;
+  padding: 8px 16px; border-radius: var(--radius-l); border: 2px solid var(--color-primary);
+  background: var(--color-bg);
+  color: var(--color-primary); font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn--secondary:disabled {
+  border-color: var(--color-muted);
+  color: var(--color-muted);
+}
+
+.btn--secondary:hover:not(:disabled) {
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
+}
+
+.btn--secondary:active:not(:disabled),
+.btn--secondary:focus-visible {
+  outline: none;
+  background: var(--color-primary-darkest);
+}

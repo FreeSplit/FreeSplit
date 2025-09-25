@@ -1,6 +1,8 @@
 :root {
   /* Brand Colours */
   --color-primary: #4F46E5;   /* Indigo 600 */
+  --color-primary-dark: #4338CA; /* Indigo 700 */
+  --color-primary-darkest: #3730A3; /* Indigo 800 */
   --color-accent: #F59E0B;    /* Amber 500 */
 
   /* Feedback Colours */

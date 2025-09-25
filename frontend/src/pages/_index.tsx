@@ -2,7 +2,7 @@ import FreesplitLogo from '../images/FreeSplit.svg';
 import React from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleCheck } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faUserPlus } from '@fortawesome/free-solid-svg-icons'
 
 function Index() {
   return (
@@ -13,14 +13,18 @@ function Index() {
         </div>
         <div className="content-section v-centered">
           <div className="content-container">
-            <p>Settle group expenses for free.</p>
+            <div className="v-flex gap-8px text-is-centered">
+              <h1>Split group costs the easy way</h1>
+              <p>Simplify payments, and settle up without the hassle.</p>
+            </div>
             <Link to="/create-a-group/" className="btn">
-              Create a group
+              <span>Create a group</span>
+              <FontAwesomeIcon icon={faUserPlus} aria-hidden="true"/>
             </Link>
             <div className="bullet-list">
-              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Track & split debts</p></div>
-              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Simplify transactions</p></div>
-              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Unlimited expenses</p></div>
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Smart settling</p></div>
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">Simple sharing</p></div>
+              <div className="bullet-point"><FontAwesomeIcon icon={faCircleCheck} className="is-green" style={{ fontSize: 16 }} aria-hidden="true" /><p className="p2">No limits</p></div>
             </div>
           </div>
         </div>
