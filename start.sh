@@ -225,6 +225,15 @@ echo "✅ PostgreSQL is running"
 setup_postgresql
 
 # Start backend
+echo "Installing backend dependencies..."
+cd backend
+if ! go mod download; then
+    echo "❌ Failed to download Go dependencies"
+    echo "Please check your Go installation and internet connection"
+    exit 1
+fi
+echo "✅ Backend dependencies installed successfully"
+
 echo "Starting backend server on port 8080..."
 cd backend && DATABASE_URL="host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable" go run rest_server.go &
 BACKEND_PID=$!

@@ -19,7 +19,6 @@
   flex-wrap: wrap;
   gap: 8px;
   padding: 8px 8px;
-  border-bottom: 2px solid var(--color-muted);
   background: transparent;
   cursor: text;
 }
@@ -68,7 +67,7 @@
   border: 0;
   outline: none;
   font: var(--font-body);
-  padding: 6px 0;
+  
   background: transparent;
   color: var(--color-text);
 }
