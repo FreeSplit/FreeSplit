@@ -151,7 +151,7 @@ export const updateParticipant = async (data: {
       name: data.name,
       participant_id: data.participant_id
     });
-    return response.data;
+    return response.data.participant;
   } catch (error: any) {
     // Extract error message from response if available
     if (error.response?.data) {
