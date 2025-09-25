@@ -1,9 +1,72 @@
 #!/bin/bash
+
+# Prevent terminal clearing and preserve output
+set -e  # Exit on any error
+exec 2>&1  # Redirect stderr to stdout to preserve error messages
+
 echo "Starting FreeSplit servers with PostgreSQL..."
+echo "============================================="
+echo "📝 All output will be preserved - scroll up to see any errors"
+echo ""
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+# Function to setup PATH variables for Go and PostgreSQL
+setup_path_variables() {
+    echo "🔧 Setting up PATH variables..."
+    
+    # Setup Go PATH
+    if command -v go &> /dev/null; then
+        GO_BIN_PATH=$(go env GOROOT)/bin
+        if [ -d "$GO_BIN_PATH" ] && [[ ":$PATH:" != *":$GO_BIN_PATH:"* ]]; then
+            export PATH="$GO_BIN_PATH:$PATH"
+            echo "✅ Added Go binaries to PATH: $GO_BIN_PATH"
+        fi
+        
+        # Setup GOPATH
+        if [ -z "$GOPATH" ]; then
+            export GOPATH="$HOME/go"
+            echo "✅ Set GOPATH: $GOPATH"
+        fi
+        
+        # Add GOPATH/bin to PATH
+        if [ -d "$GOPATH/bin" ] && [[ ":$PATH:" != *":$GOPATH/bin:"* ]]; then
+            export PATH="$GOPATH/bin:$PATH"
+            echo "✅ Added GOPATH/bin to PATH: $GOPATH/bin"
+        fi
+    fi
+    
+    # Setup PostgreSQL PATH (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try Homebrew PostgreSQL paths
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            BREW_PREFIX=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$BREW_PREFIX" ] && [ -d "$BREW_PREFIX/bin" ]; then
+                if [[ ":$PATH:" != *":$BREW_PREFIX/bin:"* ]]; then
+                    export PATH="$BREW_PREFIX/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $BREW_PREFIX/bin"
+                fi
+                break
+            fi
+        done
+    fi
+    
+    # Setup PostgreSQL PATH (Linux)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ] && [[ ":$PATH:" != *":$candidate:"* ]]; then
+                export PATH="$candidate:$PATH"
+                echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                break
+            fi
+        done
+    fi
+}
+
+# Setup PATH variables first
+setup_path_variables
 
 # Get the local IP address dynamically
 LOCAL_IP=$(ifconfig | grep "inet " | grep -v 127.0.0.1 | head -1 | awk '{print $2}')
@@ -272,27 +335,73 @@ cd backend
 if ! go mod download; then
     echo "❌ Failed to download Go dependencies"
     echo "Please check your Go installation and internet connection"
+    echo "Try running: go clean -modcache && go mod download"
     exit 1
 fi
 echo "✅ Backend dependencies installed successfully"
 
 echo "Starting backend server on port 8080..."
 export DATABASE_URL="host=localhost user=postgres password=postgres dbname=freesplit port=5432 sslmode=disable"
-go run rest_server.go &
+
+# Start backend with error logging
+echo "🔧 Backend starting... (check for errors above)"
+go run rest_server.go > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
 
-# Wait a moment for backend to start
+# Wait a moment for backend to start and check if it's running
 echo "⏳ Waiting for backend to start..."
 sleep 3
 
+# Check if backend is actually running
+if ! kill -0 $BACKEND_PID 2>/dev/null; then
+    echo "❌ Backend failed to start. Check logs:"
+    echo "📄 Backend logs:"
+    cat ../logs/backend.log 2>/dev/null || echo "No log file found"
+    exit 1
+fi
+
+# Check if backend is responding
+if ! curl -s http://localhost:8080/health >/dev/null 2>&1; then
+    echo "⚠️  Backend started but not responding on port 8080"
+    echo "📄 Backend logs:"
+    cat ../logs/backend.log 2>/dev/null || echo "No log file found"
+    echo "⏳ Waiting a bit more for backend to fully start..."
+    sleep 5
+fi
+
 # Go back to project root and start frontend
 echo "Installing frontend dependencies..."
-cd "$SCRIPT_DIR/frontend" && npm install
+cd "$SCRIPT_DIR/frontend"
+if ! npm install; then
+    echo "❌ Failed to install frontend dependencies"
+    echo "Try running: npm cache clean --force && npm install"
+    exit 1
+fi
+echo "✅ Frontend dependencies installed successfully"
+
 echo "Setting up environment for network access..."
-cd "$SCRIPT_DIR/frontend" && echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
+echo "REACT_APP_API_URL=http://$LOCAL_IP:8080" > .env
+
 echo "Starting frontend server on port 3001..."
-cd "$SCRIPT_DIR/frontend" && HOST=0.0.0.0 PORT=3001 npm start &
-FRONTEND_PID=$! 
+# Create logs directory if it doesn't exist
+mkdir -p "$SCRIPT_DIR/logs"
+
+# Start frontend with error logging
+echo "🌐 Frontend starting... (check for errors above)"
+HOST=0.0.0.0 PORT=3001 npm start > "$SCRIPT_DIR/logs/frontend.log" 2>&1 &
+FRONTEND_PID=$!
+
+# Wait a moment for frontend to start and check if it's running
+echo "⏳ Waiting for frontend to start..."
+sleep 5
+
+# Check if frontend is actually running
+if ! kill -0 $FRONTEND_PID 2>/dev/null; then
+    echo "❌ Frontend failed to start. Check logs:"
+    echo "📄 Frontend logs:"
+    cat "$SCRIPT_DIR/logs/frontend.log" 2>/dev/null || echo "No log file found"
+    exit 1
+fi 
 
 echo ""
 echo "✅ Both servers are starting..."
@@ -300,6 +409,12 @@ echo "🔧 Backend API: http://$LOCAL_IP:8080"
 echo "🌐 Frontend App: http://$LOCAL_IP:3001"
 echo "🗄️  PostgreSQL: localhost:5432"
 echo ""
+echo "📄 Log files (scroll up to see any errors):"
+echo "   Backend logs: logs/backend.log"
+echo "   Frontend logs: logs/frontend.log"
+echo ""
 echo "Press Ctrl+C to stop both servers"
 echo "Backend PID: $BACKEND_PID"
 echo "Frontend PID: $FRONTEND_PID"
+echo ""
+echo "💡 If you see errors, check the log files above or scroll up in this terminal"

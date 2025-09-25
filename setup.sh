@@ -3,6 +3,58 @@
 echo "🚀 Setting up FreeSplit - Expense Splitting Application"
 echo "======================================================="
 
+# Function to setup PATH variables for Go and PostgreSQL
+setup_path_variables() {
+    echo "🔧 Setting up PATH variables..."
+    
+    # Setup Go PATH
+    if command -v go &> /dev/null; then
+        GO_BIN_PATH=$(go env GOROOT)/bin
+        if [ -d "$GO_BIN_PATH" ] && [[ ":$PATH:" != *":$GO_BIN_PATH:"* ]]; then
+            export PATH="$GO_BIN_PATH:$PATH"
+            echo "✅ Added Go binaries to PATH: $GO_BIN_PATH"
+        fi
+        
+        # Setup GOPATH
+        if [ -z "$GOPATH" ]; then
+            export GOPATH="$HOME/go"
+            echo "✅ Set GOPATH: $GOPATH"
+        fi
+        
+        # Add GOPATH/bin to PATH
+        if [ -d "$GOPATH/bin" ] && [[ ":$PATH:" != *":$GOPATH/bin:"* ]]; then
+            export PATH="$GOPATH/bin:$PATH"
+            echo "✅ Added GOPATH/bin to PATH: $GOPATH/bin"
+        fi
+    fi
+    
+    # Setup PostgreSQL PATH (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try Homebrew PostgreSQL paths
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            BREW_PREFIX=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$BREW_PREFIX" ] && [ -d "$BREW_PREFIX/bin" ]; then
+                if [[ ":$PATH:" != *":$BREW_PREFIX/bin:"* ]]; then
+                    export PATH="$BREW_PREFIX/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $BREW_PREFIX/bin"
+                fi
+                break
+            fi
+        done
+    fi
+    
+    # Setup PostgreSQL PATH (Linux)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ] && [[ ":$PATH:" != *":$candidate:"* ]]; then
+                export PATH="$candidate:$PATH"
+                echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                break
+            fi
+        done
+    fi
+}
+
 # Check if we want Docker or local setup
 if [ "$1" = "--local" ] || [ "$1" = "-l" ]; then
     echo "🔧 Setting up for local development..."
@@ -28,6 +80,9 @@ if [ "$SETUP_MODE" = "docker" ]; then
 fi
 
 if [ "$SETUP_MODE" = "local" ]; then
+    # Setup PATH variables first
+    setup_path_variables
+    
     # Check if Go is installed
     if ! command -v go &> /dev/null; then
         echo "❌ Go is not installed. Please install Go first."
@@ -70,6 +125,16 @@ if [ "$SETUP_MODE" = "local" ]; then
     # Check Go version
     GO_VERSION=$(go version | cut -d' ' -f3 | cut -d'o' -f2)
     echo "✅ Go version: $GO_VERSION"
+    
+    # Ensure Go is in PATH and set GOPATH if needed
+    if ! command -v go &> /dev/null; then
+        echo "❌ Go not found in PATH after installation"
+        echo "Please add Go to your PATH:"
+        echo "  export PATH=\$PATH:/usr/local/go/bin"
+        echo "  export GOPATH=\$HOME/go"
+        echo "  export PATH=\$PATH:\$GOPATH/bin"
+        exit 1
+    fi
     
     # Check Node.js version
     NODE_VERSION=$(node --version)
