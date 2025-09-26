@@ -22,9 +22,10 @@
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
   width: 100%;
   padding: 16px;
-  background: var(--color-bg);
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
+  background: var(--color-primary);
   position: sticky; top: 0; z-index: 10;
+  color: var(--color-bg);
+  box-shadow: 2px 2px 4px rgba(17, 24, 39, 0.20);
 }
 
 .logo-header {
@@ -132,6 +133,7 @@ footer.has-gradient-bg {
 
 .modal-header {
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;
+  color: var(--color-text);
 }
 
 a {
@@ -292,10 +294,37 @@ p {
 
 .select-icon {
   color: var(--color-bg);
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: auto;
+  margin-left: 4px;
+  cursor: default;
+}
+
+.select-icon--text {
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.select-wrapper select {
+  flex: 1;
+}
+
+.select-wrapper .select-icon {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
 }
 
 
@@ -333,6 +362,24 @@ p {
   color: var(--color-error);
   font-family: var(--font-body);
   font-size: var(--fs-sm);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.text-is-error {
+  color: var(--color-error);
+}
+
+.text-is-success {
+  color: var(--color-success);
 }
 
 .is-green {
@@ -474,13 +521,13 @@ p {
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
+  padding: 8px 0px 8px 0px;
+  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
 }
 
 .expense {
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
-  padding: 4px 0px;
   width: 100%;
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
   gap: 8px;
 }
 
@@ -490,9 +537,9 @@ p {
 }
 
 .expense-emoji {
-  font-size: 44px;
-  height: 44px;
-  width: 44px;
+  font-size: 36px;
+  height: 36px;
+  width: 36px;
   line-height: 100%;
 }
 
@@ -570,4 +617,8 @@ p {
 
 .has-shadow {
   box-shadow: var(--shadow-1);
+}
+
+.has-color-white {
+  color: var(--color-card);
 }

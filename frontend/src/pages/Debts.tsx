@@ -9,6 +9,16 @@ import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
 
+const formatAmount = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -161,45 +171,44 @@ const Debts: React.FC = () => {
       {/* Header */}
         <Header />
 
-      <div className="content-section">
-
         {/* Debts List */}
+        <div className="content-section">
+          <h1>Debts</h1>
         {orderedDebts.length > 0 && (
-          <div className="expenses-container">
+          <div className="list">
+            
             {orderedDebts.map((debt, index) => {
               const status = getDebtStatus(debt);
               const remainingAmount = debt.debt_amount - debt.paid_amount;
               const isSettled = status === 'settled';
 
               return (
-                <div key={debt.debt_id || `debt-${index}`} className="expense">
-                  <div className="expense-details">
+                <div key={debt.debt_id || `debt-${index}`} className="expenses-container">
+                  <div className="expense">
                     {isSettled ? (
                       <>
                         <p className="text-is-muted">
-                          {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{debt.debt_amount.toFixed(2)}
+                          {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{formatAmount(debt.debt_amount)}
                         </p>
                       </>
                     ) : (
                       <>
-                        <h1>Debts</h1>
                         <p>
-                          {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)} {group.currency}{remainingAmount.toFixed(2)}
+                          <span className="is-bold">{getParticipantName(debt.debtor_id)}</span> owes <span className="is-bold">{getParticipantName(debt.lender_id)}</span> <span className="text-is-success">{group.currency}{formatAmount(remainingAmount)}</span>
                         </p>
                         {status === 'partial' && (
                           <p className="text-sm text-gray-500">
-                            Paid so far: {group.currency}{debt.paid_amount.toFixed(2)}
+                            Paid so far: {group.currency}{formatAmount(debt.paid_amount)}
                           </p>
                         )}
                       </>
                     )}
-                  </div>
-                  <div className="flex items-center space-x-2">
+ 
                     {status === 'partial' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const amount = parseFloat(prompt(`Enter payment amount (max ${remainingAmount.toFixed(2)}):`) || '0');
+                          <button
+                            type="button"
+                            onClick={() => {
+                          const amount = parseFloat(prompt(`Enter payment amount (max ${formatAmount(remainingAmount)}):`) || '0');
                           if (!Number.isNaN(amount) && amount > 0 && amount <= remainingAmount) {
                             handlePartialPayment(debt, debt.paid_amount + amount);
                           }
@@ -230,8 +239,10 @@ const Debts: React.FC = () => {
             })}
           </div>
         )}
+        </div>
 
         {/* No Debts */}
+        <div className="content-section">
         {debts.length === 0 && (
           <div className="content-container text-is-centered">
             <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
