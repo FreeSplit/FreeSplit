@@ -140,18 +140,19 @@ const GroupDashboard: React.FC = () => {
                 </div>
               ) : (
                 <>
+                <h1>Expenses</h1>
                 <div className="list">
                   {expenses.slice(0, 5).map((expense) => (
-                    <div key={expense.id} className="expenses-container">
-                      <button onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expense">
+                    <button key={expense.id} onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
+                      <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
                         <div className="expense-details">
                           <p>{expense.name}</p>
                           <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{formatAmount(expense.cost)}</span></p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                      </button>
-                    </div>
+                      </div>
+                    </button>
                   ))}
                 </div>
                 </>
@@ -161,7 +162,7 @@ const GroupDashboard: React.FC = () => {
           <div className="v-flex">
             <div className="floating-cta-container">
               <button 
-                className="btn"
+                className="btn fab-shadow"
                 onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
               >
                 <span>Add a new expense</span>

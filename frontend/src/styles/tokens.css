@@ -8,6 +8,7 @@
   /* Feedback Colours */
   --color-success: #16A34A;   /* Credit */
   --color-error:   #DC2626;   /* Debt   */
+  --color-error-active: #931919;
 
   /* Neutrals */
   --color-bg:   #F9FAFB;

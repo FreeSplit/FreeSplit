@@ -12,6 +12,7 @@ type ShareLinkProps = {
 const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
+  const shareUrl = `https://freesplit.ca/group/${group.url_slug}`;
 
   useEffect(() => {
     return () => {
@@ -22,8 +23,6 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
   }, []);
 
   const handleCopy = useCallback(async () => {
-    const shareUrl = window.location.href;
-
     try {
       await navigator.clipboard.writeText(shareUrl);
     } catch (error) {
@@ -48,7 +47,7 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
       setCopySuccess(false);
       resetTimerRef.current = null;
     }, 2000);
-  }, []);
+  }, [shareUrl]);
 
   const handleBackdropClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -67,19 +66,21 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
       onClick={handleBackdropClick}
     >
       <div className="card">
-        <div className="modal-header">
-          <h2>Share {group.name}</h2>
-          <button type="button" onClick={onClose} aria-label="Close share modal">
-            <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
-          </button>
-        </div>
+        <div className="v-flex gap-8px">
+          <div className="modal-header">
+            <h2>Share {group.name}</h2>
+            <button type="button" onClick={onClose} aria-label="Close share modal">
+              <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
+            </button>
+          </div>
         <p>Share the link below with your friends to invite them to the group.</p>
+        </div>
         <div
           className="link-share-container"
-          title={window.location.href}
+          title={shareUrl}
           onClick={handleCopy}
         >
-          <p>{window.location.href}</p>
+          <p>{shareUrl}</p>
         </div>
         <button
           type="button"

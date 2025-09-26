@@ -78,6 +78,8 @@ const formatAmount = (value: number): string => {
   });
 };
 
+const toFixedString = (value: number): string => value.toFixed(2);
+
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -106,6 +108,11 @@ const AddExpense: React.FC = () => {
   const [customSplits, setCustomSplits] = useState<{ [key: number]: number }>({});
   const [customShares, setCustomShares] = useState<{ [key: number]: number }>({});
   const [customPercentages, setCustomPercentages] = useState<{ [key: number]: number }>({});
+  const [draftSplits, setDraftSplits] = useState<{ [key: number]: string }>({});
+  const [draftShares, setDraftShares] = useState<{ [key: number]: string }>({});
+  const [draftPercentages, setDraftPercentages] = useState<{ [key: number]: string }>({});
+  const [lockedAmountParticipants, setLockedAmountParticipants] = useState<{ [key: number]: boolean }>({});
+  const [lockedPercentageParticipants, setLockedPercentageParticipants] = useState<{ [key: number]: boolean }>({});
   const [includedParticipants, setIncludedParticipants] = useState<{ [key: number]: boolean }>({});
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
@@ -195,8 +202,8 @@ const AddExpense: React.FC = () => {
     }
 
     const current = customShares[participantId] || shares[participantId] || 1;
-    const next = Math.max(1, current + delta);
-    handleShareChange(participantId, String(next));
+    const next = current + delta;
+    applyShareValue(participantId, next);
   };
 
   // Helper function to round to 2 decimal places
@@ -207,6 +214,8 @@ const AddExpense: React.FC = () => {
     customPercentagesState?: { [key: number]: number };
     splitType?: string;
     costValue?: number;
+    lockedAmountState?: { [key: number]: boolean };
+    lockedPercentageState?: { [key: number]: boolean };
   }) => {
     if (!participants.length) {
       return;
@@ -218,6 +227,8 @@ const AddExpense: React.FC = () => {
     const customSplitsState = overrides?.customSplitsState ?? customSplits;
     const customSharesState = overrides?.customSharesState ?? customShares;
     const customPercentagesState = overrides?.customPercentagesState ?? customPercentages;
+    const lockedAmountState = overrides?.lockedAmountState ?? lockedAmountParticipants;
+    const lockedPercentageState = overrides?.lockedPercentageState ?? lockedPercentageParticipants;
 
     const activeParticipants = participants.filter(participant => inclusion[participant.id]);
     const activeCount = activeParticipants.length;
@@ -291,73 +302,124 @@ const AddExpense: React.FC = () => {
         nextCustomPercentages[participant.id] = nextPercentages[participant.id];
       });
     } else if (splitType === 'percentage') {
-      let total = 0;
+      const lockedMap = lockedPercentageState;
+      let totalLockedPercentage = 0;
+
       activeParticipants.forEach(participant => {
-        const value = Math.max(0, customPercentagesState[participant.id] ?? percentages[participant.id] ?? 0);
-        total += value;
+        const participantId = participant.id;
+        const isLocked = lockedMap[participantId];
+        const rawValue = Math.max(0, customPercentagesState[participantId] ?? percentages[participantId] ?? 0);
+        if (isLocked) {
+          const clamped = Math.min(100, rawValue);
+          totalLockedPercentage += clamped;
+          nextCustomPercentages[participantId] = clamped;
+          nextPercentages[participantId] = clamped;
+        }
       });
 
-      if (total <= 0) {
-        const equalPercent = 100 / activeCount;
-        activeParticipants.forEach(participant => {
-          nextCustomPercentages[participant.id] = roundToTwoDecimals(equalPercent);
-        });
-        total = 100;
+      const remainingParticipants = activeParticipants.filter(participant => !lockedMap[participant.id]);
+      const remainingCount = remainingParticipants.length;
+      let remainingPercentage = roundToTwoDecimals(100 - totalLockedPercentage);
+      if (remainingPercentage < 0) {
+        remainingPercentage = 0;
       }
 
-      const normalized = activeParticipants.map(participant => {
-        const value = Math.max(0, nextCustomPercentages[participant.id] ?? 0);
-        return total > 0 ? (value / total) * 100 : 0;
-      });
+      if (remainingCount > 0) {
+        const basePercentages = remainingParticipants.map(participant => {
+          const value = Math.max(0, customPercentagesState[participant.id] ?? percentages[participant.id] ?? 0);
+          return value;
+        });
+        const totalBase = basePercentages.reduce((sum, value) => sum + value, 0);
+        let scaled: number[];
+        if (remainingPercentage <= 0) {
+          scaled = new Array(remainingCount).fill(0);
+        } else if (totalBase <= 0) {
+          scaled = new Array(remainingCount).fill(remainingPercentage / remainingCount);
+        } else {
+          const scale = remainingPercentage / totalBase;
+          scaled = basePercentages.map(value => value * scale);
+        }
 
-      const distributedPercentages = distributeWithRemainder(normalized, 100);
+        const distributed = distributeWithRemainder(scaled, remainingPercentage);
+        remainingParticipants.forEach((participant, index) => {
+          const participantId = participant.id;
+          const percentage = Math.min(100, Math.max(0, roundToTwoDecimals(distributed[index] ?? 0)));
+          nextCustomPercentages[participantId] = percentage;
+          nextPercentages[participantId] = percentage;
+        });
+      }
+
       const percentageMap: { [key: number]: number } = {};
-
-      activeParticipants.forEach((participant, index) => {
-        const percentage = roundToTwoDecimals(distributedPercentages[index] ?? 0);
-        nextCustomPercentages[participant.id] = percentage;
-        percentageMap[participant.id] = percentage;
+      activeParticipants.forEach(participant => {
+        const participantId = participant.id;
+        const percentage = Math.max(0, nextCustomPercentages[participantId] ?? 0);
+        percentageMap[participantId] = percentage;
       });
 
       const amounts = calculateAmountsFromPercentages(percentageMap, costValue);
 
       activeParticipants.forEach(participant => {
-        const amount = roundToTwoDecimals(amounts[participant.id] ?? 0);
-        nextSplits[participant.id] = amount;
-        nextPercentages[participant.id] = nextCustomPercentages[participant.id];
-        nextShares[participant.id] = 0;
-        nextCustomSplits[participant.id] = amount;
-        nextCustomShares[participant.id] = 0;
+        const participantId = participant.id;
+        const amount = roundToTwoDecimals(amounts[participantId] ?? 0);
+        nextSplits[participantId] = amount;
+        nextShares[participantId] = 0;
+        nextCustomShares[participantId] = 0;
+        nextCustomSplits[participantId] = amount;
       });
     } else if (splitType === 'amount') {
-      const baseAmounts = activeParticipants.map(participant => {
-        const amount = Math.max(0, customSplitsState[participant.id] ?? splits[participant.id] ?? 0);
-        nextCustomSplits[participant.id] = amount;
-        return amount;
+      const lockedMap = lockedAmountState;
+      let totalLockedAmount = 0;
+
+      activeParticipants.forEach(participant => {
+        const participantId = participant.id;
+        if (lockedMap[participantId]) {
+          const current = Math.max(0, customSplitsState[participantId] ?? splits[participantId] ?? 0);
+          const amount = roundToTwoDecimals(current);
+          totalLockedAmount += amount;
+          nextCustomSplits[participantId] = amount;
+          nextSplits[participantId] = amount;
+          nextShares[participantId] = 0;
+          nextCustomShares[participantId] = 0;
+          nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+          nextCustomPercentages[participantId] = nextPercentages[participantId];
+        }
       });
 
-      const totalBase = baseAmounts.reduce((sum, value) => sum + value, 0);
-      let scaled: number[];
-
-      if (totalBase <= 0) {
-        const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-        scaled = new Array(activeCount).fill(equalAmount);
-      } else {
-        const scale = costValue > 0 ? costValue / totalBase : 0;
-        scaled = baseAmounts.map(amount => amount * scale);
+      const remainingParticipants = activeParticipants.filter(participant => !lockedMap[participant.id]);
+      const remainingCount = remainingParticipants.length;
+      let remainingCost = roundToTwoDecimals(costValue - totalLockedAmount);
+      if (remainingCost < 0) {
+        remainingCost = 0;
       }
 
-      const distributed = distributeWithRemainder(scaled, costValue);
+      if (remainingCount > 0) {
+        const baseAmounts = remainingParticipants.map(participant => {
+          const current = Math.max(0, customSplitsState[participant.id] ?? splits[participant.id] ?? 0);
+          return current;
+        });
+        const totalBase = baseAmounts.reduce((sum, value) => sum + value, 0);
+        let scaled: number[];
+        if (remainingCost <= 0) {
+          scaled = new Array(remainingCount).fill(0);
+        } else if (totalBase <= 0) {
+          scaled = new Array(remainingCount).fill(remainingCost / remainingCount);
+        } else {
+          const scale = remainingCost / totalBase;
+          scaled = baseAmounts.map(value => value * scale);
+        }
 
-      activeParticipants.forEach((participant, index) => {
-        const amount = roundToTwoDecimals(distributed[index] ?? 0);
-        nextSplits[participant.id] = amount;
-        nextCustomSplits[participant.id] = amount;
-        nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
-        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
-        nextShares[participant.id] = 0;
-        nextCustomShares[participant.id] = 0;
-      });
+        const distributed = distributeWithRemainder(scaled, remainingCost);
+        remainingParticipants.forEach((participant, index) => {
+          const participantId = participant.id;
+          const amount = roundToTwoDecimals(distributed[index] ?? 0);
+          nextCustomSplits[participantId] = amount;
+          nextSplits[participantId] = amount;
+          nextShares[participantId] = 0;
+          nextCustomShares[participantId] = 0;
+          nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+          nextCustomPercentages[participantId] = nextPercentages[participantId];
+        });
+      }
     }
 
     participants.forEach(participant => {
@@ -518,6 +580,8 @@ const AddExpense: React.FC = () => {
       const updatedCustomSplits: { [key: number]: number } = { ...customSplits };
       const updatedCustomShares: { [key: number]: number } = { ...customShares };
       const updatedCustomPercentages: { [key: number]: number } = { ...customPercentages };
+      const nextLockedAmounts = newSplitType === 'amount' ? lockedAmountParticipants : {};
+      const nextLockedPercentages = newSplitType === 'percentage' ? lockedPercentageParticipants : {};
 
       if (newSplitType === 'shares') {
         const equalAmount = activeParticipants.length > 0 ? cost / activeParticipants.length : 0;
@@ -547,6 +611,15 @@ const AddExpense: React.FC = () => {
       setCustomSplits(updatedCustomSplits);
       setCustomShares(updatedCustomShares);
       setCustomPercentages(updatedCustomPercentages);
+      setDraftSplits({});
+      setDraftShares({});
+      setDraftPercentages({});
+      if (newSplitType !== 'amount' && Object.keys(lockedAmountParticipants).length > 0) {
+        setLockedAmountParticipants({});
+      }
+      if (newSplitType !== 'percentage' && Object.keys(lockedPercentageParticipants).length > 0) {
+        setLockedPercentageParticipants({});
+      }
 
       redistributeSplits({
         splitType: newSplitType,
@@ -555,6 +628,8 @@ const AddExpense: React.FC = () => {
         customSharesState: updatedCustomShares,
         customPercentagesState: updatedCustomPercentages,
         costValue: cost,
+        lockedAmountState: nextLockedAmounts,
+        lockedPercentageState: nextLockedPercentages,
       });
 
       return;
@@ -565,50 +640,210 @@ const AddExpense: React.FC = () => {
     }
   };
 
-  const handleSplitChange = (participantId: number, amount: string) => {
+  const handleSplitDraftChange = (participantId: number, amount: string) => {
+    const sanitized = sanitizeDecimalInput(amount);
+    setDraftSplits(prev => ({ ...prev, [participantId]: sanitized }));
+  };
+
+  const beginSplitEdit = (participantId: number, currentValue: number) => {
+    setDraftSplits(prev => {
+      if (prev.hasOwnProperty(participantId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [participantId]: sanitizeDecimalInput(toFixedString(currentValue)),
+      };
+    });
+  };
+
+  const commitSplitChange = (participantId: number, fallbackValue: number) => {
     if (!includedParticipants[participantId]) {
+      setDraftSplits(prev => {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
+      if (lockedAmountParticipants.hasOwnProperty(participantId)) {
+        const nextLocked = { ...lockedAmountParticipants };
+        delete nextLocked[participantId];
+        setLockedAmountParticipants(nextLocked);
+        redistributeSplits({
+          customSplitsState: { ...customSplits, [participantId]: 0 },
+          lockedAmountState: nextLocked,
+        });
+        return;
+      }
       return;
     }
 
-    const value = Math.max(0, parseFloat(amount) || 0);
+    const raw = draftSplits[participantId];
+    const sanitized = raw !== undefined ? sanitizeDecimalInput(raw) : sanitizeDecimalInput(toFixedString(fallbackValue));
+    const parsed = parseDecimalValue(sanitized);
+
+    let nextLockedAmounts = lockedAmountParticipants;
+    if (parsed > 0) {
+      nextLockedAmounts = { ...lockedAmountParticipants, [participantId]: true };
+    } else if (lockedAmountParticipants.hasOwnProperty(participantId)) {
+      nextLockedAmounts = { ...lockedAmountParticipants };
+      delete nextLockedAmounts[participantId];
+    }
+    if (nextLockedAmounts !== lockedAmountParticipants) {
+      setLockedAmountParticipants(nextLockedAmounts);
+    }
+
     const updatedCustomSplits = {
       ...customSplits,
-      [participantId]: value
+      [participantId]: parsed,
     };
 
     setCustomSplits(updatedCustomSplits);
-    redistributeSplits({ customSplitsState: updatedCustomSplits });
+    redistributeSplits({
+      customSplitsState: updatedCustomSplits,
+      lockedAmountState: nextLockedAmounts,
+    });
+
+    setDraftSplits(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
   };
 
-  const handleShareChange = (participantId: number, share: string) => {
-    if (!includedParticipants[participantId]) {
-      return;
-    }
+  const handleShareDraftChange = (participantId: number, share: string) => {
+    const digitsOnly = share.replace(/[^0-9]/g, '');
+    setDraftShares(prev => ({ ...prev, [participantId]: digitsOnly }));
+  };
 
-    const sanitized = share.replace(/[^0-9]/g, '');
-    const value = Math.max(1, Math.round(parseFloat(sanitized) || 1));
+  const beginShareEdit = (participantId: number, currentValue: number) => {
+    setDraftShares(prev => {
+      if (prev.hasOwnProperty(participantId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [participantId]: String(currentValue),
+      };
+    });
+  };
+
+  const applyShareValue = (participantId: number, nextShare: number) => {
+    const shareValue = Math.max(1, Math.round(nextShare));
     const updatedCustomShares = {
       ...customShares,
-      [participantId]: value
+      [participantId]: shareValue,
     };
 
     setCustomShares(updatedCustomShares);
+    setDraftShares(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
     redistributeSplits({ customSharesState: updatedCustomShares });
   };
 
-  const handlePercentageChange = (participantId: number, percentage: string) => {
+  const commitShareChange = (participantId: number, fallbackValue: number) => {
     if (!includedParticipants[participantId]) {
+      setDraftShares(prev => {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
+      setLockedAmountParticipants(prev => {
+        if (!prev.hasOwnProperty(participantId)) {
+          return prev;
+        }
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
       return;
     }
 
-    const value = Math.max(0, Math.min(100, roundToTwoDecimals(parseFloat(percentage) || 0)));
+    const raw = draftShares[participantId];
+    const numeric = raw ? parseInt(raw, 10) : fallbackValue;
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+      setDraftShares(prev => {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
+      handleParticipantToggle(participantId, false);
+      return;
+    }
+    applyShareValue(participantId, numeric);
+  };
+
+  const handlePercentageDraftChange = (participantId: number, percentage: string) => {
+    const sanitized = sanitizeDecimalInput(percentage);
+    setDraftPercentages(prev => ({ ...prev, [participantId]: sanitized }));
+  };
+
+  const beginPercentageEdit = (participantId: number, currentValue: number) => {
+    setDraftPercentages(prev => {
+      if (prev.hasOwnProperty(participantId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        [participantId]: sanitizeDecimalInput(toFixedString(currentValue)),
+      };
+    });
+  };
+
+  const commitPercentageChange = (participantId: number, fallbackValue: number) => {
+    if (!includedParticipants[participantId]) {
+      setDraftPercentages(prev => {
+        const next = { ...prev };
+        delete next[participantId];
+        return next;
+      });
+      if (lockedPercentageParticipants.hasOwnProperty(participantId)) {
+        const nextLocked = { ...lockedPercentageParticipants };
+        delete nextLocked[participantId];
+        setLockedPercentageParticipants(nextLocked);
+        redistributeSplits({
+          customPercentagesState: { ...customPercentages, [participantId]: 0 },
+          lockedPercentageState: nextLocked,
+        });
+        return;
+      }
+      return;
+    }
+
+    const raw = draftPercentages[participantId];
+    const sanitized = raw !== undefined ? sanitizeDecimalInput(raw) : sanitizeDecimalInput(toFixedString(fallbackValue));
+    const parsed = parseDecimalValue(sanitized);
+    const clamped = Math.min(100, Math.max(0, parsed));
+
+    let nextLockedPercentages = lockedPercentageParticipants;
+    if (clamped > 0) {
+      nextLockedPercentages = { ...lockedPercentageParticipants, [participantId]: true };
+    } else if (lockedPercentageParticipants.hasOwnProperty(participantId)) {
+      nextLockedPercentages = { ...lockedPercentageParticipants };
+      delete nextLockedPercentages[participantId];
+    }
+    if (nextLockedPercentages !== lockedPercentageParticipants) {
+      setLockedPercentageParticipants(nextLockedPercentages);
+    }
+
     const updatedCustomPercentages = {
       ...customPercentages,
-      [participantId]: value
+      [participantId]: clamped,
     };
 
     setCustomPercentages(updatedCustomPercentages);
-    redistributeSplits({ customPercentagesState: updatedCustomPercentages });
+    redistributeSplits({
+      customPercentagesState: updatedCustomPercentages,
+      lockedPercentageState: nextLockedPercentages,
+    });
+
+    setDraftPercentages(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
   };
 
   const handleParticipantToggle = (participantId: number, checked: boolean) => {
@@ -633,16 +868,43 @@ const AddExpense: React.FC = () => {
       updatedCustomPercentages[participantId] = 0;
     }
 
+    const updatedLockedAmounts = { ...lockedAmountParticipants };
+    const updatedLockedPercentages = { ...lockedPercentageParticipants };
+
+    if (!checked) {
+      delete updatedLockedAmounts[participantId];
+      delete updatedLockedPercentages[participantId];
+    }
+
     setIncludedParticipants(updatedInclusion);
     setCustomSplits(updatedCustomSplits);
     setCustomShares(updatedCustomShares);
     setCustomPercentages(updatedCustomPercentages);
+    setDraftSplits(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
+    setDraftShares(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
+    setDraftPercentages(prev => {
+      const next = { ...prev };
+      delete next[participantId];
+      return next;
+    });
+    setLockedAmountParticipants(updatedLockedAmounts);
+    setLockedPercentageParticipants(updatedLockedPercentages);
 
     redistributeSplits({
       inclusion: updatedInclusion,
       customSplitsState: updatedCustomSplits,
       customSharesState: updatedCustomShares,
       customPercentagesState: updatedCustomPercentages,
+      lockedAmountState: updatedLockedAmounts,
+      lockedPercentageState: updatedLockedPercentages,
     });
   };
 
@@ -1032,12 +1294,22 @@ const AddExpense: React.FC = () => {
                                 {group.currency}
                               </p>
                               <input
-                                type="number"
-                                value={displayedSplit.toFixed(2)}
-                                onChange={(e) => handleSplitChange(participant.id, e.target.value)}
+                                type="text"
+                                value={draftSplits.hasOwnProperty(participant.id)
+                                  ? draftSplits[participant.id]
+                                  : formatAmount(displayedSplit)}
+                                onFocus={() => beginSplitEdit(participant.id, displayedSplit)}
+                                onChange={(e) => handleSplitDraftChange(participant.id, e.target.value)}
+                                onBlur={() => commitSplitChange(participant.id, displayedSplit)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    commitSplitChange(participant.id, displayedSplit);
+                                  }
+                                }}
                                 className="split-input"
-                                step="0.01"
-                                min="0"
+                                inputMode="decimal"
+                                pattern="[0-9]*\\.?[0-9]*"
                                 disabled={!isIncluded}
                               />
                             </div>
@@ -1055,13 +1327,20 @@ const AddExpense: React.FC = () => {
                                 <FontAwesomeIcon icon={faMinus} />
                               </button>
                               <input
-                                type="number"
-                                value={participantShare}
-                                onChange={(e) => handleShareChange(participant.id, e.target.value)}
+                                type="text"
+                                value={draftShares.hasOwnProperty(participant.id)
+                                  ? draftShares[participant.id]
+                                  : String(participantShare)}
+                                onFocus={() => beginShareEdit(participant.id, participantShare)}
+                                onChange={(e) => handleShareDraftChange(participant.id, e.target.value)}
+                                onBlur={() => commitShareChange(participant.id, participantShare)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    commitShareChange(participant.id, participantShare);
+                                  }
+                                }}
                                 className="share-adjust__input"
-                                min="1"
-                                step="1"
-                                max="99"
                                 style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                                 disabled={!isIncluded}
                                 inputMode="numeric"
@@ -1080,17 +1359,26 @@ const AddExpense: React.FC = () => {
                           )}
 
                           {formData.split_type === 'percentage' && (
-                            <div className="split-breakdown-amount-split-container">
+                            <div className="split-breakdown-amount-split-container percent">
                               <input
-                                type="number"
-                                value={participantPercentage.toFixed(2)}
-                                onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
-                                className="split-input right-align-text"
-                                min="0"
-                                max="99.99"
-                                step="0.01"
+                                type="text"
+                                value={draftPercentages.hasOwnProperty(participant.id)
+                                  ? draftPercentages[participant.id]
+                                  : toFixedString(participantPercentage)}
+                                onFocus={() => beginPercentageEdit(participant.id, participantPercentage)}
+                                onChange={(e) => handlePercentageDraftChange(participant.id, e.target.value)}
+                                onBlur={() => commitPercentageChange(participant.id, participantPercentage)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Enter') {
+                                    event.preventDefault();
+                                    commitPercentageChange(participant.id, participantPercentage);
+                                  }
+                                }}
+                                className="split-input percent right-align-text"
                                 style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                                 disabled={!isIncluded}
+                                inputMode="decimal"
+                                pattern="[0-9]*\.?[0-9]*"
                               />
                               <p className={isIncluded ? undefined : 'text-is-muted'}>%</p>
                             </div>

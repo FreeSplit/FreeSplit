@@ -175,7 +175,7 @@ const Debts: React.FC = () => {
         <div className="content-section">
           <h1>Debts</h1>
         {orderedDebts.length > 0 && (
-          <div className="expenses-container">
+          <div className="list">
             
             {orderedDebts.map((debt, index) => {
               const status = getDebtStatus(debt);
@@ -183,8 +183,8 @@ const Debts: React.FC = () => {
               const isSettled = status === 'settled';
 
               return (
-                <div key={debt.debt_id || `debt-${index}`} className="expense">
-                  <div className="expense-details">
+                <div key={debt.debt_id || `debt-${index}`} className="expenses-container">
+                  <div className="expense">
                     {isSettled ? (
                       <>
                         <p className="text-is-muted">
@@ -194,7 +194,7 @@ const Debts: React.FC = () => {
                     ) : (
                       <>
                         <p>
-                          {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)} {group.currency}{formatAmount(remainingAmount)}
+                          <span className="is-bold">{getParticipantName(debt.debtor_id)}</span> owes <span className="is-bold">{getParticipantName(debt.lender_id)}</span> <span className="text-is-success">{group.currency}{formatAmount(remainingAmount)}</span>
                         </p>
                         {status === 'partial' && (
                           <p className="text-sm text-gray-500">
@@ -203,8 +203,7 @@ const Debts: React.FC = () => {
                         )}
                       </>
                     )}
-                  </div>
-                  <div className="flex items-center space-x-2">
+ 
                     {status === 'partial' && (
                           <button
                             type="button"

@@ -22,9 +22,10 @@
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
   width: 100%;
   padding: 16px;
-  background: var(--color-bg);
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
+  background: var(--color-primary);
   position: sticky; top: 0; z-index: 10;
+  color: var(--color-bg);
+  box-shadow: 2px 2px 4px rgba(17, 24, 39, 0.20);
 }
 
 .logo-header {
@@ -132,6 +133,7 @@ footer.has-gradient-bg {
 
 .modal-header {
   display: flex; flex-direction: row; align-items: center; justify-content: space-between; width: 100%;
+  color: var(--color-text);
 }
 
 a {
@@ -519,13 +521,13 @@ input[type="number"] {
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
+  padding: 8px 0px 8px 0px;
+  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
 }
 
 .expense {
   display: flex; flex-direction: row; align-items: center; justify-content: space-between;
-  padding: 4px 0px;
   width: 100%;
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
   gap: 8px;
 }
 
@@ -615,4 +617,8 @@ input[type="number"] {
 
 .has-shadow {
   box-shadow: var(--shadow-1);
+}
+
+.has-color-white {
+  color: var(--color-card);
 }

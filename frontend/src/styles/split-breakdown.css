@@ -169,6 +169,7 @@
     border: 1px solid var(--color-text);
     align-self: stretch;
     border-radius: 4px;
+    width: 32px;
 }
 
 .share-adjust__input:disabled {
@@ -235,9 +236,16 @@
   line-height: 1.25;
   overflow-x: scroll;
   width: auto;
-  min-width: fit-content;
+}
+
+.split-input.percent {
+  width: 52px;
 }
 
 .split-breakdown-amount-split-container.amount {
   width: 120px;
+}
+
+.split-breakdown-amount-split-container.percent {
+  width: 80px;
 }
