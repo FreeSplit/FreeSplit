@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus, faChevronDown, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { ring } from 'ldrs'; ring.register();
 
 const roundToTwoDecimals = (num: number): number => {
   return Math.round(num * 100) / 100;
@@ -1025,10 +1026,14 @@ const AddExpense: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+            <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading group data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
