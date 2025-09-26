@@ -292,10 +292,37 @@ p {
 
 .select-icon {
   color: var(--color-bg);
-  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  width: auto;
+  margin-left: 4px;
+  cursor: default;
+}
+
+.select-icon--text {
+  color: var(--color-text);
+  font-size: 16px;
+}
+
+.select-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+
+.select-wrapper select {
+  flex: 1;
+}
+
+.select-wrapper .select-icon {
+  position: absolute;
+  right: 8px;
+  pointer-events: none;
 }
 
 
@@ -333,6 +360,24 @@ p {
   color: var(--color-error);
   font-family: var(--font-body);
   font-size: var(--fs-sm);
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.text-is-error {
+  color: var(--color-error);
+}
+
+.text-is-success {
+  color: var(--color-success);
 }
 
 .is-green {
@@ -490,9 +535,9 @@ p {
 }
 
 .expense-emoji {
-  font-size: 44px;
-  height: 44px;
-  width: 44px;
+  font-size: 36px;
+  height: 36px;
+  width: 36px;
   line-height: 100%;
 }
 

@@ -121,7 +121,7 @@ const Members: React.FC = () => {
                     onClick={() => openEditModal(participant)}
                   >
                     <p>{participant.name}</p>
-                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
                   </button>
                 </div>
               ))

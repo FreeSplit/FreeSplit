@@ -50,6 +50,34 @@ const calculateAmountsFromPercentages = (percentages: { [key: number]: number },
   return amounts;
 };
 
+const sanitizeDecimalInput = (value: string): string => {
+  const digitsOnly = value.replace(/[^0-9.]/g, '');
+  const [whole, ...decimalParts] = digitsOnly.split('.');
+  if (decimalParts.length > 0) {
+    return `${whole}.${decimalParts.join('')}`;
+  }
+  return whole;
+};
+
+const parseDecimalValue = (value: string): number => {
+  const sanitized = sanitizeDecimalInput(value);
+  if (!sanitized) {
+    return 0;
+  }
+  const parsed = parseFloat(sanitized);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatAmount = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -82,6 +110,7 @@ const AddExpense: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+  const splitTypeSelectRef = useRef<HTMLSelectElement | null>(null);
 
   const nameHasError = Boolean(errors.name);
   const costHasError = Boolean(errors.cost);
@@ -185,8 +214,7 @@ const AddExpense: React.FC = () => {
 
     const inclusion = overrides?.inclusion ?? includedParticipants;
     const splitType = overrides?.splitType ?? formData.split_type;
-    const fallbackCost = parseFloat(formData.cost);
-    const costValue = overrides?.costValue ?? (Number.isFinite(fallbackCost) ? fallbackCost : 0);
+    const costValue = overrides?.costValue ?? parseDecimalValue(formData.cost);
     const customSplitsState = overrides?.customSplitsState ?? customSplits;
     const customSharesState = overrides?.customSharesState ?? customShares;
     const customPercentagesState = overrides?.customPercentagesState ?? customPercentages;
@@ -419,17 +447,39 @@ const AddExpense: React.FC = () => {
     });
   }, [participants]);
 
+  const openSplitTypeDropdown = useCallback(() => {
+    const selectEl = splitTypeSelectRef.current;
+    if (!selectEl) {
+      return;
+    }
+    const anySelect = selectEl as HTMLSelectElement & { showPicker?: () => void };
+    if (typeof anySelect.showPicker === 'function') {
+      anySelect.showPicker();
+      return;
+    }
+    selectEl.focus();
+    selectEl.click();
+  }, []);
+
   const handleInputChange = (field: string, value: string | number) => {
+    let nextValue = value;
+
+    if (field === 'cost') {
+      nextValue = sanitizeDecimalInput(String(value));
+    }
+
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [field]: nextValue
     }));
 
-    const cost = field === 'cost' ? parseFloat(String(value)) || 0 : parseFloat(formData.cost) || 0;
+    const cost = field === 'cost'
+      ? parseDecimalValue(String(nextValue))
+      : parseDecimalValue(formData.cost);
 
     setErrors(prev => {
-      if (field === 'name' && typeof value === 'string') {
-        if (!value.trim() || !prev.name) {
+      if (field === 'name' && typeof nextValue === 'string') {
+        if (!nextValue.trim() || !prev.name) {
           return prev;
         }
         const next = { ...prev };
@@ -438,7 +488,7 @@ const AddExpense: React.FC = () => {
       }
 
       if (field === 'cost') {
-        const stringValue = typeof value === 'string' ? value : String(value);
+        const stringValue = typeof nextValue === 'string' ? nextValue : String(nextValue);
         if (!stringValue.trim() || !prev.cost) {
           return prev;
         }
@@ -448,7 +498,7 @@ const AddExpense: React.FC = () => {
       }
 
       if (field === 'payer_id') {
-        const numericValue = typeof value === 'number' ? value : parseInt(String(value), 10);
+        const numericValue = typeof nextValue === 'number' ? nextValue : parseInt(String(nextValue), 10);
         if (numericValue > 0 && prev.payer) {
           const next = { ...prev };
           delete next.payer;
@@ -461,7 +511,7 @@ const AddExpense: React.FC = () => {
     });
 
     if (field === 'split_type') {
-      const newSplitType = value as string;
+      const newSplitType = nextValue as string;
       const inclusion = includedParticipants;
       const activeParticipants = participants.filter(participant => inclusion[participant.id]);
 
@@ -535,7 +585,8 @@ const AddExpense: React.FC = () => {
       return;
     }
 
-    const value = Math.max(1, Math.round(parseFloat(share) || 1));
+    const sanitized = share.replace(/[^0-9]/g, '');
+    const value = Math.max(1, Math.round(parseFloat(sanitized) || 1));
     const updatedCustomShares = {
       ...customShares,
       [participantId]: value
@@ -601,7 +652,7 @@ const AddExpense: React.FC = () => {
       return false;
     }
 
-    const totalCost = parseFloat(formData.cost) || 0;
+    const totalCost = parseDecimalValue(formData.cost);
     const totalSplits = activeParticipants.reduce((sum, participant) => sum + (splits[participant.id] || 0), 0);
 
     if (formData.split_type === 'percentage') {
@@ -658,7 +709,7 @@ const AddExpense: React.FC = () => {
       const expense: Expense = {
         id: 0,
         name: formData.name,
-        cost: parseFloat(formData.cost),
+        cost: parseDecimalValue(formData.cost),
         emoji: formData.emoji,
         payer_id: formData.payer_id,
         split_type: formData.split_type,
@@ -666,7 +717,7 @@ const AddExpense: React.FC = () => {
         group_id: group!.id
       };
 
-      const costNumeric = parseFloat(formData.cost) || 0;
+      const costNumeric = parseDecimalValue(formData.cost);
       const allSplits: { [key: number]: number } = {};
 
       if (formData.split_type === 'equal') {
@@ -726,10 +777,19 @@ const AddExpense: React.FC = () => {
   }
 
   const activeParticipants = participants.filter(participant => includedParticipants[participant.id]);
+  const costValue = parseDecimalValue(formData.cost);
   const totalAssigned = activeParticipants.reduce((sum, participant) => sum + (splits[participant.id] || 0), 0);
-  const remainingAmount = (parseFloat(formData.cost) || 0) - totalAssigned;
+  const remainingAmount = costValue - totalAssigned;
   const totalShares = activeParticipants.reduce((sum, participant) => sum + (shares[participant.id] || 0), 0);
   const totalPercentage = activeParticipants.reduce((sum, participant) => sum + (percentages[participant.id] || 0), 0);
+  const isFormComplete = Boolean(
+    formData.emoji &&
+    formData.name.trim() &&
+    formData.cost.trim() &&
+    costValue > 0 &&
+    formData.payer_id
+  );
+  const totalsMatch = Math.abs(totalAssigned - costValue) < 0.01;
 
   return (
     <>
@@ -795,18 +855,56 @@ const AddExpense: React.FC = () => {
                     Cost
                   </label>
                     <div className={costContainerClasses.join(' ')}>
-                      <p className="p2 is-black">
+                      <p className="is-black">
                         {group.currency}
                       </p>
                       <input
-                        type="number"
+                        type="text"
                         id="cost"
                         value={formData.cost}
                         onChange={(e) => handleInputChange('cost', e.target.value)}
                         className="form-input"
                         placeholder="0.00"
-                        step="0.01"
-                        min="0"
+                        inputMode="decimal"
+                        pattern="[0-9]*\\.?[0-9]*"
+                        onFocus={() => {
+                          setFormData(prev => {
+                            if (!prev.cost) {
+                              return prev;
+                            }
+                            const sanitizedCost = sanitizeDecimalInput(prev.cost);
+                            if (sanitizedCost === prev.cost) {
+                              return prev;
+                            }
+                            return {
+                              ...prev,
+                              cost: sanitizedCost,
+                            };
+                          });
+                        }}
+                        onBlur={() => {
+                          setFormData(prev => {
+                            if (!prev.cost) {
+                              return prev;
+                            }
+                            const sanitizedCost = sanitizeDecimalInput(prev.cost);
+                            if (!sanitizedCost) {
+                              return {
+                                ...prev,
+                                cost: '',
+                              };
+                            }
+                            const parsed = parseDecimalValue(sanitizedCost);
+                            const formatted = formatAmount(parsed);
+                            if (formatted === prev.cost) {
+                              return prev;
+                            }
+                            return {
+                              ...prev,
+                              cost: formatted,
+                            };
+                          });
+                        }}
                         aria-invalid={costHasError}
                         aria-describedby={costHasError ? 'add-expense-cost-error' : undefined}
                         required
@@ -824,22 +922,27 @@ const AddExpense: React.FC = () => {
                     Paid by
                   </label>
                   <div className={payerContainerClasses.join(' ')}>
-                    <select
-                      id="payer"
-                      value={formData.payer_id}
-                      onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
-                      className="form-input"
-                      aria-invalid={payerHasError}
-                      aria-describedby={payerHasError ? 'add-expense-payer-error' : undefined}
-                      required
-                    >
-                    <option value={0} disabled hidden>Select payer</option>
-                      {participants.map(participant => (
-                        <option key={participant.id} value={participant.id}>
-                          {participant.name}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="select-wrapper">
+                      <select
+                        id="payer"
+                        value={formData.payer_id}
+                        onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
+                        className="form-input"
+                        aria-invalid={payerHasError}
+                        aria-describedby={payerHasError ? 'add-expense-payer-error' : undefined}
+                        required
+                      >
+                      <option value={0} disabled hidden>Select payer</option>
+                        {participants.map(participant => (
+                          <option key={participant.id} value={participant.id}>
+                            {participant.name}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="select-icon select-icon--text">
+                        <FontAwesomeIcon icon={faChevronDown} />
+                      </span>
+                    </div>
                   </div>
                   {payerHasError && (
                     <p className="form-error" id="add-expense-payer-error" role="alert">
@@ -857,18 +960,24 @@ const AddExpense: React.FC = () => {
                     <div className="split-breakdown-dropdown">
                       <select
                         id="split_type"
-                        className="split-breakdown-dropdown"
+                        className="split-breakdown-dropdown-input"
                         value={formData.split_type}
                         onChange={(e) => handleInputChange('split_type', e.target.value)}
+                        ref={splitTypeSelectRef}
                       >
                         <option value="equal">Equal</option>
                         <option value="amount">Amount</option>
                         <option value="shares">Shares</option>
                         <option value="percentage">Percentage</option>
                       </select>
-                      <span className="select-icon">
+                      <button
+                        type="button"
+                        className="select-icon"
+                        onClick={openSplitTypeDropdown}
+                        aria-label="Open split type options"
+                      >
                         <FontAwesomeIcon icon={faChevronDown} />
-                      </span>
+                      </button>
                     </div>
                   </div>
 
@@ -904,7 +1013,7 @@ const AddExpense: React.FC = () => {
                                 {participant.name}
                               </p>
                               <p className={isIncluded ? 'p2' : 'p2 text-is-muted'}>
-                                {group.currency}{displayedSplit.toFixed(2)}
+                                {group.currency}{formatAmount(displayedSplit)}
                               </p>
                             </div>
                           </div>
@@ -912,13 +1021,13 @@ const AddExpense: React.FC = () => {
                           {formData.split_type === 'equal' && (
                             <div className={`split-breakdown-even-split-container${isIncluded ? '' : ' is-disabled'}`}>
                               <span>
-                                {group.currency}{displayedSplit.toFixed(2)}
+                                {group.currency}{formatAmount(displayedSplit)}
                               </span>
                             </div>
                           )}
 
                           {formData.split_type === 'amount' && (
-                            <div className="split-breakdown-amount-split-container">
+                            <div className="split-breakdown-amount-split-container amount hide-scrollbar">
                               <p className={isIncluded ? undefined : 'text-is-muted'}>
                                 {group.currency}
                               </p>
@@ -926,7 +1035,7 @@ const AddExpense: React.FC = () => {
                                 type="number"
                                 value={displayedSplit.toFixed(2)}
                                 onChange={(e) => handleSplitChange(participant.id, e.target.value)}
-                                className="form-input"
+                                className="split-input"
                                 step="0.01"
                                 min="0"
                                 disabled={!isIncluded}
@@ -952,8 +1061,11 @@ const AddExpense: React.FC = () => {
                                 className="share-adjust__input"
                                 min="1"
                                 step="1"
+                                max="99"
                                 style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
                                 disabled={!isIncluded}
+                                inputMode="numeric"
+                                pattern="[0-9]*"
                               />
                               <button
                                 type="button"
@@ -973,7 +1085,7 @@ const AddExpense: React.FC = () => {
                                 type="number"
                                 value={participantPercentage.toFixed(2)}
                                 onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
-                                className="form-input right-align-text"
+                                className="split-input right-align-text"
                                 min="0"
                                 max="99.99"
                                 step="0.01"
@@ -997,12 +1109,14 @@ const AddExpense: React.FC = () => {
               <div className="breakdown-details">
                 <p>Total Attributed: </p>
                 <h2>
-                  {group.currency}{totalAssigned.toFixed(2)}
+                  {group.currency}{formatAmount(totalAssigned)}
                 </h2>
               </div>
               {formData.split_type === 'amount' && (
                 <div className="p2">
-                  Remaining: {group.currency}{remainingAmount.toFixed(2)}
+                  Remaining: <span className={Math.abs(remainingAmount) < 0.01 ? 'text-is-success' : 'text-is-error'}>
+                    {group.currency}{formatAmount(remainingAmount)}
+                  </span>
                 </div>
               )}
               {formData.split_type === 'shares' && (
@@ -1012,7 +1126,9 @@ const AddExpense: React.FC = () => {
               )}
               {formData.split_type === 'percentage' && (
                 <div className="p2">
-                  Total Percentage: {totalPercentage.toFixed(2)}%
+                  Total Percentage: <span className={Math.abs(totalPercentage - 100) < 0.01 ? 'text-is-success' : 'text-is-error'}>
+                    {totalPercentage.toFixed(2)}%
+                  </span>
                 </div>
               )}
             </div>
@@ -1027,7 +1143,12 @@ const AddExpense: React.FC = () => {
               <button
                 type="submit"
                 form="add-expense"
-                disabled={submitting || !validateSplits()} 
+                disabled={
+                  submitting ||
+                  !isFormComplete ||
+                  !validateSplits() ||
+                  !totalsMatch
+                }
                 className="btn has-full-width"
               >
                 Add

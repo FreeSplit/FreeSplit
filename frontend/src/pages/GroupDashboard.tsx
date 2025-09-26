@@ -10,6 +10,16 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
 
+const formatAmount = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -137,7 +147,7 @@ const GroupDashboard: React.FC = () => {
                         <span className="expense-emoji">{expense.emoji}</span>
                         <div className="expense-details">
                           <p>{expense.name}</p>
-                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{expense.cost.toFixed(2)}</span></p>
+                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{formatAmount(expense.cost)}</span></p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
                       </button>

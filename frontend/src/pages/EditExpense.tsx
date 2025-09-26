@@ -48,6 +48,16 @@ const calculateAmountsFromPercentages = (percentagesData: { [key: number]: numbe
   return amounts;
 };
 
+const formatAmount = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
+
 const EditExpense: React.FC = () => {
   const { urlSlug, expenseId } = useParams<{ urlSlug: string; expenseId: string }>();
   const navigate = useNavigate();
@@ -442,15 +452,27 @@ const EditExpense: React.FC = () => {
   }, [participants]);
 
   const handleInputChange = (field: string, value: string | number) => {
+    let nextValue = value;
+
+    if (field === 'cost') {
+      const stringValue = String(value);
+      const digitsOnly = stringValue.replace(/[^0-9.]/g, '');
+      const [whole, ...decimals] = digitsOnly.split('.');
+      const rebuilt = decimals.length > 0 ? `${whole}.${decimals.join('')}` : whole;
+      nextValue = rebuilt;
+    }
+
     setFormData(prev => ({
       ...prev,
-      [field]: value,
+      [field]: nextValue,
     }));
 
-    const costValue = field === 'cost' ? parseFloat(String(value)) || 0 : parseFloat(formData.cost) || 0;
+    const costValue = field === 'cost'
+      ? parseFloat(String(nextValue)) || 0
+      : parseFloat(formData.cost) || 0;
 
     if (field === 'split_type') {
-      const newSplitType = value as string;
+      const newSplitType = nextValue as string;
       const inclusion = includedParticipants;
       const activeParticipants = participants.filter(participant => inclusion[participant.id]);
 
@@ -524,7 +546,8 @@ const EditExpense: React.FC = () => {
       return;
     }
 
-    const value = Math.max(1, Math.round(parseFloat(share) || 1));
+    const sanitized = share.replace(/[^0-9]/g, '');
+    const value = Math.max(1, Math.round(parseFloat(sanitized) || 1));
     const updatedCustomShares = {
       ...customShares,
       [participantId]: value,
@@ -783,6 +806,8 @@ const EditExpense: React.FC = () => {
                         placeholder="0.00"
                         step="0.01"
                         min="0"
+                        inputMode="decimal"
+                        pattern="[0-9]*\\.?[0-9]*"
                         required
                         disabled={submitting || deleting}
                       />
@@ -884,14 +909,14 @@ const EditExpense: React.FC = () => {
                       <div className="split-breakdown-participant-details">
                         <p className={isIncluded ? undefined : 'text-is-muted'}>{participant.name}</p>
                         <p className={isIncluded ? 'p2' : 'p2 text-is-muted'}>
-                          {group.currency}{displayedSplit.toFixed(2)}
+                          {group.currency}{formatAmount(displayedSplit)}
                         </p>
                       </div>
                     </div>
 
                     {formData.split_type === 'equal' && (
                       <div className={`split-breakdown-even-split-container${isIncluded ? '' : ' is-disabled'}`}>
-                        <span>{group.currency}{displayedSplit.toFixed(2)}</span>
+                        <span>{group.currency}{formatAmount(displayedSplit)}</span>
                       </div>
                     )}
 
@@ -930,6 +955,8 @@ const EditExpense: React.FC = () => {
                           step="1"
                           disabled={!isIncluded || submitting || deleting}
                           style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
                         />
                         <button
                           type="button"
@@ -982,12 +1009,12 @@ const EditExpense: React.FC = () => {
               <div className="breakdown-details">
                 <p>Total Attributed: </p>
                 <h2>
-                  {group.currency}{totalAssigned.toFixed(2)}
+                  {group.currency}{formatAmount(totalAssigned)}
                 </h2>
               </div>
               {formData.split_type === 'amount' && (
                 <div className="p2">
-                  Remaining: {group.currency}{remainingAmount.toFixed(2)}
+                  Remaining: {group.currency}{formatAmount(remainingAmount)}
                 </div>
               )}
               {formData.split_type === 'shares' && (
