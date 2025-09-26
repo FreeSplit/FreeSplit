@@ -53,21 +53,57 @@
     flex-direction: column;
 }
 
-.checkbox {
-    display: flex;
-    align-items: center;
-    border-radius: 2px;
-    border: 1px solid var(--color-muted);
-    background: var(--color-bg);
+.split-breakdown-participant-container.is-excluded {
+  opacity: 0.6;
 }
 
-.checkbox:selected {
-    display: flex;
-    align-items: center;
-    border-radius: 2px;
-    border: 1px solid var(--color-text);
-    background: var(--color-text);
-    color: var(--color-bg)
+.split-breakdown-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--color-bg);
+  cursor: pointer;
+}
+
+.split-breakdown-checkbox input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.split-breakdown-checkbox .checkbox-indicator {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--color-muted);
+}
+
+.split-breakdown-checkbox .checkbox-indicator svg {
+  font-size: 20px;
+  color: var(--color-bg);
+}
+
+.split-breakdown-checkbox input:checked + .checkbox-indicator {
+  background: var(--color-text);
+  border-radius: 2px;
+  border-color: var(--text);
+}
+
+.split-breakdown-checkbox input:focus-visible + .checkbox-indicator {
+  box-shadow: 0 0 0 2px rgba(55, 48, 163, 0.35);
 }
 
 .split-breakdown-even-split-container {
@@ -159,4 +195,14 @@
   background: transparent;
   cursor: text;
   outline: none;
+}
+
+.split-breakdown-container .form-input:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.split-breakdown-even-split-container.is-disabled {
+  background: var(--color-muted);
+  color: var(--color-bg);
 }
