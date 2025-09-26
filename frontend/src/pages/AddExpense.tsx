@@ -4,9 +4,51 @@ import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMinus, faPlus, faChevronDown, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus, faChevronDown, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+
+const roundToTwoDecimals = (num: number): number => {
+  return Math.round(num * 100) / 100;
+};
+
+const distributeWithRemainder = (amounts: number[], total: number): number[] => {
+  const rounded = amounts.map(roundToTwoDecimals);
+  const sum = rounded.reduce((acc, val) => acc + val, 0);
+  const remainder = roundToTwoDecimals(total - sum);
+
+  if (remainder !== 0 && rounded.length > 0) {
+    rounded[rounded.length - 1] = roundToTwoDecimals(rounded[rounded.length - 1] + remainder);
+  }
+
+  return rounded;
+};
+
+const calculateAmountsFromShares = (shares: { [key: number]: number }, cost: number): { [key: number]: number } => {
+  const amounts: { [key: number]: number } = {};
+  const totalShares = Object.values(shares).reduce((sum, val) => sum + val, 0);
+
+  if (totalShares > 0) {
+    const amountsArray = Object.entries(shares).map(([id, share]) => (share / totalShares) * cost);
+    const distributed = distributeWithRemainder(amountsArray, cost);
+
+    Object.keys(shares).forEach((id, index) => {
+      amounts[Number(id)] = distributed[index];
+    });
+  }
+
+  return amounts;
+};
+
+const calculateAmountsFromPercentages = (percentages: { [key: number]: number }, cost: number): { [key: number]: number } => {
+  const amounts: { [key: number]: number } = {};
+
+  Object.entries(percentages).forEach(([id, percentage]) => {
+    amounts[Number(id)] = roundToTwoDecimals((percentage / 100) * cost);
+  });
+
+  return amounts;
+};
 
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -36,6 +78,7 @@ const AddExpense: React.FC = () => {
   const [customSplits, setCustomSplits] = useState<{ [key: number]: number }>({});
   const [customShares, setCustomShares] = useState<{ [key: number]: number }>({});
   const [customPercentages, setCustomPercentages] = useState<{ [key: number]: number }>({});
+  const [includedParticipants, setIncludedParticipants] = useState<{ [key: number]: boolean }>({});
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
@@ -118,56 +161,194 @@ const AddExpense: React.FC = () => {
   }, [isEmojiPickerOpen]);
 
   const adjustShare = (participantId: number, delta: number) => {
-    const current = shares[participantId] || 1;
+    if (!includedParticipants[participantId]) {
+      return;
+    }
+
+    const current = customShares[participantId] || shares[participantId] || 1;
     const next = Math.max(1, current + delta);
     handleShareChange(participantId, String(next));
   };
 
   // Helper function to round to 2 decimal places
-  const roundToTwoDecimals = (num: number): number => {
-    return Math.round(num * 100) / 100;
-  };
-
-  // Helper function to distribute remainder to last person
-  const distributeWithRemainder = (amounts: number[], total: number): number[] => {
-    const rounded = amounts.map(roundToTwoDecimals);
-    const sum = rounded.reduce((acc, val) => acc + val, 0);
-    const remainder = roundToTwoDecimals(total - sum);
-    
-    if (remainder !== 0 && rounded.length > 0) {
-      rounded[rounded.length - 1] = roundToTwoDecimals(rounded[rounded.length - 1] + remainder);
+  const redistributeSplits = (overrides?: {
+    inclusion?: { [key: number]: boolean };
+    customSplitsState?: { [key: number]: number };
+    customSharesState?: { [key: number]: number };
+    customPercentagesState?: { [key: number]: number };
+    splitType?: string;
+    costValue?: number;
+  }) => {
+    if (!participants.length) {
+      return;
     }
-    
-    return rounded;
-  };
 
+    const inclusion = overrides?.inclusion ?? includedParticipants;
+    const splitType = overrides?.splitType ?? formData.split_type;
+    const fallbackCost = parseFloat(formData.cost);
+    const costValue = overrides?.costValue ?? (Number.isFinite(fallbackCost) ? fallbackCost : 0);
+    const customSplitsState = overrides?.customSplitsState ?? customSplits;
+    const customSharesState = overrides?.customSharesState ?? customShares;
+    const customPercentagesState = overrides?.customPercentagesState ?? customPercentages;
 
-  // Calculate amounts from shares
-  const calculateAmountsFromShares = (shares: { [key: number]: number }, cost: number): { [key: number]: number } => {
-    const amounts: { [key: number]: number } = {};
-    const totalShares = Object.values(shares).reduce((sum, val) => sum + val, 0);
-    
-    if (totalShares > 0) {
-      const amountsArray = Object.entries(shares).map(([id, share]) => (share / totalShares) * cost);
-      const distributed = distributeWithRemainder(amountsArray, cost);
-      
-      Object.keys(shares).forEach((id, index) => {
-        amounts[Number(id)] = distributed[index];
+    const activeParticipants = participants.filter(participant => inclusion[participant.id]);
+    const activeCount = activeParticipants.length;
+
+    const nextSplits: { [key: number]: number } = {};
+    const nextShares: { [key: number]: number } = {};
+    const nextPercentages: { [key: number]: number } = {};
+    const nextCustomSplits: { [key: number]: number } = { ...customSplitsState };
+    const nextCustomShares: { [key: number]: number } = { ...customSharesState };
+    const nextCustomPercentages: { [key: number]: number } = { ...customPercentagesState };
+
+    if (activeCount === 0) {
+      participants.forEach(participant => {
+        nextSplits[participant.id] = 0;
+        nextShares[participant.id] = 0;
+        nextPercentages[participant.id] = 0;
+        nextCustomSplits[participant.id] = 0;
+        nextCustomShares[participant.id] = 0;
+        nextCustomPercentages[participant.id] = 0;
+      });
+
+      setSplits(nextSplits);
+      setShares(nextShares);
+      setPercentages(nextPercentages);
+      setCustomSplits(nextCustomSplits);
+      setCustomShares(nextCustomShares);
+      setCustomPercentages(nextCustomPercentages);
+      return;
+    }
+
+    if (splitType === 'equal') {
+      const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
+      const distributed = distributeWithRemainder(new Array(activeCount).fill(equalAmount), costValue);
+
+      activeParticipants.forEach((participant, index) => {
+        const amount = roundToTwoDecimals(distributed[index] ?? 0);
+        nextSplits[participant.id] = amount;
+        nextShares[participant.id] = 1;
+        nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+        nextCustomSplits[participant.id] = amount;
+        nextCustomShares[participant.id] = 1;
+        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
+      });
+    } else if (splitType === 'shares') {
+      const workingShares: { [key: number]: number } = {};
+      let totalShares = 0;
+
+      activeParticipants.forEach(participant => {
+        const rawShare = customSharesState[participant.id] || shares[participant.id] || 1;
+        const shareValue = Math.max(1, Math.round(rawShare));
+        workingShares[participant.id] = shareValue;
+        nextCustomShares[participant.id] = shareValue;
+        totalShares += shareValue;
+      });
+
+      if (totalShares === 0) {
+        activeParticipants.forEach(participant => {
+          workingShares[participant.id] = 1;
+          nextCustomShares[participant.id] = 1;
+        });
+      }
+
+      const shareAmounts = calculateAmountsFromShares(workingShares, costValue);
+
+      activeParticipants.forEach(participant => {
+        const amount = roundToTwoDecimals(shareAmounts[participant.id] ?? 0);
+        nextSplits[participant.id] = amount;
+        nextShares[participant.id] = workingShares[participant.id];
+        nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+        nextCustomSplits[participant.id] = amount;
+        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
+      });
+    } else if (splitType === 'percentage') {
+      let total = 0;
+      activeParticipants.forEach(participant => {
+        const value = Math.max(0, customPercentagesState[participant.id] ?? percentages[participant.id] ?? 0);
+        total += value;
+      });
+
+      if (total <= 0) {
+        const equalPercent = 100 / activeCount;
+        activeParticipants.forEach(participant => {
+          nextCustomPercentages[participant.id] = roundToTwoDecimals(equalPercent);
+        });
+        total = 100;
+      }
+
+      const normalized = activeParticipants.map(participant => {
+        const value = Math.max(0, nextCustomPercentages[participant.id] ?? 0);
+        return total > 0 ? (value / total) * 100 : 0;
+      });
+
+      const distributedPercentages = distributeWithRemainder(normalized, 100);
+      const percentageMap: { [key: number]: number } = {};
+
+      activeParticipants.forEach((participant, index) => {
+        const percentage = roundToTwoDecimals(distributedPercentages[index] ?? 0);
+        nextCustomPercentages[participant.id] = percentage;
+        percentageMap[participant.id] = percentage;
+      });
+
+      const amounts = calculateAmountsFromPercentages(percentageMap, costValue);
+
+      activeParticipants.forEach(participant => {
+        const amount = roundToTwoDecimals(amounts[participant.id] ?? 0);
+        nextSplits[participant.id] = amount;
+        nextPercentages[participant.id] = nextCustomPercentages[participant.id];
+        nextShares[participant.id] = 0;
+        nextCustomSplits[participant.id] = amount;
+        nextCustomShares[participant.id] = 0;
+      });
+    } else if (splitType === 'amount') {
+      const baseAmounts = activeParticipants.map(participant => {
+        const amount = Math.max(0, customSplitsState[participant.id] ?? splits[participant.id] ?? 0);
+        nextCustomSplits[participant.id] = amount;
+        return amount;
+      });
+
+      const totalBase = baseAmounts.reduce((sum, value) => sum + value, 0);
+      let scaled: number[];
+
+      if (totalBase <= 0) {
+        const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
+        scaled = new Array(activeCount).fill(equalAmount);
+      } else {
+        const scale = costValue > 0 ? costValue / totalBase : 0;
+        scaled = baseAmounts.map(amount => amount * scale);
+      }
+
+      const distributed = distributeWithRemainder(scaled, costValue);
+
+      activeParticipants.forEach((participant, index) => {
+        const amount = roundToTwoDecimals(distributed[index] ?? 0);
+        nextSplits[participant.id] = amount;
+        nextCustomSplits[participant.id] = amount;
+        nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
+        nextShares[participant.id] = 0;
+        nextCustomShares[participant.id] = 0;
       });
     }
-    
-    return amounts;
-  };
 
-  // Calculate amounts from percentages
-  const calculateAmountsFromPercentages = (percentages: { [key: number]: number }, cost: number): { [key: number]: number } => {
-    const amounts: { [key: number]: number } = {};
-    
-    Object.entries(percentages).forEach(([id, percentage]) => {
-      amounts[Number(id)] = roundToTwoDecimals((percentage / 100) * cost);
+    participants.forEach(participant => {
+      if (!inclusion[participant.id]) {
+        nextSplits[participant.id] = 0;
+        nextShares[participant.id] = 0;
+        nextPercentages[participant.id] = 0;
+        nextCustomSplits[participant.id] = 0;
+        nextCustomShares[participant.id] = 0;
+        nextCustomPercentages[participant.id] = 0;
+      }
     });
-    
-    return amounts;
+
+    setSplits(nextSplits);
+    setShares(nextShares);
+    setPercentages(nextPercentages);
+    setCustomSplits(nextCustomSplits);
+    setCustomShares(nextCustomShares);
+    setCustomPercentages(nextCustomPercentages);
   };
 
   const loadGroupData = useCallback(async () => {
@@ -185,6 +366,7 @@ const AddExpense: React.FC = () => {
       const initialCustomSplits: { [key: number]: number } = {};
       const initialCustomShares: { [key: number]: number } = {};
       const initialCustomPercentages: { [key: number]: number } = {};
+      const initialIncluded: { [key: number]: boolean } = {};
       
       response.participants.forEach((participant: any) => {
         initialSplits[participant.id] = equalAmount;
@@ -193,6 +375,7 @@ const AddExpense: React.FC = () => {
         initialCustomSplits[participant.id] = equalAmount;
         initialCustomShares[participant.id] = 1;
         initialCustomPercentages[participant.id] = 0;
+        initialIncluded[participant.id] = true;
       });
       
       setSplits(initialSplits);
@@ -201,6 +384,7 @@ const AddExpense: React.FC = () => {
       setCustomSplits(initialCustomSplits);
       setCustomShares(initialCustomShares);
       setCustomPercentages(initialCustomPercentages);
+      setIncludedParticipants(initialIncluded);
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);
@@ -215,14 +399,33 @@ const AddExpense: React.FC = () => {
     }
   }, [urlSlug, loadGroupData]);
 
+  useEffect(() => {
+    if (!participants.length) {
+      return;
+    }
+
+    setIncludedParticipants(prev => {
+      const next = { ...prev };
+      let changed = false;
+
+      participants.forEach(participant => {
+        if (next[participant.id] === undefined) {
+          next[participant.id] = true;
+          changed = true;
+        }
+      });
+
+      return changed ? next : prev;
+    });
+  }, [participants]);
+
   const handleInputChange = (field: string, value: string | number) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
 
-    // Use the new value for cost calculations, not the old formData.cost
-    const cost = field === 'cost' ? parseFloat(value as string) || 0 : parseFloat(formData.cost) || 0;
+    const cost = field === 'cost' ? parseFloat(String(value)) || 0 : parseFloat(formData.cost) || 0;
 
     setErrors(prev => {
       if (field === 'name' && typeof value === 'string') {
@@ -245,7 +448,7 @@ const AddExpense: React.FC = () => {
       }
 
       if (field === 'payer_id') {
-        const numericValue = typeof value === 'number' ? value : parseInt(value as string, 10);
+        const numericValue = typeof value === 'number' ? value : parseInt(String(value), 10);
         if (numericValue > 0 && prev.payer) {
           const next = { ...prev };
           delete next.payer;
@@ -257,233 +460,156 @@ const AddExpense: React.FC = () => {
       return prev;
     });
 
-    // Handle split type changes with seamless conversion
     if (field === 'split_type') {
       const newSplitType = value as string;
-      
-      if (newSplitType === 'equal') {
-        // Always show equal distribution, don't affect custom splits
-        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-        const newSplits: { [key: number]: number } = {};
-        participants.forEach(participant => {
-          newSplits[participant.id] = equalAmount;
+      const inclusion = includedParticipants;
+      const activeParticipants = participants.filter(participant => inclusion[participant.id]);
+
+      const updatedCustomSplits: { [key: number]: number } = { ...customSplits };
+      const updatedCustomShares: { [key: number]: number } = { ...customShares };
+      const updatedCustomPercentages: { [key: number]: number } = { ...customPercentages };
+
+      if (newSplitType === 'shares') {
+        const equalAmount = activeParticipants.length > 0 ? cost / activeParticipants.length : 0;
+        activeParticipants.forEach(participant => {
+          const amount = splits[participant.id] ?? 0;
+          updatedCustomShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
         });
-        setSplits(newSplits);
-      } else if (newSplitType === 'shares') {
-        // Restore custom shares or convert from current amounts
-        if (Object.keys(customShares).length > 0 && Object.values(customShares).some(v => v > 0)) {
-          setShares(customShares);
-          const newAmounts = calculateAmountsFromShares(customShares, cost);
-          setSplits(newAmounts);
-        } else {
-          // Convert current amounts to shares
-          const newShares: { [key: number]: number } = {};
-          const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-          participants.forEach(participant => {
-            const amount = splits[participant.id] || 0;
-            newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
-          });
-          setShares(newShares);
-          setCustomShares(newShares);
-          const newAmounts = calculateAmountsFromShares(newShares, cost);
-          setSplits(newAmounts);
-        }
       } else if (newSplitType === 'percentage') {
-        // Restore custom percentages or convert from current amounts
-        if (Object.keys(customPercentages).length > 0 && Object.values(customPercentages).some(v => v > 0)) {
-          setPercentages(customPercentages);
-          const newAmounts = calculateAmountsFromPercentages(customPercentages, cost);
-          setSplits(newAmounts);
-        } else {
-          // Convert current amounts to percentages
-          const newPercentages: { [key: number]: number } = {};
-          participants.forEach(participant => {
-            const amount = splits[participant.id] || 0;
-            newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-          });
-          setPercentages(newPercentages);
-          setCustomPercentages(newPercentages);
-          const newAmounts = calculateAmountsFromPercentages(newPercentages, cost);
-          setSplits(newAmounts);
-        }
-      } else if (newSplitType === 'amount') {
-        // Restore custom amounts or keep current amounts
-        if (Object.keys(customSplits).length > 0 && Object.values(customSplits).some(v => v > 0)) {
-          setSplits(customSplits);
-        } else {
-          // Keep current amounts but ensure they sum to cost
-          const currentTotal = Object.values(splits).reduce((sum, val) => sum + val, 0);
-          if (currentTotal > 0 && cost > 0) {
-            const multiplier = cost / currentTotal;
-            const amounts = participants.map(p => (splits[p.id] || 0) * multiplier);
-            const distributed = distributeWithRemainder(amounts, cost);
-            const newSplits: { [key: number]: number } = {};
-            participants.forEach((participant, index) => {
-              newSplits[participant.id] = distributed[index];
-            });
-            setSplits(newSplits);
-            setCustomSplits(newSplits);
-          }
-        }
-      }
-    }
-    
-    // Recalculate splits when cost changes
-    if (field === 'cost') {
-      if (formData.split_type === 'equal') {
-        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-        const newSplits: { [key: number]: number } = {};
-        participants.forEach(participant => {
-          newSplits[participant.id] = equalAmount;
+        activeParticipants.forEach(participant => {
+          const amount = splits[participant.id] ?? 0;
+          updatedCustomPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
         });
-        setSplits(newSplits);
-      } else if (formData.split_type === 'shares') {
-        const newAmounts = calculateAmountsFromShares(shares, cost);
-        setSplits(newAmounts);
-      } else if (formData.split_type === 'percentage') {
-        const newAmounts = calculateAmountsFromPercentages(percentages, cost);
-        setSplits(newAmounts);
-      } else if (formData.split_type === 'amount') {
-        // Scale custom amounts proportionally to match the new cost
-        const currentTotal = Object.values(customSplits).reduce((sum, val) => sum + val, 0);
-        if (currentTotal > 0 && cost > 0) {
-          const multiplier = cost / currentTotal;
-          const amounts = participants.map(p => (customSplits[p.id] || 0) * multiplier);
-          const distributed = distributeWithRemainder(amounts, cost);
-          const newSplits: { [key: number]: number } = {};
-          participants.forEach((participant, index) => {
-            newSplits[participant.id] = distributed[index];
-          });
-          setSplits(newSplits);
-          setCustomSplits(newSplits);
-        } else if (cost > 0) {
-          // If no existing amounts, distribute equally
-          const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-          const newSplits: { [key: number]: number } = {};
-          participants.forEach(participant => {
-            newSplits[participant.id] = equalAmount;
-          });
-          setSplits(newSplits);
-          setCustomSplits(newSplits);
-        }
+      } else if (newSplitType === 'amount') {
+        activeParticipants.forEach(participant => {
+          updatedCustomSplits[participant.id] = splits[participant.id] ?? 0;
+        });
       }
+
+      participants.forEach(participant => {
+        if (!inclusion[participant.id]) {
+          updatedCustomSplits[participant.id] = 0;
+          updatedCustomShares[participant.id] = 0;
+          updatedCustomPercentages[participant.id] = 0;
+        }
+      });
+
+      setCustomSplits(updatedCustomSplits);
+      setCustomShares(updatedCustomShares);
+      setCustomPercentages(updatedCustomPercentages);
+
+      redistributeSplits({
+        splitType: newSplitType,
+        inclusion,
+        customSplitsState: updatedCustomSplits,
+        customSharesState: updatedCustomShares,
+        customPercentagesState: updatedCustomPercentages,
+        costValue: cost,
+      });
+
+      return;
+    }
+
+    if (field === 'cost') {
+      redistributeSplits({ costValue: cost });
     }
   };
 
   const handleSplitChange = (participantId: number, amount: string) => {
-    const value = parseFloat(amount) || 0;
-    const cost = parseFloat(formData.cost) || 0;
-    
-    // Update the splits
-    setSplits(prev => ({
-      ...prev,
-      [participantId]: value
-    }));
-    
-    // Update custom splits
-    setCustomSplits(prev => ({
-      ...prev,
-      [participantId]: value
-    }));
-    
-    // Update shares and percentages to reflect the new amounts
-    if (cost > 0) {
-      // Convert amounts to shares
-      const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-      const newShares: { [key: number]: number } = {};
-      participants.forEach(participant => {
-        const amount = participant.id === participantId ? value : (splits[participant.id] || 0);
-        newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
-      });
-      setShares(newShares);
-      setCustomShares(newShares);
-      
-      // Convert amounts to percentages
-      const newPercentages: { [key: number]: number } = {};
-      participants.forEach(participant => {
-        const amount = participant.id === participantId ? value : (splits[participant.id] || 0);
-        newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-      });
-      setPercentages(newPercentages);
-      setCustomPercentages(newPercentages);
+    if (!includedParticipants[participantId]) {
+      return;
     }
+
+    const value = Math.max(0, parseFloat(amount) || 0);
+    const updatedCustomSplits = {
+      ...customSplits,
+      [participantId]: value
+    };
+
+    setCustomSplits(updatedCustomSplits);
+    redistributeSplits({ customSplitsState: updatedCustomSplits });
   };
 
   const handleShareChange = (participantId: number, share: string) => {
+    if (!includedParticipants[participantId]) {
+      return;
+    }
+
     const value = Math.max(1, Math.round(parseFloat(share) || 1));
-    const cost = parseFloat(formData.cost) || 0;
-    
-    // Update shares
-    setShares(prev => ({
-      ...prev,
+    const updatedCustomShares = {
+      ...customShares,
       [participantId]: value
-    }));
-    
-    // Update custom shares
-    setCustomShares(prev => ({
-      ...prev,
-      [participantId]: value
-    }));
-    
-    // Recalculate amounts from shares
-    const newShares = { ...shares, [participantId]: value };
-    const newAmounts = calculateAmountsFromShares(newShares, cost);
-    setSplits(newAmounts);
-    setCustomSplits(newAmounts);
-    
-    // Update percentages to reflect the new amounts
-    const newPercentages: { [key: number]: number } = {};
-    participants.forEach(participant => {
-      const amount = newAmounts[participant.id] || 0;
-      newPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-    });
-    setPercentages(newPercentages);
-    setCustomPercentages(newPercentages);
+    };
+
+    setCustomShares(updatedCustomShares);
+    redistributeSplits({ customSharesState: updatedCustomShares });
   };
 
   const handlePercentageChange = (participantId: number, percentage: string) => {
+    if (!includedParticipants[participantId]) {
+      return;
+    }
+
     const value = Math.max(0, Math.min(100, roundToTwoDecimals(parseFloat(percentage) || 0)));
-    const cost = parseFloat(formData.cost) || 0;
-    
-    // Update percentages
-    setPercentages(prev => ({
-      ...prev,
+    const updatedCustomPercentages = {
+      ...customPercentages,
       [participantId]: value
-    }));
-    
-    // Update custom percentages
-    setCustomPercentages(prev => ({
-      ...prev,
-      [participantId]: value
-    }));
-    
-    // Recalculate amounts from percentages
-    const newPercentages = { ...percentages, [participantId]: value };
-    const newAmounts = calculateAmountsFromPercentages(newPercentages, cost);
-    setSplits(newAmounts);
-    setCustomSplits(newAmounts);
-    
-    // Update shares to reflect the new amounts
-    const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-    const newShares: { [key: number]: number } = {};
-    participants.forEach(participant => {
-      const amount = newAmounts[participant.id] || 0;
-      newShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+    };
+
+    setCustomPercentages(updatedCustomPercentages);
+    redistributeSplits({ customPercentagesState: updatedCustomPercentages });
+  };
+
+  const handleParticipantToggle = (participantId: number, checked: boolean) => {
+    const currentlyIncluded = participants.filter(participant => includedParticipants[participant.id]);
+    if (!checked && currentlyIncluded.length <= 1) {
+      toast.error('At least one participant must be included in the expense.');
+      return;
+    }
+
+    const updatedInclusion = {
+      ...includedParticipants,
+      [participantId]: checked
+    };
+
+    const updatedCustomSplits = { ...customSplits };
+    const updatedCustomShares = { ...customShares };
+    const updatedCustomPercentages = { ...customPercentages };
+
+    if (!checked) {
+      updatedCustomSplits[participantId] = 0;
+      updatedCustomShares[participantId] = 0;
+      updatedCustomPercentages[participantId] = 0;
+    }
+
+    setIncludedParticipants(updatedInclusion);
+    setCustomSplits(updatedCustomSplits);
+    setCustomShares(updatedCustomShares);
+    setCustomPercentages(updatedCustomPercentages);
+
+    redistributeSplits({
+      inclusion: updatedInclusion,
+      customSplitsState: updatedCustomSplits,
+      customSharesState: updatedCustomShares,
+      customPercentagesState: updatedCustomPercentages,
     });
-    setShares(newShares);
-    setCustomShares(newShares);
   };
 
   const validateSplits = () => {
-    const totalCost = parseFloat(formData.cost) || 0;
-    const totalSplits = Object.values(splits).reduce((sum, amount) => sum + amount, 0);
-    
-    if (formData.split_type === 'percentage') {
-      const totalPercentage = Object.values(percentages).reduce((sum, pct) => sum + pct, 0);
-      return Math.abs(100 - totalPercentage) < 0.01; // Must sum to 100%
+    const activeParticipants = participants.filter(participant => includedParticipants[participant.id]);
+    if (!activeParticipants.length) {
+      return false;
     }
-    
-    return Math.abs(totalCost - totalSplits) < 0.01; // Allow small floating point differences
+
+    const totalCost = parseFloat(formData.cost) || 0;
+    const totalSplits = activeParticipants.reduce((sum, participant) => sum + (splits[participant.id] || 0), 0);
+
+    if (formData.split_type === 'percentage') {
+      const totalPercentage = activeParticipants.reduce((sum, participant) => sum + (percentages[participant.id] || 0), 0);
+      return Math.abs(100 - totalPercentage) < 0.01;
+    }
+
+    return Math.abs(totalCost - totalSplits) < 0.01;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -514,6 +640,12 @@ const AddExpense: React.FC = () => {
       return;
     }
 
+    const activeParticipants = participants.filter(participant => includedParticipants[participant.id]);
+    if (!activeParticipants.length) {
+      toast.error('Include at least one participant in the expense.');
+      return;
+    }
+
     if (!validateSplits()) {
       toast.error('Split amounts must equal the total cost');
       return;
@@ -522,46 +654,40 @@ const AddExpense: React.FC = () => {
     try {
       setSubmitting(true);
       setErrors({});
-      
+
       const expense: Expense = {
-        id: 0, // Will be set by backend
+        id: 0,
         name: formData.name,
         cost: parseFloat(formData.cost),
         emoji: formData.emoji,
         payer_id: formData.payer_id,
         split_type: formData.split_type,
-        split_ids: [], // Will be set by backend
+        split_ids: [],
         group_id: group!.id
       };
 
-      // Ensure all current group members are included in splits
-      const allSplits: { [key: number]: number } = { ...splits };
-      
-      // Add any missing participants
-      participants.forEach(participant => {
-        if (!(participant.id in allSplits)) {
-          allSplits[participant.id] = 0;
-        }
-      });
-      
-      // If equal split, recalculate for all participants
+      const costNumeric = parseFloat(formData.cost) || 0;
+      const allSplits: { [key: number]: number } = {};
+
       if (formData.split_type === 'equal') {
-        const cost = parseFloat(formData.cost) || 0;
-        const equalAmount = participants.length > 0 ? cost / participants.length : 0;
-        participants.forEach(participant => {
-          allSplits[participant.id] = equalAmount;
+        const equalAmount = activeParticipants.length > 0 ? costNumeric / activeParticipants.length : 0;
+        const distributed = distributeWithRemainder(new Array(activeParticipants.length).fill(equalAmount), costNumeric);
+        activeParticipants.forEach((participant, index) => {
+          allSplits[participant.id] = roundToTwoDecimals(distributed[index] ?? 0);
+        });
+      } else {
+        activeParticipants.forEach(participant => {
+          allSplits[participant.id] = roundToTwoDecimals(splits[participant.id] ?? 0);
         });
       }
-      
-      const splitArray: Split[] = Object.entries(allSplits)
-        .filter(([_, amount]) => formData.split_type === 'equal' || amount > 0)
-        .map(([participantId, amount]) => ({
-          split_id: 0, // Will be set by backend
-          group_id: group!.id,
-          expense_id: 0, // Will be set by backend
-          participant_id: parseInt(participantId),
-          split_amount: amount
-        }));
+
+      const splitArray: Split[] = activeParticipants.map(participant => ({
+        split_id: 0,
+        group_id: group!.id,
+        expense_id: 0,
+        participant_id: participant.id,
+        split_amount: allSplits[participant.id] ?? 0,
+      }));
 
       await createExpense({
         expense,
@@ -599,8 +725,11 @@ const AddExpense: React.FC = () => {
     return null;
   }
 
-  const totalAssigned = Object.values(splits).reduce((sum, amount) => sum + amount, 0);
+  const activeParticipants = participants.filter(participant => includedParticipants[participant.id]);
+  const totalAssigned = activeParticipants.reduce((sum, participant) => sum + (splits[participant.id] || 0), 0);
   const remainingAmount = (parseFloat(formData.cost) || 0) - totalAssigned;
+  const totalShares = activeParticipants.reduce((sum, participant) => sum + (shares[participant.id] || 0), 0);
+  const totalPercentage = activeParticipants.reduce((sum, participant) => sum + (percentages[participant.id] || 0), 0);
 
   return (
     <>
@@ -744,96 +873,119 @@ const AddExpense: React.FC = () => {
                   </div>
 
                   {/* Split Details */}
-                    {participants.map(participant => (
-                      <div key={participant.id} className="split-breakdown-participant-container">
-                        <div className="split-breakdown-details-container">
-                          <div className="checkbox">
-                            A
-                          </div>
-                          <div className="split-breakdown-participant-details">
-                            <p>
-                              {participant.name}
-                            </p>
-                            <p className="p2">{group.currency}{(splits[participant.id] ?? 0).toFixed(2)}</p>
-                          </div>
-                        </div>
+                    {participants.map(participant => {
+                      const isIncluded = includedParticipants[participant.id] ?? true;
+                      const rawSplit = splits[participant.id] ?? 0;
+                      const displayedSplit = isIncluded ? rawSplit : 0;
+                      const shareValue = shares[participant.id] ?? 1;
+                      const participantShare = isIncluded ? shareValue : 0;
+                      const percentageValue = percentages[participant.id] ?? 0;
+                      const participantPercentage = isIncluded ? percentageValue : 0;
 
-                        {/* Equal Input */}
+                      return (
+                        <div
+                          key={participant.id}
+                          className={`split-breakdown-participant-container${isIncluded ? '' : ' is-excluded'}`}
+                        >
+                          <div className="split-breakdown-details-container">
+                            <label className="split-breakdown-checkbox">
+                              <input
+                                type="checkbox"
+                                checked={isIncluded}
+                                onChange={(e) => handleParticipantToggle(participant.id, e.target.checked)}
+                                aria-label={`Include ${participant.name} in this expense`}
+                              />
+                              <span className="checkbox-indicator">
+                                {isIncluded && <FontAwesomeIcon icon={faCheck} />}
+                              </span>
+                            </label>
+                            <div className="split-breakdown-participant-details">
+                              <p className={isIncluded ? undefined : 'text-is-muted'}>
+                                {participant.name}
+                              </p>
+                              <p className={isIncluded ? 'p2' : 'p2 text-is-muted'}>
+                                {group.currency}{displayedSplit.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+
                           {formData.split_type === 'equal' && (
-                            <div className="split-breakdown-even-split-container">
+                            <div className={`split-breakdown-even-split-container${isIncluded ? '' : ' is-disabled'}`}>
                               <span>
-                                {group.currency}{(splits[participant.id] ?? 0).toFixed(2)}
+                                {group.currency}{displayedSplit.toFixed(2)}
                               </span>
                             </div>
                           )}
 
-                        {/* Amount Input */}
                           {formData.split_type === 'amount' && (
                             <div className="split-breakdown-amount-split-container">
-                              <p>
+                              <p className={isIncluded ? undefined : 'text-is-muted'}>
                                 {group.currency}
                               </p>
                               <input
                                 type="number"
-                                value={(splits[participant.id] ?? 0).toFixed(2)}
+                                value={displayedSplit.toFixed(2)}
                                 onChange={(e) => handleSplitChange(participant.id, e.target.value)}
                                 className="form-input"
                                 step="0.01"
                                 min="0"
+                                disabled={!isIncluded}
                               />
                             </div>
                           )}
-                      
-                        {/* Shares Input */}
+
                           {formData.split_type === 'shares' && (
                             <div className="share-adjust">
                               <button
                                 type="button"
                                 className="share-adjust__button"
                                 onClick={() => adjustShare(participant.id, -1)}
-                                disabled={(shares[participant.id] || 1) <= 1}
+                                disabled={!isIncluded || participantShare <= 1}
                                 aria-label={`Decrease shares for ${participant.name}`}
                               >
                                 <FontAwesomeIcon icon={faMinus} />
                               </button>
                               <input
                                 type="number"
-                                value={shares[participant.id] || 1}
+                                value={participantShare}
                                 onChange={(e) => handleShareChange(participant.id, e.target.value)}
                                 className="share-adjust__input"
                                 min="1"
                                 step="1"
                                 style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                disabled={!isIncluded}
                               />
                               <button
                                 type="button"
                                 className="share-adjust__button"
                                 onClick={() => adjustShare(participant.id, 1)}
+                                disabled={!isIncluded}
                                 aria-label={`Increase shares for ${participant.name}`}
                               >
                                 <FontAwesomeIcon icon={faPlus} />
                               </button>
                             </div>
                           )}
-                      
-                        {/* Percentage Input */}
+
                           {formData.split_type === 'percentage' && (
                             <div className="split-breakdown-amount-split-container">
-                                <input
-                                  type="number"
-                                  value={(percentages[participant.id] ?? 0).toFixed(2)}
-                                  onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
-                                  className="form-input right-align-text"
-                                  min="0"
-                                  max="99.99"
-                                  step="0.01"
-                                  style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
-                                />
-                                <p>%</p>
+                              <input
+                                type="number"
+                                value={participantPercentage.toFixed(2)}
+                                onChange={(e) => handlePercentageChange(participant.id, e.target.value)}
+                                className="form-input right-align-text"
+                                min="0"
+                                max="99.99"
+                                step="0.01"
+                                style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                                disabled={!isIncluded}
+                              />
+                              <p className={isIncluded ? undefined : 'text-is-muted'}>%</p>
                             </div>
                           )}
-                      </div>
-                    ))}
+                        </div>
+                      );
+                    })}
               
                   {/* Summary */}
                   
@@ -855,12 +1007,12 @@ const AddExpense: React.FC = () => {
               )}
               {formData.split_type === 'shares' && (
                 <div className="p2">
-                  Total Shares: {Object.values(shares).reduce((sum, share) => sum + share, 0)}
+                  Total Shares: {totalShares}
                 </div>
               )}
               {formData.split_type === 'percentage' && (
                 <div className="p2">
-                  Total Percentage: {Object.values(percentages).reduce((sum, pct) => sum + pct, 0).toFixed(2)}%
+                  Total Percentage: {totalPercentage.toFixed(2)}%
                 </div>
               )}
             </div>
