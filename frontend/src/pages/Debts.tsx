@@ -8,6 +8,7 @@ import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { ring } from 'ldrs'; ring.register();
 
 const formatAmount = (value: number): string => {
   if (!Number.isFinite(value)) {
@@ -148,10 +149,14 @@ const Debts: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading group data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -168,101 +173,108 @@ const Debts: React.FC = () => {
   return (
     <div className="page">
       <div className="body">
-      {/* Header */}
-        <Header />
+        {/* Header */}
+          <Header />
 
         {/* Debts List */}
-        <div className="content-section">
-          <h1>Debts</h1>
-        {orderedDebts.length > 0 && (
-          <div className="list">
-            
-            {orderedDebts.map((debt, index) => {
-              const status = getDebtStatus(debt);
-              const remainingAmount = debt.debt_amount - debt.paid_amount;
-              const isSettled = status === 'settled';
+          {orderedDebts.length > 0 && (
+            <div className="content-section">
+              <h1>Debts</h1>
+              <div className="list"> 
+                {orderedDebts.map((debt, index) => {
+                  const status = getDebtStatus(debt);
+                  const remainingAmount = debt.debt_amount - debt.paid_amount;
+                  const isSettled = status === 'settled';
 
-              return (
-                <div key={debt.debt_id || `debt-${index}`} className="expenses-container">
-                  <div className="expense">
-                    {isSettled ? (
-                      <>
-                        <p className="text-is-muted">
-                          {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{formatAmount(debt.debt_amount)}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p>
-                          <span className="is-bold">{getParticipantName(debt.debtor_id)}</span> owes <span className="is-bold">{getParticipantName(debt.lender_id)}</span> <span className="text-is-success">{group.currency}{formatAmount(remainingAmount)}</span>
-                        </p>
-                        {status === 'partial' && (
-                          <p className="text-sm text-gray-500">
-                            Paid so far: {group.currency}{formatAmount(debt.paid_amount)}
-                          </p>
-                        )}
-                      </>
-                    )}
- 
-                    {status === 'partial' && (
-                          <button
-                            type="button"
-                            onClick={() => {
-                          const amount = parseFloat(prompt(`Enter payment amount (max ${formatAmount(remainingAmount)}):`) || '0');
-                          if (!Number.isNaN(amount) && amount > 0 && amount <= remainingAmount) {
-                            handlePartialPayment(debt, debt.paid_amount + amount);
-                          }
-                        }}
-                        className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                        disabled={updating === debt.debt_id}
-                      >
-                        Add Payment
-                      </button>
-                    )}
-                    {isSettled ? (
-                      <span className="link" style={{ color: 'var(--color-muted)', cursor: 'default' }}>
-                        Settled
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => handleSettleDebt(debt)}
-                        disabled={updating === debt.debt_id}
-                      >
-                        Settle
-                      </button>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-        </div>
+                    return (
+                      <div key={debt.debt_id || `debt-${index}`} className="expenses-container">
+                        <div className="expense">
+                          {isSettled ? (
+                            <>
+                              <p className="text-is-muted">
+                                {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{formatAmount(debt.debt_amount)}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <p>
+                                <span className="is-bold">{getParticipantName(debt.debtor_id)}</span> owes <span className="is-bold">{getParticipantName(debt.lender_id)}</span> <span className="text-is-success">{group.currency}{formatAmount(remainingAmount)}</span>
+                              </p>
+                              {status === 'partial' && (
+                                <p className="text-sm text-gray-500">
+                                  Paid so far: {group.currency}{formatAmount(debt.paid_amount)}
+                                </p>
+                              )}
+                            </>
+                          )}
+                          {status === 'partial' && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const amount = parseFloat(prompt(`Enter payment amount (max ${formatAmount(remainingAmount)}):`) || '0');
+                                if (!Number.isNaN(amount) && amount > 0 && amount <= remainingAmount) {
+                                handlePartialPayment(debt, debt.paid_amount + amount);
+                                }
+                              }}
+                              className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                              disabled={updating === debt.debt_id}
+                            >
+                              Add Payment
+                            </button>
+                          )}
+                          {isSettled ? (
+                            <span className="link" style={{ color: 'var(--color-muted)', cursor: 'default' }}>
+                              Settled
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              className="link"
+                              onClick={() => handleSettleDebt(debt)}
+                              disabled={updating === debt.debt_id}
+                            >
+                              Settle
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+          )}
+        
 
         {/* No Debts */}
-        <div className="content-section">
-        {debts.length === 0 && (
-          <div className="content-container text-is-centered">
-            <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-            <div className="v-flex gap-8px">
-              <h2>No debts</h2>
-              <p>Add an expense to track your group debts.</p>
+          {debts.length === 0 && (
+            <div className="content-section">
+              <div className="content-container text-is-centered">
+                <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
+                <div className="v-flex gap-8px">
+                  <h2>No debts</h2>
+                  <p>Add an expense to track your group debts.</p>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-              className="btn"
-             >
-              <span>Add an expense</span>
-              <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
-            </button>
+          )}
+
+        {/* Nav */}
+          <div className="v-flex">
+            {debts.length === 0 && (
+              <div className="floating-cta-container">
+                <button 
+                  className="btn fab-shadow"
+                  onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                >
+                  <span>Add a new expense</span>
+                  <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+                </button>
+              </div>
+            )}
+            <NavBar />
           </div>
-        )}
+
       </div>
-            {/* Nav */}
-      <NavBar />
-    </div>
     </div>
   );
 };

@@ -9,6 +9,7 @@ import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
+import { ring } from 'ldrs'; ring.register();
 
 const formatAmount = (value: number): string => {
   if (!Number.isFinite(value)) {
@@ -90,10 +91,14 @@ const GroupDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading group data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
