@@ -1,0 +1,22 @@
+.sa-wrap { margin: 12px auto; width: 100%; }
+
+.sa-svg { background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(17,24,39,0.08); width:100%; height:auto; }
+
+.sa-node-pill {
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:2px 6px;
+  border-radius:999px;
+  background:var(--color-primary);
+  color:#fff;
+  font-weight:700;
+  font-size:14px;
+  pointer-events:none;
+  box-shadow:0 1px 3px rgba(15,23,42,0.15);
+  white-space:nowrap;
+}
+
+.sa-edge { opacity:0.9; }

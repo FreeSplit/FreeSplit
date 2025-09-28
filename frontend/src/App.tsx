@@ -13,6 +13,7 @@ import './styles/tokens.css';
 import './styles/components.css';
 import './styles/participants-form.css';
 import './styles/split-breakdown.css';
+import './styles/simplify-animation.css';
 
 function App() {
   return (
