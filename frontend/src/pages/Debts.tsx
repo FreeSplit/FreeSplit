@@ -60,26 +60,6 @@ const Debts: React.FC = () => {
     }
   };
 
-  const handlePartialPayment = async (debt: DebtPageData, amount: number) => {
-    try {
-      setUpdating(debt.id);
-      await updateDebtPaidAmount({
-        debt_id: debt.id,
-        paid_amount: amount
-      });
-      
-      // Reload debts to get updated state
-      await loadDebtsData();
-      toast.success('Payment updated successfully!');
-    } catch (error: any) {
-      // Display the specific error message from the backend
-      const errorMessage = error.message || 'Failed to update payment';
-      toast.error(errorMessage);
-      console.error('Error updating payment:', error);
-    } finally {
-      setUpdating(null);
-    }
-  };
 
   // All debts returned from backend are current (unsettled) debts
   // No need for status checking since settled debts are not returned
@@ -117,19 +97,6 @@ const Debts: React.FC = () => {
                     </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const amount = parseFloat(prompt(`Enter payment amount (max ${debt.debt_amount.toFixed(2)}):`) || '0');
-                        if (!Number.isNaN(amount) && amount > 0 && amount <= debt.debt_amount) {
-                          handlePartialPayment(debt, amount);
-                        }
-                      }}
-                      className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                      disabled={updating === debt.id}
-                    >
-                      Add Payment
-                    </button>
                     <button
                       type="button"
                       className="link"
