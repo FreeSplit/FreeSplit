@@ -102,6 +102,13 @@ func main() {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
+		} else if strings.Contains(r.URL.Path, "/debts-page-data") {
+			switch r.Method {
+			case "GET":
+				getDebtsPageData(w, r, debtService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
 		} else if strings.Contains(r.URL.Path, "/payments") {
 			switch r.Method {
 			case "GET":
@@ -586,21 +593,21 @@ func getPayments(w http.ResponseWriter, r *http.Request, debtService services.De
 }
 
 func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
-	// Extract group ID from URL path
+	// Extract group URL slug from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
 		http.Error(w, "Invalid URL", http.StatusBadRequest)
 		return
 	}
 
-	groupID, err := strconv.Atoi(pathParts[3])
-	if err != nil {
-		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+	urlSlug := pathParts[3]
+	if urlSlug == "" {
+		http.Error(w, "Invalid group URL slug", http.StatusBadRequest)
 		return
 	}
 
 	serviceReq := &services.GetDebtsRequest{
-		GroupId: int32(groupID),
+		UrlSlug: urlSlug,
 	}
 
 	resp, err := debtService.GetDebts(context.TODO(), serviceReq)
@@ -612,6 +619,35 @@ func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtS
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp.Debts)
+}
+
+func getDebtsPageData(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+	// Extract group URL slug from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	urlSlug := pathParts[3]
+	if urlSlug == "" {
+		http.Error(w, "Invalid group URL slug", http.StatusBadRequest)
+		return
+	}
+
+	serviceReq := &services.GetDebtsRequest{
+		UrlSlug: urlSlug,
+	}
+
+	resp, err := debtService.GetDebtsPageData(context.TODO(), serviceReq)
+	if err != nil {
+		log.Printf("Error getting debts page data: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {

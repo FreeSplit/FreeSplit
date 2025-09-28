@@ -103,11 +103,26 @@ type DeleteExpenseRequest struct {
 
 // Request and Response types for Debt operations
 type GetDebtsRequest struct {
-	GroupId int32 `json:"group_id"`
+	GroupId int32  `json:"group_id,omitempty"`
+	UrlSlug string `json:"url_slug,omitempty"`
 }
 
 type GetDebtsResponse struct {
 	Debts []*Debt `json:"debts"`
+}
+
+// Optimized debt data for the debts page
+type DebtPageData struct {
+	Id         int32   `json:"id"`
+	DebtAmount float64 `json:"debt_amount"`
+	DebtorName string  `json:"debtor_name"`
+	LenderName string  `json:"lender_name"`
+	Currency   string  `json:"currency"`
+}
+
+type GetDebtsPageDataResponse struct {
+	Debts    []*DebtPageData `json:"debts"`
+	Currency string          `json:"currency"`
 }
 
 type UpdateDebtPaidAmountRequest struct {
@@ -167,7 +182,6 @@ type Debt struct {
 	LenderId   int32   `json:"lender_id"`
 	DebtorId   int32   `json:"debtor_id"`
 	DebtAmount float64 `json:"debt_amount"`
-	PaidAmount float64 `json:"paid_amount"`
 }
 
 type Payment struct {

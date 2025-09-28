@@ -22,12 +22,31 @@ func NewDebtService(db *gorm.DB) DebtService {
 }
 
 // GetDebts retrieves all unpaid debts for a specific group from the database.
-// Input: GetDebtsRequest containing GroupId
+// Input: GetDebtsRequest containing either GroupId or UrlSlug
 // Output: GetDebtsResponse with list of debts where debt_amount > paid_amount
 // Description: Fetches all outstanding debts for a group, excluding fully paid debts
 func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error) {
+	var groupID uint
+
+	// Handle both GroupId and UrlSlug for backward compatibility
+	if req.UrlSlug != "" {
+		// Look up group by URL slug
+		var group database.Group
+		if err := s.db.Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, fmt.Errorf("group not found")
+			}
+			return nil, fmt.Errorf("failed to get group: %v", err)
+		}
+		groupID = group.ID
+	} else if req.GroupId > 0 {
+		groupID = uint(req.GroupId)
+	} else {
+		return nil, fmt.Errorf("either group_id or url_slug must be provided")
+	}
+
 	var debts []database.Debt
-	if err := s.db.Where("group_id = ?", req.GroupId).Find(&debts).Error; err != nil {
+	if err := s.db.Where("group_id = ?", groupID).Find(&debts).Error; err != nil {
 		return nil, fmt.Errorf("failed to get debts: %v", err)
 	}
 
@@ -41,10 +60,74 @@ func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetD
 	}, nil
 }
 
-// UpdateDebtPaidAmount records a payment for a specific debt and returns updated debt information.
+// GetDebtsPageData retrieves optimized debt data for the debts page with resolved names and currency.
+// Input: GetDebtsRequest containing either GroupId or UrlSlug
+// Output: GetDebtsPageDataResponse with resolved debt data
+// Description: Single query that joins debts with participants and group to get all needed data
+func (s *debtService) GetDebtsPageData(ctx context.Context, req *GetDebtsRequest) (*GetDebtsPageDataResponse, error) {
+	var groupID uint
+	var currency string
+
+	// Handle both GroupId and UrlSlug for backward compatibility
+	if req.UrlSlug != "" {
+		// Look up group by URL slug
+		var group database.Group
+		if err := s.db.Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				return nil, fmt.Errorf("group not found")
+			}
+			return nil, fmt.Errorf("failed to get group: %v", err)
+		}
+		groupID = group.ID
+		currency = group.Currency
+	} else if req.GroupId > 0 {
+		groupID = uint(req.GroupId)
+		// Get currency for the group
+		var group database.Group
+		if err := s.db.Where("id = ?", groupID).First(&group).Error; err != nil {
+			return nil, fmt.Errorf("failed to get group: %v", err)
+		}
+		currency = group.Currency
+	} else {
+		return nil, fmt.Errorf("either group_id or url_slug must be provided")
+	}
+
+	// Single optimized query that joins debts with participants and gets all needed data
+	var debtPageData []DebtPageData
+	err := s.db.Table("debts").
+		Select(`
+			debts.id,
+			debts.debt_amount,
+			debtor.name as debtor_name,
+			lender.name as lender_name,
+			groups.currency
+		`).
+		Joins("JOIN participants as debtor ON debts.debtor_id = debtor.id").
+		Joins("JOIN participants as lender ON debts.lender_id = lender.id").
+		Joins("JOIN groups ON debts.group_id = groups.id").
+		Where("debts.group_id = ?", groupID).
+		Scan(&debtPageData).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get debt page data: %v", err)
+	}
+
+	// Convert to response format
+	responseDebts := make([]*DebtPageData, len(debtPageData))
+	for i, debt := range debtPageData {
+		responseDebts[i] = &debt
+	}
+
+	return &GetDebtsPageDataResponse{
+		Debts:    responseDebts,
+		Currency: currency,
+	}, nil
+}
+
+// UpdateDebtPaidAmount records a payment and recalculates all debts for the group.
 // Input: UpdateDebtPaidAmountRequest with DebtId and PaidAmount
 // Output: UpdateDebtPaidAmountResponse with updated debt information
-// Description: Records payment in history and returns current debt with net amount calculated
+// Description: Records payment in history, recalculates debts, and returns updated debt
 func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error) {
 	// Validate input
 	if req.DebtId <= 0 {
@@ -68,6 +151,14 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 		return nil, fmt.Errorf("paid amount (%.2f) cannot exceed debt amount (%.2f)", req.PaidAmount, debt.DebtAmount)
 	}
 
+	// Start transaction
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
 	// Record the payment in the payments table
 	payment := database.Payment{
 		GroupID: debt.GroupID,
@@ -75,25 +166,37 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 		PayeeID: debt.LenderID,
 		Amount:  req.PaidAmount,
 	}
-	if err := s.db.Create(&payment).Error; err != nil {
+	if err := tx.Create(&payment).Error; err != nil {
+		tx.Rollback()
 		return nil, fmt.Errorf("failed to record payment: %v", err)
 	}
 
-	// Calculate net amount (debt_amount - total_payments)
-	var totalPaid float64
-	s.db.Model(&database.Payment{}).
-		Where("group_id = ? AND payer_id = ? AND payee_id = ?", debt.GroupID, debt.DebtorID, debt.LenderID).
-		Select("COALESCE(SUM(amount), 0)").Scan(&totalPaid)
-
-	// Create response with net amount
-	responseDebt := &Debt{
-		Id:         int32(debt.ID),
-		GroupId:    int32(debt.GroupID),
-		LenderId:   int32(debt.LenderID),
-		DebtorId:   int32(debt.DebtorID),
-		DebtAmount: debt.DebtAmount,
-		PaidAmount: totalPaid,
+	// Recalculate and update all debts for the group
+	if err := s.updateDebts(tx, debt.GroupID); err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to recalculate debts: %v", err)
 	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	// Get the updated debt (it may have been modified or removed during recalculation)
+	var updatedDebt database.Debt
+	err := s.db.Where("group_id = ? AND lender_id = ? AND debtor_id = ?", debt.GroupID, debt.LenderID, debt.DebtorID).First(&updatedDebt).Error
+	if err != nil {
+		if err == gorm.ErrRecordNotFound {
+			// Debt was fully settled and removed
+			return &UpdateDebtPaidAmountResponse{
+				Debt: nil,
+			}, nil
+		}
+		return nil, fmt.Errorf("failed to get updated debt: %v", err)
+	}
+
+	// Create response with updated debt
+	responseDebt := DebtFromDB(&updatedDebt)
 
 	return &UpdateDebtPaidAmountResponse{
 		Debt: responseDebt,
@@ -125,4 +228,30 @@ func (s *debtService) GetPayments(ctx context.Context, req *GetPaymentsRequest) 
 	return &GetPaymentsResponse{
 		Payments: responsePayments,
 	}, nil
+}
+
+// updateDebts recalculates and updates debts in the database after payments
+// Input: gorm.DB transaction and groupID
+// Output: error if debt calculation fails
+// Description: Calculates new debts using the improved algorithm and updates database
+func (s *debtService) updateDebts(tx *gorm.DB, groupID uint) error {
+	// Calculate new debts using the improved algorithm
+	newDebts, err := CalculateNetDebts(tx, groupID)
+	if err != nil {
+		return err
+	}
+
+	// Clear existing debts
+	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
+		return err
+	}
+
+	// Create new debts
+	for _, debt := range newDebts {
+		if err := tx.Create(&debt).Error; err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

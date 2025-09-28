@@ -92,7 +92,20 @@ export interface Debt {
   lender_id: number;
   debtor_id: number;
   debt_amount: number;
-  paid_amount: number;
+}
+
+// Optimized debt data for the debts page
+export interface DebtPageData {
+  id: number;
+  debt_amount: number;
+  debtor_name: string;
+  lender_name: string;
+  currency: string;
+}
+
+export interface DebtsPageResponse {
+  debts: DebtPageData[];
+  currency: string;
 }
 
 // Group API
@@ -226,33 +239,29 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
 
 
 // Debt API
-export const getDebts = async (groupId: number): Promise<Debt[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/debts`);
+export const getDebts = async (urlSlug: string): Promise<Debt[]> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts`);
   console.log('Getting debts:', response.data);
   
-  // Get payments to calculate net amounts
-  const paymentsResponse = await axios.get(`${API_BASE_URL}/api/group/${groupId}/payments`);
-  const payments = paymentsResponse.data;
-  
   // Transform the response to match the Debt interface
-  return response.data.map((debt: any) => {
-    // Calculate total payments for this debt pair
-    const totalPaid = payments
-      .filter((payment: any) => 
-        payment.payer_id === debt.debtor_id && 
-        payment.payee_id === debt.lender_id
-      )
-      .reduce((sum: number, payment: any) => sum + payment.amount, 0);
-    
-    return {
-      debt_id: debt.id,
-      group_id: debt.group_id,
-      lender_id: debt.lender_id,
-      debtor_id: debt.debtor_id,
-      debt_amount: debt.debt_amount,
-      paid_amount: totalPaid
-    };
-  });
+  return response.data.map((debt: any) => ({
+    debt_id: debt.id,
+    group_id: debt.group_id,
+    lender_id: debt.lender_id,
+    debtor_id: debt.debtor_id,
+    debt_amount: debt.debt_amount
+  }));
+};
+
+// Optimized API for debts page - gets all data in one call
+export const getDebtsPageData = async (urlSlug: string): Promise<DebtsPageResponse> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts-page-data`);
+  console.log('Getting debts page data:', response.data);
+  
+  return {
+    debts: response.data.debts,
+    currency: response.data.currency
+  };
 };
 
 export const updateDebtPaidAmount = async (data: {

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Check } from 'lucide-react';
-import { getGroup, getDebts, updateDebtPaidAmount } from '../services/api';
-import { Group, Debt, Participant } from '../services/api';
+import { getDebtsPageData, updateDebtPaidAmount } from '../services/api';
+import { DebtPageData } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -12,25 +12,22 @@ import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
-  const [group, setGroup] = useState<Group | null>(null);
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [debts, setDebts] = useState<DebtPageData[]>([]);
+  const [currency, setCurrency] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
 
-  const loadGroupData = useCallback(async () => {
+  const loadDebtsData = useCallback(async () => {
     try {
       setLoading(true);
-      const groupResponse = await getGroup(urlSlug!);
-      const debtsResponse = await getDebts(groupResponse.group.id);
-
-      setGroup(groupResponse.group);
-      setParticipants(groupResponse.participants);
-      setDebts(debtsResponse);
+      const response = await getDebtsPageData(urlSlug!);
+      
+      setDebts(response.debts);
+      setCurrency(response.currency);
       
     } catch (error) {
-      toast.error('Failed to load group data');
-      console.error('Error loading group data:', error);
+      toast.error('Failed to load debts data');
+      console.error('Error loading debts data:', error);
     } finally {
       setLoading(false);
     }
@@ -38,30 +35,20 @@ const Debts: React.FC = () => {
 
   useEffect(() => {
     if (urlSlug) {
-      loadGroupData();
+      loadDebtsData();
     }
-  }, [urlSlug, loadGroupData]);
+  }, [urlSlug, loadDebtsData]);
 
-  const getParticipantName = (participantId: number) => {
-    const participant = participants.find(p => p.id === participantId);
-    return participant?.name || 'Unknown';
-  };
-
-  const handleSettleDebt = async (debt: Debt) => {
+  const handleSettleDebt = async (debt: DebtPageData) => {
     try {
-      setUpdating(debt.debt_id);
+      setUpdating(debt.id);
       await updateDebtPaidAmount({
-        debt_id: debt.debt_id,
+        debt_id: debt.id,
         paid_amount: debt.debt_amount
       });
       
-      setDebts(prev => 
-        prev.map(d => 
-          d.debt_id === debt.debt_id 
-            ? { ...d, paid_amount: debt.debt_amount }
-            : d
-        )
-      );
+      // Reload debts to get updated state
+      await loadDebtsData();
       toast.success('Debt settled successfully!');
     } catch (error: any) {
       // Display the specific error message from the backend
@@ -73,21 +60,16 @@ const Debts: React.FC = () => {
     }
   };
 
-  const handlePartialPayment = async (debt: Debt, amount: number) => {
+  const handlePartialPayment = async (debt: DebtPageData, amount: number) => {
     try {
-      setUpdating(debt.debt_id);
+      setUpdating(debt.id);
       await updateDebtPaidAmount({
-        debt_id: debt.debt_id,
+        debt_id: debt.id,
         paid_amount: amount
       });
       
-      setDebts(prev => 
-        prev.map(d => 
-          d.debt_id === debt.debt_id 
-            ? { ...d, paid_amount: amount }
-            : d
-        )
-      );
+      // Reload debts to get updated state
+      await loadDebtsData();
       toast.success('Payment updated successfully!');
     } catch (error: any) {
       // Display the specific error message from the backend
@@ -99,61 +81,19 @@ const Debts: React.FC = () => {
     }
   };
 
-  const getDebtStatus = (debt: Debt) => {
-    if (debt.paid_amount >= debt.debt_amount) {
-      return 'settled';
-    } else if (debt.paid_amount > 0) {
-      return 'partial';
-    }
-    return 'pending';
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'settled':
-        return 'text-green-600 bg-green-100';
-      case 'partial':
-        return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-red-600 bg-red-100';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'settled':
-        return 'Settled';
-      case 'partial':
-        return 'Partial';
-      default:
-        return 'Pending';
-    }
-  };
-
-  useEffect(() => {
-    if (!loading && !group && urlSlug) {
-      navigate(`/group/${urlSlug}`);
-    }
-  }, [loading, group, urlSlug, navigate]);
+  // All debts returned from backend are current (unsettled) debts
+  // No need for status checking since settled debts are not returned
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+          <p className="text-gray-600">Loading debts data...</p>
         </div>
       </div>
     );
   }
-
-  if (!group) {
-    return null;
-  }
-
-  const settledDebts = debts.filter(debt => getDebtStatus(debt) === 'settled');
-  const pendingDebts = debts.filter(debt => getDebtStatus(debt) !== 'settled');
-  const orderedDebts = [...pendingDebts, ...settledDebts];
 
   return (
     <div className="page">
@@ -166,65 +106,38 @@ const Debts: React.FC = () => {
         <h1>Debts</h1>
 
         {/* Debts List */}
-        {orderedDebts.length > 0 && (
+        {debts.length > 0 && (
           <div className="expenses-container">
-            {orderedDebts.map((debt, index) => {
-              const status = getDebtStatus(debt);
-              const remainingAmount = debt.debt_amount - debt.paid_amount;
-              const isSettled = status === 'settled';
-
+            {debts.map((debt, index) => {
               return (
-                <div key={debt.debt_id || `debt-${index}`} className="expense">
+                <div key={debt.id || `debt-${index}`} className="expense">
                   <div className="expense-details">
-                    {isSettled ? (
-                      <>
-                        <p className="text-is-muted">
-                          {getParticipantName(debt.debtor_id)} paid {getParticipantName(debt.lender_id)} {group.currency}{debt.debt_amount.toFixed(2)}
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p>
-                          {getParticipantName(debt.debtor_id)} owes {getParticipantName(debt.lender_id)} {group.currency}{remainingAmount.toFixed(2)}
-                        </p>
-                        {status === 'partial' && (
-                          <p className="text-sm text-gray-500">
-                            Paid so far: {group.currency}{debt.paid_amount.toFixed(2)}
-                          </p>
-                        )}
-                      </>
-                    )}
+                    <p>
+                      {debt.debtor_name} owes {debt.lender_name} {currency}{debt.debt_amount.toFixed(2)}
+                    </p>
                   </div>
                   <div className="flex items-center space-x-2">
-                    {status === 'partial' && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const amount = parseFloat(prompt(`Enter payment amount (max ${remainingAmount.toFixed(2)}):`) || '0');
-                          if (!Number.isNaN(amount) && amount > 0 && amount <= remainingAmount) {
-                            handlePartialPayment(debt, debt.paid_amount + amount);
-                          }
-                        }}
-                        className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
-                        disabled={updating === debt.debt_id}
-                      >
-                        Add Payment
-                      </button>
-                    )}
-                    {isSettled ? (
-                      <span className="link" style={{ color: 'var(--color-muted)', cursor: 'default' }}>
-                        Settled
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="link"
-                        onClick={() => handleSettleDebt(debt)}
-                        disabled={updating === debt.debt_id}
-                      >
-                        Settle
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const amount = parseFloat(prompt(`Enter payment amount (max ${debt.debt_amount.toFixed(2)}):`) || '0');
+                        if (!Number.isNaN(amount) && amount > 0 && amount <= debt.debt_amount) {
+                          handlePartialPayment(debt, amount);
+                        }
+                      }}
+                      className="px-4 py-2 text-sm bg-yellow-600 text-white rounded-lg hover:bg-yellow-700"
+                      disabled={updating === debt.id}
+                    >
+                      Add Payment
+                    </button>
+                    <button
+                      type="button"
+                      className="link"
+                      onClick={() => handleSettleDebt(debt)}
+                      disabled={updating === debt.id}
+                    >
+                      Settle
+                    </button>
                   </div>
                 </div>
               );
