@@ -62,17 +62,13 @@ type Split struct {
 
 // Debt represents simplified debts between participants
 type Debt struct {
-	ID         uint        `gorm:"primaryKey" json:"id"`
-	GroupID    uint        `gorm:"not null" json:"group_id"`
-	Group      Group       `gorm:"foreignKey:GroupID" json:"group"`
-	LenderID   uint        `gorm:"not null" json:"lender_id"`
-	Lender     Participant `gorm:"foreignKey:LenderID" json:"lender"`
-	DebtorID   uint        `gorm:"not null" json:"debtor_id"`
-	Debtor     Participant `gorm:"foreignKey:DebtorID" json:"debtor"`
-	DebtAmount float64     `gorm:"type:decimal(10,2);not null" json:"debt_amount"`
-	PaidAmount float64     `gorm:"type:decimal(10,2);default:0" json:"paid_amount"`
-	CreatedAt  time.Time   `json:"created_at"`
-	UpdatedAt  time.Time   `json:"updated_at"`
+	ID         uint      `gorm:"primaryKey" json:"id"`
+	GroupID    uint      `gorm:"not null" json:"group_id"`
+	LenderID   uint      `gorm:"not null" json:"lender_id"`
+	DebtorID   uint      `gorm:"not null" json:"debtor_id"`
+	DebtAmount float64   `gorm:"type:decimal(10,2);not null" json:"debt_amount"`
+	CreatedAt  time.Time `json:"created_at"`
+	UpdatedAt  time.Time `json:"updated_at"`
 }
 
 // Migrate runs database migrations

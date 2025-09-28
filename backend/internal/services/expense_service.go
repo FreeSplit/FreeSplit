@@ -298,23 +298,6 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		return err
 	}
 
-	// Calculate total paid amounts per participant pair (regardless of current debt structure)
-	paidAmounts := make(map[string]float64) // key: "debtorID-lenderID", value: total paid amount
-	for _, debt := range existingDebts {
-		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
-		paidAmounts[key] += debt.PaidAmount
-	}
-
-	// Subtract paid amounts from balances (reduce what debtors owe)
-	for key, paidAmount := range paidAmounts {
-		var debtorID, lenderID uint
-		fmt.Sscanf(key, "%d-%d", &debtorID, &lenderID)
-		// The debtor has paid some amount, so reduce their debt
-		balances[debtorID] += paidAmount
-		// The lender has received some payment, so reduce what they're owed
-		balances[lenderID] -= paidAmount
-	}
-
 	// Clear existing debts for this group AFTER factoring in paid amounts
 	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
 		return err
@@ -359,16 +342,11 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 
 		// Create debt record
-		// Check if there was a previous debt between these participants with paid amount
-		key := fmt.Sprintf("%d-%d", debtor.ID, creditor.ID)
-		totalPaidAmount := paidAmounts[key]
-
 		debt := database.Debt{
 			GroupID:    groupID,
 			LenderID:   creditor.ID,
 			DebtorID:   debtor.ID,
 			DebtAmount: settleAmount,
-			PaidAmount: totalPaidAmount,
 		}
 
 		if err := tx.Create(&debt).Error; err != nil {
@@ -402,13 +380,6 @@ func (s *expenseService) updateDebts(tx *gorm.DB, groupID uint) error {
 		return err
 	}
 
-	// Create a map of paid amounts by participant pair
-	paidAmounts := make(map[string]float64)
-	for _, debt := range existingDebts {
-		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
-		paidAmounts[key] = debt.PaidAmount
-	}
-
 	// Calculate new debts using the improved algorithm
 	newDebts, err := CalculateNetDebts(tx, groupID)
 	if err != nil {
@@ -420,12 +391,8 @@ func (s *expenseService) updateDebts(tx *gorm.DB, groupID uint) error {
 		return err
 	}
 
-	// Create new debts with preserved paid amounts
+	// Create new debts
 	for _, debt := range newDebts {
-		key := fmt.Sprintf("%d-%d", debt.DebtorID, debt.LenderID)
-		if paidAmount, exists := paidAmounts[key]; exists {
-			debt.PaidAmount = paidAmount
-		}
 		if err := tx.Create(&debt).Error; err != nil {
 			return err
 		}

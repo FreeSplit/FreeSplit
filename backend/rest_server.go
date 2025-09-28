@@ -102,6 +102,13 @@ func main() {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
+		} else if strings.Contains(r.URL.Path, "/payments") {
+			switch r.Method {
+			case "GET":
+				getPayments(w, r, debtService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
 		} else {
 			// Basic group operations (GET by URL slug, PUT for updates)
 			switch r.Method {
@@ -552,6 +559,32 @@ func deleteExpense(w http.ResponseWriter, r *http.Request, expenseService servic
 }
 
 // Debt handlers
+func getPayments(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+	// Extract group ID from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	groupID, err := strconv.Atoi(pathParts[3])
+	if err != nil {
+		http.Error(w, "Invalid group ID", http.StatusBadRequest)
+		return
+	}
+
+	// Get payments using service
+	req := &services.GetPaymentsRequest{GroupId: int32(groupID)}
+	response, err := debtService.GetPayments(r.Context(), req)
+	if err != nil {
+		http.Error(w, "Failed to get payments", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response.Payments)
+}
+
 func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
 	// Extract group ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")

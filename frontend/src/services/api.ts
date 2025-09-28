@@ -230,15 +230,29 @@ export const getDebts = async (groupId: number): Promise<Debt[]> => {
   const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/debts`);
   console.log('Getting debts:', response.data);
   
+  // Get payments to calculate net amounts
+  const paymentsResponse = await axios.get(`${API_BASE_URL}/api/group/${groupId}/payments`);
+  const payments = paymentsResponse.data;
+  
   // Transform the response to match the Debt interface
-  return response.data.map((debt: any) => ({
-    debt_id: debt.id,
-    group_id: debt.group_id,
-    lender_id: debt.lender_id,
-    debtor_id: debt.debtor_id,
-    debt_amount: debt.debt_amount,
-    paid_amount: debt.paid_amount
-  }));
+  return response.data.map((debt: any) => {
+    // Calculate total payments for this debt pair
+    const totalPaid = payments
+      .filter((payment: any) => 
+        payment.payer_id === debt.debtor_id && 
+        payment.payee_id === debt.lender_id
+      )
+      .reduce((sum: number, payment: any) => sum + payment.amount, 0);
+    
+    return {
+      debt_id: debt.id,
+      group_id: debt.group_id,
+      lender_id: debt.lender_id,
+      debtor_id: debt.debtor_id,
+      debt_amount: debt.debt_amount,
+      paid_amount: totalPaid
+    };
+  });
 };
 
 export const updateDebtPaidAmount = async (data: {

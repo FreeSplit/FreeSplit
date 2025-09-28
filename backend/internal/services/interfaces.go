@@ -29,4 +29,5 @@ type ExpenseService interface {
 type DebtService interface {
 	GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error)
 	UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error)
+	GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error)
 }

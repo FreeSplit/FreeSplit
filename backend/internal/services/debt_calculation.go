@@ -123,17 +123,12 @@ func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 			settleAmount = debtor.Balance
 		}
 
-		// Get the total payment made by this debtor to this creditor
-		key := fmt.Sprintf("%d-%d", debtor.ID, creditor.ID)
-		totalPaid := paymentTotals[key]
-
-		// Create debt record
+		// Create debt record (no paid_amount needed - payments are tracked separately)
 		debt := database.Debt{
 			GroupID:    groupID,
 			LenderID:   creditor.ID,
 			DebtorID:   debtor.ID,
 			DebtAmount: settleAmount,
-			PaidAmount: totalPaid,
 		}
 
 		newDebts = append(newDebts, debt)

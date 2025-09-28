@@ -27,7 +27,7 @@ func NewDebtService(db *gorm.DB) DebtService {
 // Description: Fetches all outstanding debts for a group, excluding fully paid debts
 func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error) {
 	var debts []database.Debt
-	if err := s.db.Where("group_id = ? AND debt_amount > paid_amount", req.GroupId).Find(&debts).Error; err != nil {
+	if err := s.db.Where("group_id = ?", req.GroupId).Find(&debts).Error; err != nil {
 		return nil, fmt.Errorf("failed to get debts: %v", err)
 	}
 
@@ -41,10 +41,10 @@ func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetD
 	}, nil
 }
 
-// UpdateDebtPaidAmount updates the paid amount for a specific debt and records payment history.
+// UpdateDebtPaidAmount records a payment for a specific debt and returns updated debt information.
 // Input: UpdateDebtPaidAmountRequest with DebtId and PaidAmount
 // Output: UpdateDebtPaidAmountResponse with updated debt information
-// Description: Updates debt paid amount, validates input, and records payment in history
+// Description: Records payment in history and returns current debt with net amount calculated
 func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error) {
 	// Validate input
 	if req.DebtId <= 0 {
@@ -68,30 +68,61 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 		return nil, fmt.Errorf("paid amount (%.2f) cannot exceed debt amount (%.2f)", req.PaidAmount, debt.DebtAmount)
 	}
 
-	// Calculate the payment amount (difference between old and new paid amount)
-	paymentAmount := req.PaidAmount - debt.PaidAmount
-
-	// Update the debt
-	debt.PaidAmount = req.PaidAmount
-	if err := s.db.Save(&debt).Error; err != nil {
-		return nil, fmt.Errorf("failed to update debt: %v", err)
+	// Record the payment in the payments table
+	payment := database.Payment{
+		GroupID: debt.GroupID,
+		PayerID: debt.DebtorID,
+		PayeeID: debt.LenderID,
+		Amount:  req.PaidAmount,
+	}
+	if err := s.db.Create(&payment).Error; err != nil {
+		return nil, fmt.Errorf("failed to record payment: %v", err)
 	}
 
-	// Record the payment if there's a payment amount
-	if paymentAmount > 0 {
-		payment := database.Payment{
-			GroupID: debt.GroupID,
-			PayerID: debt.DebtorID,
-			PayeeID: debt.LenderID,
-			Amount:  paymentAmount,
-		}
-		if err := s.db.Create(&payment).Error; err != nil {
-			// Log error but don't fail the debt update
-			fmt.Printf("Warning: Failed to record payment: %v\n", err)
-		}
+	// Calculate net amount (debt_amount - total_payments)
+	var totalPaid float64
+	s.db.Model(&database.Payment{}).
+		Where("group_id = ? AND payer_id = ? AND payee_id = ?", debt.GroupID, debt.DebtorID, debt.LenderID).
+		Select("COALESCE(SUM(amount), 0)").Scan(&totalPaid)
+
+	// Create response with net amount
+	responseDebt := &Debt{
+		Id:         int32(debt.ID),
+		GroupId:    int32(debt.GroupID),
+		LenderId:   int32(debt.LenderID),
+		DebtorId:   int32(debt.DebtorID),
+		DebtAmount: debt.DebtAmount,
+		PaidAmount: totalPaid,
 	}
 
 	return &UpdateDebtPaidAmountResponse{
-		Debt: DebtFromDB(&debt),
+		Debt: responseDebt,
+	}, nil
+}
+
+// GetPayments retrieves all payments for a specific group from the database.
+// Input: GetPaymentsRequest containing GroupId
+// Output: GetPaymentsResponse with list of payments
+// Description: Fetches all payment records for a group
+func (s *debtService) GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error) {
+	var payments []database.Payment
+	if err := s.db.Where("group_id = ?", req.GroupId).Find(&payments).Error; err != nil {
+		return nil, fmt.Errorf("failed to get payments: %v", err)
+	}
+
+	responsePayments := make([]*Payment, len(payments))
+	for i, p := range payments {
+		responsePayments[i] = &Payment{
+			Id:        int32(p.ID),
+			GroupId:   int32(p.GroupID),
+			PayerId:   int32(p.PayerID),
+			PayeeId:   int32(p.PayeeID),
+			Amount:    p.Amount,
+			CreatedAt: p.CreatedAt,
+		}
+	}
+
+	return &GetPaymentsResponse{
+		Payments: responsePayments,
 	}, nil
 }

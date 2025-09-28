@@ -119,6 +119,14 @@ type UpdateDebtPaidAmountResponse struct {
 	Debt *Debt `json:"debt"`
 }
 
+type GetPaymentsRequest struct {
+	GroupId int32 `json:"group_id"`
+}
+
+type GetPaymentsResponse struct {
+	Payments []*Payment `json:"payments"`
+}
+
 // Data types
 type Group struct {
 	Id        int32     `json:"id"`
@@ -160,6 +168,15 @@ type Debt struct {
 	DebtorId   int32   `json:"debtor_id"`
 	DebtAmount float64 `json:"debt_amount"`
 	PaidAmount float64 `json:"paid_amount"`
+}
+
+type Payment struct {
+	Id        int32     `json:"id"`
+	GroupId   int32     `json:"group_id"`
+	PayerId   int32     `json:"payer_id"`
+	PayeeId   int32     `json:"payee_id"`
+	Amount    float64   `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Conversion functions from database models to service types
@@ -211,6 +228,5 @@ func DebtFromDB(dbDebt *database.Debt) *Debt {
 		LenderId:   int32(dbDebt.LenderID),
 		DebtorId:   int32(dbDebt.DebtorID),
 		DebtAmount: dbDebt.DebtAmount,
-		PaidAmount: dbDebt.PaidAmount,
 	}
 }
