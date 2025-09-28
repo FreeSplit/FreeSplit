@@ -158,7 +158,7 @@ const Members: React.FC = () => {
           />
         )}
 
-        <div className="v-flex">
+        <div className="floating-cta-footer">
             <div className="floating-cta-container">
               <button 
                 className="btn fab-shadow"

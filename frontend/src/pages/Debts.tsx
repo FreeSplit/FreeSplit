@@ -1,13 +1,23 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Check } from 'lucide-react';
-import { getGroup, getDebts, updateDebtPaidAmount } from '../services/api';
-import { Group, Debt, Participant } from '../services/api';
+import {
+  getGroup,
+  getDebts,
+  updateDebtPaidAmount,
+  getExpensesByGroup,
+  getExpenseWithSplits,
+  Group,
+  Debt,
+  Participant,
+  Expense,
+  Split,
+} from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
+import SimplifyAnimationFM, { Edge as AnimationEdge, AnimationNode } from "../animations/SimplifyAnimation";
 import { ring } from 'ldrs'; ring.register();
 
 const formatAmount = (value: number): string => {
@@ -20,6 +30,44 @@ const formatAmount = (value: number): string => {
   });
 };
 
+type ExpenseWithSplits = { expense: Expense; splits: Split[] };
+
+const roundToTwo = (value: number) => Math.round(value * 100) / 100;
+
+const truncateLabel = (name: string) =>
+  name.length > 10 ? `${name.slice(0, 10)}...` : name;
+
+const buildRawEdges = (details: ExpenseWithSplits[]): AnimationEdge[] => {
+  const edgeMap = new Map<string, number>();
+
+  details.forEach(({ expense, splits }) => {
+    const payerId = String(expense.payer_id);
+
+    splits.forEach((split) => {
+      const participantId = String(split.participant_id);
+      if (participantId === payerId) {
+        return;
+      }
+
+      const key = `${participantId}->${payerId}`;
+      const current = edgeMap.get(key) ?? 0;
+      const nextAmount = current + (split.split_amount ?? 0);
+      edgeMap.set(key, nextAmount);
+    });
+  });
+
+  return Array.from(edgeMap.entries())
+    .map(([key, amount]) => {
+      const [from, to] = key.split("->");
+      const rounded = roundToTwo(amount);
+      if (rounded <= 0.009) {
+        return null;
+      }
+      return { from, to, amount: rounded } as AnimationEdge;
+    })
+    .filter((edge): edge is AnimationEdge => edge !== null);
+};
+
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -28,20 +76,46 @@ const Debts: React.FC = () => {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
+  const [rawEdges, setRawEdges] = useState<AnimationEdge[]>([]);
 
   const loadGroupData = useCallback(async () => {
     try {
       setLoading(true);
       const groupResponse = await getGroup(urlSlug!);
-      const debtsResponse = await getDebts(groupResponse.group.id);
+      const groupId = groupResponse.group.id;
+      setRawEdges([]);
+
+      const [debtsResponse, expensesResponse] = await Promise.all([
+        getDebts(groupId),
+        getExpensesByGroup(groupId),
+      ]);
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
       setDebts(debtsResponse);
-      
+
+      if (expensesResponse.length > 0) {
+        const detailedResults = await Promise.allSettled(
+          expensesResponse.map((expense) => getExpenseWithSplits(expense.id))
+        );
+
+        const fulfilled = detailedResults.filter(
+          (res): res is PromiseFulfilledResult<{ expense: Expense; splits: Split[] }> =>
+            res.status === "fulfilled"
+        );
+
+        const edges = buildRawEdges(
+          fulfilled.map((result) => result.value)
+        );
+
+        setRawEdges(edges);
+      } else {
+        setRawEdges([]);
+      }
     } catch (error) {
       toast.error('Failed to load group data');
       console.error('Error loading group data:', error);
+      setRawEdges([]);
     } finally {
       setLoading(false);
     }
@@ -57,6 +131,44 @@ const Debts: React.FC = () => {
     const participant = participants.find(p => p.id === participantId);
     return participant?.name || 'Unknown';
   };
+
+  const nodes: AnimationNode[] = useMemo(() => {
+    return participants
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((participant) => ({
+        id: String(participant.id),
+        label: truncateLabel(participant.name),
+      }));
+  }, [participants]);
+
+  const nodeIdSet = useMemo(() => new Set(nodes.map((node) => node.id)), [nodes]);
+
+  const simplifiedEdges = useMemo<AnimationEdge[]>(() => {
+    return debts
+      .map((debt) => {
+        const remaining = roundToTwo(Math.max(debt.debt_amount - debt.paid_amount, 0));
+        if (remaining <= 0.009) {
+          return null;
+        }
+        return {
+          from: String(debt.debtor_id),
+          to: String(debt.lender_id),
+          amount: remaining,
+        } as AnimationEdge;
+      })
+      .filter((edge): edge is AnimationEdge => !!edge)
+      .filter((edge) => nodeIdSet.has(edge.from) && nodeIdSet.has(edge.to));
+  }, [debts, nodeIdSet]);
+
+  const displayRawEdges = useMemo(() => {
+    return rawEdges.filter(
+      (edge) => nodeIdSet.has(edge.from) && nodeIdSet.has(edge.to)
+    );
+  }, [rawEdges, nodeIdSet]);
+
+  const rawEdgeCount = displayRawEdges.length;
+  const transactionsSaved = Math.max(rawEdgeCount - debts.length, 0);
 
   const handleSettleDebt = async (debt: Debt) => {
     try {
@@ -119,28 +231,6 @@ const Debts: React.FC = () => {
     return 'pending';
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'settled':
-        return 'text-green-600 bg-green-100';
-      case 'partial':
-        return 'text-yellow-600 bg-yellow-100';
-      default:
-        return 'text-red-600 bg-red-100';
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'settled':
-        return 'Settled';
-      case 'partial':
-        return 'Partial';
-      default:
-        return 'Pending';
-    }
-  };
-
   useEffect(() => {
     if (!loading && !group && urlSlug) {
       navigate(`/group/${urlSlug}`);
@@ -180,6 +270,30 @@ const Debts: React.FC = () => {
           {orderedDebts.length > 0 && (
             <div className="content-section">
               <h1>Debts</h1>
+              {transactionsSaved > 0 && (
+                <div className="v-flex align-center gap-16px">
+                  <SimplifyAnimationFM
+                    nodes={nodes}
+                    rawEdges={displayRawEdges}
+                    simplifiedEdges={simplifiedEdges}
+                    width={720}
+                    height={360}
+                    cycleMs={2800}
+                    autoplay
+                    currency={group.currency}
+                  />
+                  <p>
+                    Debts simplified from
+                    {' '}
+                    <span className="text-is-error is-bold">{rawEdgeCount}</span>
+                    {' '}to{' '}
+                    <span className="text-is-success is-bold">{debts.length}</span>
+                    {' '}transactions.{' '}
+                    <span className="text-is-success is-bold">{transactionsSaved}</span>
+                    {' '}transactions saved.
+                  </p>
+                </div>
+              )}
               <div className="list"> 
                 {orderedDebts.map((debt, index) => {
                   const status = getDebtStatus(debt);
@@ -259,7 +373,7 @@ const Debts: React.FC = () => {
           )}
 
         {/* Nav */}
-          <div className="v-flex">
+          <div className="floating-cta-footer">
             {debts.length === 0 && (
               <div className="floating-cta-container">
                 <button 

@@ -401,6 +401,7 @@ input[type="number"] {
   padding: 8px 16px;
   background: var(--color-text);
   position: sticky; bottom: 0; z-index: 10;
+  box-shadow: -2px -2px 4px rgba(17, 24, 39, 0.20);
 }
 
 .nav-item {
@@ -621,4 +622,12 @@ input[type="number"] {
 
 .has-color-white {
   color: var(--color-card);
+}
+
+.floating-cta-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  position: sticky; bottom: 0; z-index: 10;
 }
