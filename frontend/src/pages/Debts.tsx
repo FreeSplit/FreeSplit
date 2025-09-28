@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, DollarSign, Check } from 'lucide-react';
-import { getDebtsPageData, updateDebtPaidAmount } from '../services/api';
+import { getDebtsPageData, createPayment } from '../services/api';
 import { DebtPageData } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
@@ -42,7 +42,8 @@ const Debts: React.FC = () => {
   const handleSettleDebt = async (debt: DebtPageData) => {
     try {
       setUpdating(debt.id);
-      await updateDebtPaidAmount({
+      // Creates a payment record aka settles a debt and recalculates all debts for the group
+      await createPayment({
         debt_id: debt.id,
         paid_amount: debt.debt_amount
       });

@@ -121,12 +121,12 @@ type GetDebtsPageDataResponse struct {
 	Currency string          `json:"currency"`
 }
 
-type UpdateDebtPaidAmountRequest struct {
+type CreatePaymentRequest struct {
 	DebtId     int32   `json:"debt_id"`
 	PaidAmount float64 `json:"paid_amount"`
 }
 
-type UpdateDebtPaidAmountResponse struct {
+type CreatePaymentResponse struct {
 	Debt *Debt `json:"debt"`
 }
 

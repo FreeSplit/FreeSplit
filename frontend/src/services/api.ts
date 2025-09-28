@@ -250,12 +250,13 @@ export const getDebtsPageData = async (urlSlug: string): Promise<DebtsPageRespon
   };
 };
 
-export const updateDebtPaidAmount = async (data: {
+// Creates a payment record aka settles a debt and recalculates all debts for the group
+export const createPayment = async (data: {
   debt_id: number;
   paid_amount: number;
 }): Promise<Debt> => {
   try {
-    console.log('Updating debt paid amount:', data);
+    console.log('Creating payment:', data);
     const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
       debt_id: data.debt_id,
       paid_amount: data.paid_amount

@@ -150,7 +150,7 @@ func main() {
 		if strings.Contains(r.URL.Path, "/paid") {
 			switch r.Method {
 			case "PUT":
-				updateDebtPaidAmount(w, r, debtService)
+				createPayment(w, r, debtService)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -614,7 +614,7 @@ func getDebtsPageData(w http.ResponseWriter, r *http.Request, debtService servic
 	json.NewEncoder(w).Encode(resp)
 }
 
-func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+func createPayment(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
 	var req struct {
 		DebtID     int32   `json:"debt_id"`
 		PaidAmount float64 `json:"paid_amount"`
@@ -637,14 +637,14 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService se
 		return
 	}
 
-	serviceReq := &services.UpdateDebtPaidAmountRequest{
+	serviceReq := &services.CreatePaymentRequest{
 		DebtId:     req.DebtID,
 		PaidAmount: req.PaidAmount,
 	}
 
-	resp, err := debtService.UpdateDebtPaidAmount(context.TODO(), serviceReq)
+	resp, err := debtService.CreatePayment(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error updating debt %d: %v", req.DebtID, err)
+		log.Printf("Error creating payment for debt %d: %v", req.DebtID, err)
 
 		// Check if it's a business logic error
 		if strings.Contains(err.Error(), "not found") {

@@ -85,11 +85,11 @@ func (s *debtService) GetDebtsPageData(ctx context.Context, req *GetDebtsRequest
 	}, nil
 }
 
-// UpdateDebtPaidAmount records a payment and recalculates all debts for the group.
-// Input: UpdateDebtPaidAmountRequest with DebtId and PaidAmount
-// Output: UpdateDebtPaidAmountResponse with updated debt information
-// Description: Records payment in history, recalculates debts, and returns updated debt
-func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error) {
+// CreatePayment records a payment and recalculates all debts for the group.
+// Input: CreatePaymentRequest with DebtId and PaidAmount
+// Output: CreatePaymentResponse with updated debt information
+// Description: Creates a payment record, recalculates all debts, and returns updated debt
+func (s *debtService) CreatePayment(ctx context.Context, req *CreatePaymentRequest) (*CreatePaymentResponse, error) {
 	// Validate input
 	if req.DebtId <= 0 {
 		return nil, fmt.Errorf("invalid debt ID")
@@ -149,7 +149,7 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			// Debt was fully settled and removed
-			return &UpdateDebtPaidAmountResponse{
+			return &CreatePaymentResponse{
 				Debt: nil,
 			}, nil
 		}
@@ -159,7 +159,7 @@ func (s *debtService) UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtP
 	// Create response with updated debt
 	responseDebt := DebtFromDB(&updatedDebt)
 
-	return &UpdateDebtPaidAmountResponse{
+	return &CreatePaymentResponse{
 		Debt: responseDebt,
 	}, nil
 }

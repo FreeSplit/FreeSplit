@@ -28,6 +28,6 @@ type ExpenseService interface {
 // DebtService interface
 type DebtService interface {
 	GetDebtsPageData(ctx context.Context, req *GetDebtsRequest) (*GetDebtsPageDataResponse, error)
-	UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error)
+	CreatePayment(ctx context.Context, req *CreatePaymentRequest) (*CreatePaymentResponse, error)
 	GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error)
 }
