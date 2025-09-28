@@ -95,13 +95,6 @@ func main() {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
-		} else if strings.Contains(r.URL.Path, "/debts") {
-			switch r.Method {
-			case "GET":
-				getDebts(w, r, debtService)
-			default:
-				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			}
 		} else if strings.Contains(r.URL.Path, "/debts-page-data") {
 			switch r.Method {
 			case "GET":
@@ -590,35 +583,6 @@ func getPayments(w http.ResponseWriter, r *http.Request, debtService services.De
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(response.Payments)
-}
-
-func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
-	// Extract group URL slug from URL path
-	pathParts := strings.Split(r.URL.Path, "/")
-	if len(pathParts) < 4 {
-		http.Error(w, "Invalid URL", http.StatusBadRequest)
-		return
-	}
-
-	urlSlug := pathParts[3]
-	if urlSlug == "" {
-		http.Error(w, "Invalid group URL slug", http.StatusBadRequest)
-		return
-	}
-
-	serviceReq := &services.GetDebtsRequest{
-		UrlSlug: urlSlug,
-	}
-
-	resp, err := debtService.GetDebts(context.TODO(), serviceReq)
-	if err != nil {
-		log.Printf("Error getting debts: %v", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp.Debts)
 }
 
 func getDebtsPageData(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {

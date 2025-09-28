@@ -21,45 +21,6 @@ func NewDebtService(db *gorm.DB) DebtService {
 	return &debtService{db: db}
 }
 
-// GetDebts retrieves all unpaid debts for a specific group from the database.
-// Input: GetDebtsRequest containing either GroupId or UrlSlug
-// Output: GetDebtsResponse with list of debts where debt_amount > paid_amount
-// Description: Fetches all outstanding debts for a group, excluding fully paid debts
-func (s *debtService) GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error) {
-	var groupID uint
-
-	// Handle both GroupId and UrlSlug for backward compatibility
-	if req.UrlSlug != "" {
-		// Look up group by URL slug
-		var group database.Group
-		if err := s.db.Where("url_slug = ?", req.UrlSlug).First(&group).Error; err != nil {
-			if err == gorm.ErrRecordNotFound {
-				return nil, fmt.Errorf("group not found")
-			}
-			return nil, fmt.Errorf("failed to get group: %v", err)
-		}
-		groupID = group.ID
-	} else if req.GroupId > 0 {
-		groupID = uint(req.GroupId)
-	} else {
-		return nil, fmt.Errorf("either group_id or url_slug must be provided")
-	}
-
-	var debts []database.Debt
-	if err := s.db.Where("group_id = ?", groupID).Find(&debts).Error; err != nil {
-		return nil, fmt.Errorf("failed to get debts: %v", err)
-	}
-
-	responseDebts := make([]*Debt, len(debts))
-	for i, d := range debts {
-		responseDebts[i] = DebtFromDB(&d)
-	}
-
-	return &GetDebtsResponse{
-		Debts: responseDebts,
-	}, nil
-}
-
 // GetDebtsPageData retrieves optimized debt data for the debts page with resolved names and currency.
 // Input: GetDebtsRequest containing either GroupId or UrlSlug
 // Output: GetDebtsPageDataResponse with resolved debt data

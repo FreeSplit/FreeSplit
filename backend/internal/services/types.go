@@ -107,10 +107,6 @@ type GetDebtsRequest struct {
 	UrlSlug string `json:"url_slug,omitempty"`
 }
 
-type GetDebtsResponse struct {
-	Debts []*Debt `json:"debts"`
-}
-
 // Optimized debt data for the debts page
 type DebtPageData struct {
 	Id         int32   `json:"id"`

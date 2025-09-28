@@ -239,20 +239,6 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
 
 
 // Debt API
-export const getDebts = async (urlSlug: string): Promise<Debt[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts`);
-  console.log('Getting debts:', response.data);
-  
-  // Transform the response to match the Debt interface
-  return response.data.map((debt: any) => ({
-    debt_id: debt.id,
-    group_id: debt.group_id,
-    lender_id: debt.lender_id,
-    debtor_id: debt.debtor_id,
-    debt_amount: debt.debt_amount
-  }));
-};
-
 // Optimized API for debts page - gets all data in one call
 export const getDebtsPageData = async (urlSlug: string): Promise<DebtsPageResponse> => {
   const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts-page-data`);
