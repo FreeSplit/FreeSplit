@@ -44,8 +44,8 @@ const Debts: React.FC = () => {
       setUpdating(debt.id);
       // Creates a payment record aka settles a debt and recalculates all debts for the group
       await createPayment({
-        debt_id: debt.id,
-        paid_amount: debt.debt_amount
+        debt_id: debt.id, // The debt we are settling knows who is involved
+        paid_amount: debt.debt_amount // Currently we are settling the debt in full
       });
       
       // Reload debts to get updated state

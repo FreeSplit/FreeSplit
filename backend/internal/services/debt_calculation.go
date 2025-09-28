@@ -7,10 +7,46 @@ import (
 	"gorm.io/gorm"
 )
 
-// CalculateNetDebts calculates net debts for a group, factoring in all settlements and payments.
+// CalculateNetDebts calculates net debts for a group, factoring in all expenses and payments.
 // Input: gorm.DB database connection and groupID
 // Output: []database.Debt list of calculated debts and error
-// Description: Calculates simplified debts based on expenses, splits, and historical payments
+// Description: Calculates simplified debts based on expenses with their splits, and previous payments made between participants
+/*
+
+Example: Two Expenses
+Let's say we have 3 people: Alice, Bob, and Charlie.
+
+Expense 1: Alice pays $30 for dinner (split equally)
+    Alice pays: $30
+    Split: $10 each (Alice, Bob, Charlie)
+
+    After Expense 1:
+    Result after Expense 1:
+        Alice: +$20 (owed $20)
+        Bob: -$10 (owes $10)
+        Charlie: -$10 (owes $10)
+
+Expense 2: Bob pays $24 for gas (split by usage)
+    Bob pays: $24
+    Split: Alice $8, Bob $8, Charlie $8
+
+    After Expense 2:
+    Result after both expenses:
+        Alice: +$12 (owed $12)
+        Bob: +$6 (owed $6)
+        Charlie: -$18 (owes $18)
+
+What this means:
+    Alice is owed $12 by the group
+    Bob is owed $6 by the group
+    Charlie owes $18 to the group
+
+The debt simplification will create:
+    Charlie owes Alice $12
+    Charlie owes Bob $6
+    Total: Charlie owes $18 (which matches his -$18 balance)
+
+*/
 func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 	// Get all participants in the group
 	var participants []database.Participant
@@ -60,14 +96,6 @@ func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 		paymentTotals[key] += payment.Amount
 	}
 
-	// Debug: Log payments
-	fmt.Printf("DEBUG: Found %d payment records\n", len(payments))
-	for key, amount := range paymentTotals {
-		if amount > 0 {
-			fmt.Printf("DEBUG: Payment %s: $%.2f\n", key, amount)
-		}
-	}
-
 	// Subtract payments from balances
 	for key, amount := range paymentTotals {
 		var payerID, payeeID uint
@@ -76,12 +104,6 @@ func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 		balances[payerID] += amount
 		// The payee has received a payment, so reduce what they're owed
 		balances[payeeID] -= amount
-	}
-
-	// Debug: Log balances after factoring in payments
-	fmt.Printf("DEBUG: Balances after factoring in payments:\n")
-	for participantID, balance := range balances {
-		fmt.Printf("DEBUG: Participant %d: $%.2f\n", participantID, balance)
 	}
 
 	// Create creditors and debtors lists
@@ -95,6 +117,7 @@ func CalculateNetDebts(db *gorm.DB, groupID uint) ([]database.Debt, error) {
 	}
 
 	for participantID, balance := range balances {
+		// Using 0.01 as a threshold to avoid floating point precision issues
 		if balance > 0.01 { // They are owed money (creditor)
 			creditors = append(creditors, struct {
 				ID      uint
