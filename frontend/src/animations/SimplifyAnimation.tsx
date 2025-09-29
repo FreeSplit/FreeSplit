@@ -202,6 +202,8 @@ export default function SimplifyAnimationFM({
                 color="#DC2626"
                 thin
                 drawDelay={i * 0.06}
+                width={width}
+                height={height}
               />
             );
           })}
@@ -223,6 +225,8 @@ export default function SimplifyAnimationFM({
                 color="#16A34A"
                 thin={false}
                 drawDelay={i * 0.08}
+                width={width}
+                height={height}
               />
             );
           })}
@@ -261,12 +265,16 @@ function AnimatedArrow({
   color,
   thin,
   drawDelay = 0,
+  width = 720,
+  height = 320,
 }: {
   a: LayoutNode;
   b: LayoutNode;
   color: string;
   thin?: boolean;
   drawDelay?: number;
+  width?: number;
+  height?: number;
 }) {
   const { start, end } = trimEndpoints(a, b);
 
@@ -277,8 +285,20 @@ function AnimatedArrow({
   const nx = -dy;
   const ny = dx;
   const k = 0.18;
-  const cx = mx + nx * k;
-  const cy = my + ny * k;
+  
+  // Calculate control point with bounds checking
+  let cx = mx + nx * k;
+  let cy = my + ny * k;
+  
+  // Constrain control point to stay within SVG bounds with padding
+  const padding = 20;
+  const minX = padding;
+  const maxX = width - padding;
+  const minY = padding;
+  const maxY = height - padding;
+  
+  cx = Math.max(minX, Math.min(maxX, cx));
+  cy = Math.max(minY, Math.min(maxY, cy));
 
   const d = `M ${start.x} ${start.y} Q ${cx} ${cy} ${end.x} ${end.y}`;
   const strokeWidth = thin ? 2 : 4;
