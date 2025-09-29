@@ -9,6 +9,17 @@ import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
+import { ring } from 'ldrs'; ring.register();
+
+const formatAmount = (value: number): string => {
+  if (!Number.isFinite(value)) {
+    return '0.00';
+  }
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+};
 
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -76,10 +87,14 @@ const GroupDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading group data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -117,42 +132,38 @@ const GroupDashboard: React.FC = () => {
           {/* Expenses */}
             <div className="content-section">
               {expenses.length === 0 ? (
-                <div className="content-container">
+                <div className="content-container text-is-centered">
                   <FontAwesomeIcon icon={faReceipt} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-                  <h2>No expenses</h2>
-                  <p>Add an expense to track your group debts.</p>
-                  <button
-                    onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
-                    className="btn"
-                  >
-                    <span>Add an expense</span>
-                    <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                  </button>
+                  <div className="v-flex gap-8px">
+                    <h2>No expenses</h2>
+                    <p>Add an expense to track your group debts.</p>
+                  </div>
                 </div>
               ) : (
                 <>
+                <h1>Expenses</h1>
                 <div className="list">
                   {expenses.slice(0, 5).map((expense) => (
-                    <div key={expense.id} className="expenses-container">
-                      <button onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expense">
+                    <button key={expense.id} onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
+                      <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
                         <div className="expense-details">
                           <p>{expense.name}</p>
-                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{expense.cost.toFixed(2)}</span></p>
+                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{formatAmount(expense.cost)}</span></p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                      </button>
-                    </div>
+                      </div>
+                    </button>
                   ))}
                 </div>
                 </>
               )}
             </div>
 
-          <div className="v-flex">
+          <div className="floating-cta-footer">
             <div className="floating-cta-container">
               <button 
-                className="btn"
+                className="btn fab-shadow"
                 onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
               >
                 <span>Add a new expense</span>

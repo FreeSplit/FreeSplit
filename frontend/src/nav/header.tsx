@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faShareNodes } from '@fortawesome/free-solid-svg-icons';
+import { faShare } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom';
 import { getGroup, Group } from '../services/api';
 import ShareLink from '../modals/share-link';
@@ -27,13 +27,13 @@ const Header: React.FC = () => {
 
   return (
     <div className="header">
-      <p className="is-bold">{group?.name ?? ''}</p>
+      <h1 className="is-bold has-color-white">{group?.name ?? ''}</h1>
       <button
         className="a"
         onClick={() => setShareOpen(true)}
         aria-label="Share group"
       >
-        <FontAwesomeIcon icon={faShareNodes} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+        <FontAwesomeIcon className="has-color-white" icon={faShare} style={{ fontSize: 20 }} aria-hidden="true" />
       </button>
 
       {isShareOpen && group && (

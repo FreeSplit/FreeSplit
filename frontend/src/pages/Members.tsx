@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronRight, faPlus, faUserXmark } from '@fortawesome/free-solid-svg-icons';
 import AddMemberModal from '../modals/add-member';
 import EditMemberModal from '../modals/edit-member';
+import { ring } from 'ldrs'; ring.register();
 
 const Members: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -77,10 +78,14 @@ const Members: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading group data...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading group data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -121,7 +126,7 @@ const Members: React.FC = () => {
                     onClick={() => openEditModal(participant)}
                   >
                     <p>{participant.name}</p>
-                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
+                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
                   </button>
                 </div>
               ))
@@ -153,10 +158,10 @@ const Members: React.FC = () => {
           />
         )}
 
-        <div className="v-flex">
+        <div className="floating-cta-footer">
             <div className="floating-cta-container">
               <button 
-                className="btn"
+                className="btn fab-shadow"
                 onClick={() => setAddMemberOpen(true)}
               >
                 <span>Add a new member</span>

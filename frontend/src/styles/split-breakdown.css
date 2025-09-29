@@ -20,16 +20,21 @@
 .split-breakdown-dropdown {
   display: flex;
   border-radius: 12px;
-  padding: 2px 6px;
-  gap: 4px;
+  padding: 4px 8px;
   align-items: center;
   background-color: var(--color-accent);
   color: var(--color-card);
-  outline: none;
   font-size: var(--fs-sm);
   font-family: var(--font-body);
+  font-weight: 700;
+}
+
+.split-breakdown-dropdown-input {
+  outline: none;
   -webkit-appearance: none;
   -moz-appearance: none;
+  background: transparent;
+  padding: 0px;
 }
 
 .split-breakdown-participant-container {
@@ -38,7 +43,7 @@
   justify-content: space-between;
   align-items: center;
   align-self: stretch;
-  border-bottom: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-muted);
   width: 100%;
 }
 
@@ -53,31 +58,64 @@
     flex-direction: column;
 }
 
-.checkbox {
-    display: flex;
-    align-items: center;
-    border-radius: 2px;
-    border: 1px solid var(--color-muted);
-    background: var(--color-bg);
+.split-breakdown-checkbox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--color-bg);
+  cursor: pointer;
 }
 
-.checkbox:selected {
-    display: flex;
-    align-items: center;
-    border-radius: 2px;
-    border: 1px solid var(--color-text);
-    background: var(--color-text);
-    color: var(--color-bg)
+.split-breakdown-checkbox input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.split-breakdown-checkbox .checkbox-indicator {
+  width: 100%;
+  height: 100%;
+  border-radius: 2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+  border: 1px solid var(--color-text);
+}
+
+.split-breakdown-checkbox .checkbox-indicator svg {
+  font-size: 20px;
+  color: var(--color-bg);
+}
+
+.split-breakdown-checkbox input:checked + .checkbox-indicator {
+  background: var(--color-text);
+  border-radius: 2px;
+  border-color: var(--text);
+}
+
+.split-breakdown-checkbox input:focus-visible + .checkbox-indicator {
+  box-shadow: 0 0 0 2px rgba(55, 48, 163, 0.35);
 }
 
 .split-breakdown-even-split-container {
     display: flex;
     padding: 2px 6px;
-    align-items: flex-start;
-    gap: 10px;
+    align-items: center;
     border-radius: 4px;
     background: var(--color-text);
-    color: var(--color-bg)
+    color: var(--color-bg);
+    border: 1px solid var(--color-text);
+    align-self: stretch;
 }
 
 .split-breakdown-amount-split-container {
@@ -88,13 +126,15 @@
     border: 1px solid var(--color-text);
     background: var(--color-bg);
     color: var(--color-text);
-    gap: 4px;
+    align-self: stretch;
+    overflow: hidden;
 }
+
 
 .share-adjust {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 8px;
     align-self: stretch;
 }
 
@@ -108,7 +148,6 @@
     background: var(--color-primary);
     color: var(--color-bg);
     cursor: pointer;
-    transition: opacity 0.2s ease;
     align-self: stretch;
 }
 
@@ -127,6 +166,15 @@
     font-family: var(--font-body);
     font-size: var(--fs-sm);
     outline: none;
+    border: 1px solid var(--color-text);
+    align-self: stretch;
+    border-radius: 4px;
+    width: 32px;
+}
+
+.share-adjust__input:disabled {
+    border-color: var(--color-muted);
+    color: var(--color-muted);
 }
 
 .share-adjust__input:focus {
@@ -159,4 +207,45 @@
   background: transparent;
   cursor: text;
   outline: none;
+}
+
+.split-breakdown-container .form-input:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.split-breakdown-container .split-input:disabled {
+  color: var(--color-muted);
+  cursor: not-allowed;
+}
+
+.split-breakdown-even-split-container.is-disabled {
+  background: var(--color-muted);
+  color: var(--color-bg);
+  border-color: var(--color-muted);
+}
+
+.split-input {
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: var(--fs-md);
+  background: transparent;
+  cursor: text;
+  outline: none;
+  border-radius: 0; -webkit-appearance: none;
+  line-height: 1.25;
+  overflow-x: scroll;
+  width: auto;
+}
+
+.split-input.percent {
+  width: 52px;
+}
+
+.split-breakdown-amount-split-container.amount {
+  width: 120px;
+}
+
+.split-breakdown-amount-split-container.percent {
+  width: 80px;
 }

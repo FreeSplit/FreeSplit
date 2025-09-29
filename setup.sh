@@ -3,6 +3,81 @@
 echo "🚀 Setting up FreeSplit - Expense Splitting Application"
 echo "======================================================="
 
+# Function to setup PATH variables for Go and PostgreSQL
+setup_path_variables() {
+    echo "🔧 Setting up PATH variables..."
+    
+    # Setup Go PATH
+    if command -v go &> /dev/null; then
+        GO_BIN_PATH=$(go env GOROOT)/bin
+        if [ -d "$GO_BIN_PATH" ] && [[ ":$PATH:" != *":$GO_BIN_PATH:"* ]]; then
+            export PATH="$GO_BIN_PATH:$PATH"
+            echo "✅ Added Go binaries to PATH: $GO_BIN_PATH"
+        fi
+        
+        # Setup GOPATH
+        if [ -z "$GOPATH" ]; then
+            export GOPATH="$HOME/go"
+            echo "✅ Set GOPATH: $GOPATH"
+        fi
+        
+        # Add GOPATH/bin to PATH
+        if [ -d "$GOPATH/bin" ] && [[ ":$PATH:" != *":$GOPATH/bin:"* ]]; then
+            export PATH="$GOPATH/bin:$PATH"
+            echo "✅ Added GOPATH/bin to PATH: $GOPATH/bin"
+        fi
+    fi
+    
+    # Setup PostgreSQL PATH (macOS)
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        # Try multiple Homebrew PostgreSQL versions
+        for version in "postgresql@15" "postgresql@14" "postgresql@13" "postgresql"; do
+            BREW_PREFIX=$(brew --prefix "$version" 2>/dev/null)
+            if [ -n "$BREW_PREFIX" ] && [ -d "$BREW_PREFIX/bin" ]; then
+                if [[ ":$PATH:" != *":$BREW_PREFIX/bin:"* ]]; then
+                    export PATH="$BREW_PREFIX/bin:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $BREW_PREFIX/bin"
+                fi
+                # Test if psql is now available
+                if command -v psql >/dev/null 2>&1; then
+                    echo "✅ psql command now available"
+                    break
+                fi
+            fi
+        done
+        
+        # Try common Homebrew paths if still not found
+        if ! command -v psql >/dev/null 2>&1; then
+            for path in "/opt/homebrew/opt/postgresql@15/bin" "/opt/homebrew/opt/postgresql/bin" "/usr/local/opt/postgresql@15/bin" "/usr/local/opt/postgresql/bin"; do
+                if [ -d "$path" ] && [[ ":$PATH:" != *":$path:"* ]]; then
+                    export PATH="$path:$PATH"
+                    echo "✅ Added PostgreSQL binaries to PATH: $path"
+                    # Test if psql is now available
+                    if command -v psql >/dev/null 2>&1; then
+                        echo "✅ psql command now available"
+                        break
+                    fi
+                fi
+            done
+        fi
+    fi
+    
+    # Setup PostgreSQL PATH (Linux)
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        for candidate in /usr/lib/postgresql/*/bin; do
+            if [ -d "$candidate" ] && [[ ":$PATH:" != *":$candidate:"* ]]; then
+                export PATH="$candidate:$PATH"
+                echo "✅ Added PostgreSQL binaries to PATH: $candidate"
+                # Test if psql is now available
+                if command -v psql >/dev/null 2>&1; then
+                    echo "✅ psql command now available"
+                    break
+                fi
+            fi
+        done
+    fi
+}
+
 # Check if we want Docker or local setup
 if [ "$1" = "--local" ] || [ "$1" = "-l" ]; then
     echo "🔧 Setting up for local development..."
@@ -28,6 +103,20 @@ if [ "$SETUP_MODE" = "docker" ]; then
 fi
 
 if [ "$SETUP_MODE" = "local" ]; then
+    # Setup PATH variables first
+    setup_path_variables
+    
+    # Check if psql is available after PATH setup
+    if ! command -v psql &> /dev/null; then
+        echo "❌ psql command not found after PATH setup"
+        echo "Please ensure PostgreSQL is installed and try again"
+        echo "On macOS: brew install postgresql@15"
+        echo "On Linux: sudo apt install postgresql postgresql-contrib"
+        exit 1
+    else
+        echo "✅ psql command found: $(which psql)"
+    fi
+    
     # Check if Go is installed
     if ! command -v go &> /dev/null; then
         echo "❌ Go is not installed. Please install Go first."
@@ -71,6 +160,16 @@ if [ "$SETUP_MODE" = "local" ]; then
     GO_VERSION=$(go version | cut -d' ' -f3 | cut -d'o' -f2)
     echo "✅ Go version: $GO_VERSION"
     
+    # Ensure Go is in PATH and set GOPATH if needed
+    if ! command -v go &> /dev/null; then
+        echo "❌ Go not found in PATH after installation"
+        echo "Please add Go to your PATH:"
+        echo "  export PATH=\$PATH:/usr/local/go/bin"
+        echo "  export GOPATH=\$HOME/go"
+        echo "  export PATH=\$PATH:\$GOPATH/bin"
+        exit 1
+    fi
+    
     # Check Node.js version
     NODE_VERSION=$(node --version)
     echo "✅ Node.js version: $NODE_VERSION"
@@ -104,6 +203,77 @@ if [ "$SETUP_MODE" = "local" ]; then
         exit 1
     fi
     cd ..
+    
+    # Setup PostgreSQL database and user
+    echo "🔧 Setting up PostgreSQL database..."
+    
+    # Detect the current PostgreSQL user
+    CURRENT_USER=$(whoami)
+    echo "🔍 Detected current user: $CURRENT_USER"
+    
+    # Try to determine the PostgreSQL superuser
+    POSTGRES_SUPERUSER=""
+    
+    # Check if postgres user exists
+    if psql -U postgres -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="postgres"
+        echo "✅ Found 'postgres' superuser"
+    # Check if current user is a superuser
+    elif psql -U "$CURRENT_USER" -c "SELECT 1;" >/dev/null 2>&1; then
+        POSTGRES_SUPERUSER="$CURRENT_USER"
+        echo "✅ Using current user '$CURRENT_USER' as superuser"
+    else
+        echo "❌ Cannot connect to PostgreSQL with either 'postgres' or '$CURRENT_USER'"
+        echo "🔧 Attempting to create 'postgres' user..."
+        
+        # Try to create postgres user using current user
+        if psql -U "$CURRENT_USER" -c "CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';" >/dev/null 2>&1; then
+            POSTGRES_SUPERUSER="postgres"
+            echo "✅ Created 'postgres' superuser"
+        else
+            echo "❌ Failed to create 'postgres' user"
+            echo "Please run the following commands manually:"
+            echo "  psql -U $CURRENT_USER -c \"CREATE USER postgres WITH SUPERUSER CREATEDB CREATEROLE LOGIN PASSWORD 'postgres';\""
+            echo "  createdb -U postgres freesplit"
+        fi
+    fi
+    
+    # Create database if it doesn't exist
+    if [ -n "$POSTGRES_SUPERUSER" ]; then
+        echo "📁 Creating database 'freesplit'..."
+        if createdb -U "$POSTGRES_SUPERUSER" freesplit 2>/dev/null; then
+            echo "✅ Database 'freesplit' created successfully"
+        else
+            echo "ℹ️  Database 'freesplit' already exists or creation failed"
+        fi
+        
+        # Set password for postgres user (if using postgres user)
+        if [ "$POSTGRES_SUPERUSER" = "postgres" ]; then
+            echo "🔐 Setting password for postgres user..."
+            psql -U postgres -c "ALTER USER postgres PASSWORD 'postgres';" >/dev/null 2>&1 || echo "ℹ️  Password already set or user doesn't exist"
+        fi
+        
+        # Test the connection with the postgres user
+        echo "🧪 Testing database connection..."
+        if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+            echo "✅ Database connection successful with postgres user"
+        else
+            echo "⚠️  Database connection failed with postgres user"
+            echo "🔧 Trying to fix connection..."
+            
+            # Grant permissions to postgres user on the database
+            psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL PRIVILEGES ON DATABASE freesplit TO postgres;" >/dev/null 2>&1 || true
+            psql -U "$POSTGRES_SUPERUSER" -c "GRANT ALL ON SCHEMA public TO postgres;" >/dev/null 2>&1 || true
+            
+            # Test again
+            if psql -U postgres -d freesplit -c "SELECT 1;" >/dev/null 2>&1; then
+                echo "✅ Database connection now successful"
+            else
+                echo "❌ Still cannot connect with postgres user"
+                echo "Please check your PostgreSQL setup manually"
+            fi
+        fi
+    fi
     
     echo "✅ Local development setup complete!"
     echo ""

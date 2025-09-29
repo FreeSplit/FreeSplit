@@ -14,7 +14,7 @@ function Index() {
         <div className="content-section v-centered">
           <div className="content-container">
             <div className="v-flex gap-8px text-is-centered">
-              <h1>Split group costs the easy way</h1>
+              <h1>The easy way to split group costs</h1>
               <p>Simplify payments, and settle up without the hassle.</p>
             </div>
             <Link to="/create-a-group/" className="btn">

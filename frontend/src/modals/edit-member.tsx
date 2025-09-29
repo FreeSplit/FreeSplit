@@ -103,23 +103,14 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
             />
           </div>
         </form>
-        <button
-          type="button"
-          className="h-flex align-center gap-4px link text-is-red"
-          onClick={handleDelete}
-          disabled={submitting || deleting}
-        >
-          <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-          {deleting ? 'Deleting…' : 'Delete member'}
-        </button>
           <div className="h-flex align-center gap-16px has-full-width">
             <button
               type="button"
-              className="btn--secondary has-full-width"
-              onClick={onClose}
+              className="btn--delete has-full-width"
+              onClick={handleDelete}
               disabled={submitting || deleting}
             >
-              Cancel
+              Delete
             </button>
             <button
               type="submit"
@@ -127,7 +118,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
               className="btn has-full-width"
               disabled={submitting || deleting}
             >
-              {submitting ? 'Saving…' : 'Save changes'}
+              {submitting ? 'Saving…' : 'Save'}
             </button>
           </div>
       </div>
