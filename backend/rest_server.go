@@ -95,6 +95,13 @@ func main() {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
+		} else if strings.Contains(r.URL.Path, "/splits") {
+			switch r.Method {
+			case "GET":
+				getSplitsByGroup(w, r, expenseService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
 		} else if strings.Contains(r.URL.Path, "/debts-page-data") {
 			switch r.Method {
 			case "GET":
@@ -402,6 +409,35 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService s
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp.Expenses)
+}
+
+func getSplitsByGroup(w http.ResponseWriter, r *http.Request, expenseService services.ExpenseService) {
+	// Extract urlSlug from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	urlSlug := pathParts[3]
+	if urlSlug == "" {
+		http.Error(w, "Invalid URL slug", http.StatusBadRequest)
+		return
+	}
+
+	serviceReq := &services.GetSplitsByGroupRequest{
+		UrlSlug: urlSlug,
+	}
+
+	resp, err := expenseService.GetSplitsByGroup(context.TODO(), serviceReq)
+	if err != nil {
+		log.Printf("Error getting splits: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp.Splits)
 }
 
 func createExpense(w http.ResponseWriter, r *http.Request, expenseService services.ExpenseService) {

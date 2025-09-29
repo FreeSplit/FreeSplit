@@ -66,6 +66,44 @@ func (s *expenseService) GetExpenseWithSplits(ctx context.Context, req *GetExpen
 	}, nil
 }
 
+// GetSplitsByGroup retrieves all splits for a group with participant and payer names.
+// This is used for animation purposes and is separate from debt settlement logic.
+func (s *expenseService) GetSplitsByGroup(ctx context.Context, req *GetSplitsByGroupRequest) (*GetSplitsByGroupResponse, error) {
+	var splitsWithNames []SplitWithNames
+
+	// Join splits with participants, expenses, and groups to get names using urlSlug
+	err := s.db.Table("splits").
+		Select(`
+			splits.id as split_id,
+			splits.group_id,
+			splits.expense_id,
+			splits.participant_id,
+			splits.split_amount,
+			participant.name as participant_name,
+			expenses.payer_id,
+			payer.name as payer_name
+		`).
+		Joins("JOIN participants as participant ON splits.participant_id = participant.id").
+		Joins("JOIN expenses ON splits.expense_id = expenses.id").
+		Joins("JOIN participants as payer ON expenses.payer_id = payer.id").
+		Joins("JOIN groups ON splits.group_id = groups.id").
+		Where("groups.url_slug = ?", req.UrlSlug).
+		Scan(&splitsWithNames).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get splits with names: %v", err)
+	}
+
+	responseSplits := make([]*SplitWithNames, len(splitsWithNames))
+	for i, split := range splitsWithNames {
+		responseSplits[i] = &split
+	}
+
+	return &GetSplitsByGroupResponse{
+		Splits: responseSplits,
+	}, nil
+}
+
 // CreateExpense creates a new expense with splits and recalculates group debts.
 // Input: CreateExpenseRequest with expense and splits data
 // Output: CreateExpenseResponse with created expense and splits

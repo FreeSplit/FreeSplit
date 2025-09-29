@@ -20,6 +20,7 @@ type ParticipantService interface {
 type ExpenseService interface {
 	GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error)
 	GetExpenseWithSplits(ctx context.Context, req *GetExpenseWithSplitsRequest) (*GetExpenseWithSplitsResponse, error)
+	GetSplitsByGroup(ctx context.Context, req *GetSplitsByGroupRequest) (*GetSplitsByGroupResponse, error)
 	CreateExpense(ctx context.Context, req *CreateExpenseRequest) (*CreateExpenseResponse, error)
 	UpdateExpense(ctx context.Context, req *UpdateExpenseRequest) (*UpdateExpenseResponse, error)
 	DeleteExpense(ctx context.Context, req *DeleteExpenseRequest) error

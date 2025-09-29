@@ -87,6 +87,25 @@ type GetExpenseWithSplitsResponse struct {
 	Splits  []*Split `json:"splits"`
 }
 
+type GetSplitsByGroupRequest struct {
+	UrlSlug string `json:"url_slug"`
+}
+
+type GetSplitsByGroupResponse struct {
+	Splits []*SplitWithNames `json:"splits"`
+}
+
+type SplitWithNames struct {
+	SplitId         int32   `json:"split_id"`
+	GroupId         int32   `json:"group_id"`
+	ExpenseId       int32   `json:"expense_id"`
+	ParticipantId   int32   `json:"participant_id"`
+	SplitAmount     float64 `json:"split_amount"`
+	ParticipantName string  `json:"participant_name"`
+	PayerId         int32   `json:"payer_id"`
+	PayerName       string  `json:"payer_name"`
+}
+
 type UpdateExpenseRequest struct {
 	Expense *Expense `json:"expense"`
 	Splits  []*Split `json:"splits"`

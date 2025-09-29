@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, DollarSign, Check } from 'lucide-react';
-import { getDebtsPageData, createPayment } from '../services/api';
-import { DebtPageData } from '../services/api';
+import { getDebtsPageData, createPayment, getSplitsByGroup } from '../services/api';
+import { DebtPageData, SplitWithNames } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -11,28 +10,44 @@ import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
 import SimplifyAnimationFM, { Edge as AnimationEdge, AnimationNode } from "../animations/SimplifyAnimation";
 import { ring } from 'ldrs'; ring.register();
 
-const formatAmount = (value: number): string => {
-  if (!Number.isFinite(value)) {
-    return '0.00';
-  }
-  return value.toLocaleString(undefined, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-};
-
-// Note: buildRawEdges function is not currently used but kept for potential future use
 
 const roundToTwo = (value: number) => Math.round(value * 100) / 100;
 
 const truncateLabel = (name: string) =>
   name.length > 10 ? `${name.slice(0, 10)}...` : name;
 
-// buildRawEdges function commented out - not currently used
-// const buildRawEdges = (details: ExpenseWithSplits[]): AnimationEdge[] => {
-//   const edgeMap = new Map<string, number>();
-//   // ... implementation would go here
-// };
+// Animation function - builds raw edges from splits data
+// This is completely separate from debt settlement logic
+const buildRawEdges = (splits: SplitWithNames[]): AnimationEdge[] => {
+  const edgeMap = new Map<string, number>();
+
+  splits.forEach((split) => {
+    // Skip if participant is the same as payer (no debt to themselves)
+    if (split.participant_id === split.payer_id) {
+      return;
+    }
+
+    // Create IDs from names for animation
+    const participantId = split.participant_name.toLowerCase().replace(/\s+/g, '-');
+    const payerId = split.payer_name.toLowerCase().replace(/\s+/g, '-');
+
+    const key = `${participantId}->${payerId}`;
+    const current = edgeMap.get(key) ?? 0;
+    const nextAmount = current + split.split_amount;
+    edgeMap.set(key, nextAmount);
+  });
+
+  return Array.from(edgeMap.entries())
+    .map(([key, amount]) => {
+      const [from, to] = key.split("->");
+      const rounded = roundToTwo(amount);
+      if (rounded <= 0.009) {
+        return null;
+      }
+      return { from, to, amount: rounded } as AnimationEdge;
+    })
+    .filter((edge): edge is AnimationEdge => edge !== null);
+};
 
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
@@ -46,10 +61,22 @@ const Debts: React.FC = () => {
   const loadDebtsData = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await getDebtsPageData(urlSlug!);
+      const debtsResponse = await getDebtsPageData(urlSlug!);
       
-      setDebts(response.debts);
-      setCurrency(response.currency);
+      setDebts(debtsResponse.debts);
+      setCurrency(debtsResponse.currency);
+      
+      // Load splits data for animation (separate from debt settlement)
+      try {
+        const splitsData = await getSplitsByGroup(urlSlug!);
+        console.log('Splits data:', splitsData);
+        const rawEdgesData = buildRawEdges(splitsData);
+        console.log('Raw edges data:', rawEdgesData);
+        setRawEdges(rawEdgesData);
+      } catch (splitsError) {
+        console.warn('Failed to load splits for animation:', splitsError);
+        // Don't show error to user - animation is optional
+      }
       
     } catch (error) {
       toast.error('Failed to load debts data');
@@ -65,12 +92,12 @@ const Debts: React.FC = () => {
     }
   }, [urlSlug, loadDebtsData]);
 
-  // Derive participants from debt data
+  // Derive participants from debt data and raw edges
   const participants = useMemo(() => {
     const participantMap = new Map<string, { id: string; name: string }>();
     
+    // Add participants from debts
     debts.forEach(debt => {
-      // Create a simple ID from the name for animation purposes
       const debtorId = debt.debtor_name.toLowerCase().replace(/\s+/g, '-');
       const lenderId = debt.lender_name.toLowerCase().replace(/\s+/g, '-');
       
@@ -78,13 +105,20 @@ const Debts: React.FC = () => {
       participantMap.set(lenderId, { id: lenderId, name: debt.lender_name });
     });
     
+    // Add participants from raw edges
+    rawEdges.forEach(edge => {
+      if (!participantMap.has(edge.from)) {
+        participantMap.set(edge.from, { id: edge.from, name: edge.from });
+      }
+      if (!participantMap.has(edge.to)) {
+        participantMap.set(edge.to, { id: edge.to, name: edge.to });
+      }
+    });
+    
     return Array.from(participantMap.values());
-  }, [debts]);
+  }, [debts, rawEdges]);
 
-  const getParticipantName = (participantId: string) => {
-    const participant = participants.find(p => p.id === participantId);
-    return participant?.name || 'Unknown';
-  };
+
 
   const nodes: AnimationNode[] = useMemo(() => {
     return participants

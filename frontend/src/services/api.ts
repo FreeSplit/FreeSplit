@@ -86,6 +86,17 @@ export interface Split {
   split_amount: number;
 }
 
+export interface SplitWithNames {
+  split_id: number;
+  group_id: number;
+  expense_id: number;
+  participant_id: number;
+  split_amount: number;
+  participant_name: string;
+  payer_id: number;
+  payer_name: string;
+}
+
 export interface Debt {
   debt_id: number;
   group_id: number;
@@ -195,6 +206,12 @@ export const getExpensesByGroup = async (groupId: number): Promise<Expense[]> =>
 export const getSplitsByParticipant = async (participantId: number): Promise<Split[]> => {
   // Simplified implementation for now
   return [];
+};
+
+// Animation API - gets splits with participant names for building raw edges
+export const getSplitsByGroup = async (urlSlug: string): Promise<SplitWithNames[]> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/splits`);
+  return response.data;
 };
 
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
