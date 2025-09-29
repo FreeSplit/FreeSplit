@@ -14,6 +14,7 @@ type Props = {
   cycleMs?: number; // full cycle duration
   autoplay?: boolean;
   currency?: string;
+  onClose?: () => void; // Callback for close button
 };
 
 type LayoutNode = { x: number; y: number; width?: number; height?: number };
@@ -29,6 +30,7 @@ export default function SimplifyAnimationFM({
   cycleMs = 2600,
   autoplay = true,
   currency,
+  onClose,
 }: Props) {
   const MIN_NODE_WIDTH = 48;
   const LABEL_HEIGHT = 28;
@@ -127,6 +129,9 @@ export default function SimplifyAnimationFM({
 
   const [phase, setPhase] = useState<Phase>(0);
   const playing = useRef<boolean>(autoplay);
+  const [isPlaying, setIsPlaying] = useState(autoplay);
+  const [cycleCount, setCycleCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(true);
 
   const scaledNodeDimensions = useMemo(() => {
     return Object.fromEntries(
@@ -149,7 +154,7 @@ export default function SimplifyAnimationFM({
   );
 
   useEffect(() => {
-    if (!playing.current) return;
+    if (!playing.current || !isPlaying) return;
     const rawTime = cycleMs * 0.45;
     const xfadeTime = cycleMs * 0.15;
     const simpTime = cycleMs * 0.4;
@@ -158,19 +163,51 @@ export default function SimplifyAnimationFM({
 
     async function loop() {
       if (!mounted) return;
+      
+      // First cycle: Red -> Green
       setPhase(0);
       await sleep(rawTime);
-      if (!mounted || !playing.current) return;
+      if (!mounted || !playing.current || !isPlaying) return;
 
       setPhase(1);
       await sleep(xfadeTime);
-      if (!mounted || !playing.current) return;
+      if (!mounted || !playing.current || !isPlaying) return;
 
       setPhase(2);
       await sleep(simpTime);
-      if (!mounted || !playing.current) return;
+      if (!mounted || !playing.current || !isPlaying) return;
 
-      loop();
+      // Increment cycle count
+      setCycleCount(prev => {
+        const newCount = prev + 1;
+        return newCount;
+      });
+
+      // If we've completed 2 cycles, pause on green (phase 2)
+      if (cycleCount + 1 >= 2) {
+        setIsPlaying(false);
+        playing.current = false;
+        return; // End here on green arrows
+      }
+
+      // Second cycle: Red -> Green
+      if (isPlaying && playing.current) {
+        setPhase(0);
+        await sleep(rawTime);
+        if (!mounted || !playing.current || !isPlaying) return;
+
+        setPhase(1);
+        await sleep(xfadeTime);
+        if (!mounted || !playing.current || !isPlaying) return;
+
+        setPhase(2);
+        await sleep(simpTime);
+        if (!mounted || !playing.current || !isPlaying) return;
+
+        // After second cycle, pause on green
+        setIsPlaying(false);
+        playing.current = false;
+      }
     }
 
     loop();
@@ -179,13 +216,82 @@ export default function SimplifyAnimationFM({
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cycleMs]);
+  }, [cycleMs, isPlaying]);
 
   const rawOpacity = phase === 0 ? 1 : phase === 1 ? 0.4 : 0;
   const simpOpacity = phase === 0 ? 0 : phase === 1 ? 0.6 : 1;
 
+  const handlePlayPause = () => {
+    const newPlaying = !isPlaying;
+    setIsPlaying(newPlaying);
+    playing.current = newPlaying;
+  };
+
+  const handleClose = () => {
+    setIsVisible(false);
+    onClose?.();
+  };
+
+  if (!isVisible) {
+    return null;
+  }
+
   return (
-    <svg className="sa-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
+    <div className="sa-wrap" style={{ position: 'relative' }}>
+      {/* Control buttons */}
+      <div style={{ 
+        position: 'absolute', 
+        top: '0px', 
+        left: '8px', 
+        right: '8px', 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        zIndex: 10,
+        pointerEvents: 'none'
+      }}>
+        {/* Close button */}
+        <button
+          onClick={handleClose}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#9CA3AF',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            pointerEvents: 'auto',
+            padding: '4px'
+          }}
+          title="Close animation"
+        >
+          ×
+        </button>
+
+        {/* Play/Pause button */}
+        <button
+          onClick={handlePlayPause}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: '#9CA3AF',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '16px',
+            pointerEvents: 'auto',
+            padding: '4px'
+          }}
+          title={isPlaying ? 'Pause animation' : 'Play animation'}
+        >
+          {isPlaying ? '⏸' : '▶'}
+        </button>
+      </div>
+
+      <svg className="sa-svg" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="xMidYMid meet">
         {/* raw edges */}
         <motion.g animate={{ opacity: rawOpacity }} transition={{ duration: 0.35 }}>
           {rawEdges.map((edge, i) => {
@@ -256,6 +362,7 @@ export default function SimplifyAnimationFM({
           );
         })}
       </svg>
+    </div>
   );
 }
 

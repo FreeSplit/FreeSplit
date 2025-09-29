@@ -57,6 +57,7 @@ const Debts: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<number | null>(null);
   const [rawEdges, setRawEdges] = useState<AnimationEdge[]>([]);
+  const [showAnimation, setShowAnimation] = useState(true);
 
   const loadDebtsData = useCallback(async () => {
     try {
@@ -207,7 +208,7 @@ const Debts: React.FC = () => {
           <h1>Debts</h1>
 
           {/* Animation Section */}
-          {debts.length > 0 && (
+          {debts.length > 0 && showAnimation && (
             <div className="v-flex align-center gap-16px">
               <SimplifyAnimationFM
                 nodes={nodes}
@@ -218,6 +219,7 @@ const Debts: React.FC = () => {
                 cycleMs={2800}
                 autoplay
                 currency={currency}
+                onClose={() => setShowAnimation(false)}
               />
               <p>
                 Debts simplified from
