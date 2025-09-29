@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import type { Group, Participant } from '../services/api';
@@ -14,6 +14,14 @@ type AddMemberModalProps = {
 const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMemberAdded }) => {
   const [newMemberName, setNewMemberName] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus the input when modal opens
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, []);
 
   const handleBackdropClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
@@ -67,6 +75,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
         <form onSubmit={handleSubmit} className="form-item" id="new-member">
           <div className="form-input-container">
             <input
+              ref={inputRef}
               id="new-member-name"
               type="text"
               value={newMemberName}
