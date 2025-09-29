@@ -120,15 +120,14 @@ const Members: React.FC = () => {
               </div>
             ) : (
               participants.map((participant) => (
-                <div key={participant.id} className="list">
-                  <button 
-                    className="list-item"
-                    onClick={() => openEditModal(participant)}
-                  >
-                    <p>{participant.name}</p>
-                    <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
-                  </button>
-                </div>
+                <button 
+                  key={participant.id}
+                  className="list-item"
+                  onClick={() => openEditModal(participant)}
+                >
+                  <p>{participant.name}</p>
+                  <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+                </button>
               ))
             )}
           </div>

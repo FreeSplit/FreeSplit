@@ -163,7 +163,7 @@ export const addParticipant = async (data: {
     name: data.name,
     group_id: data.group_id
   });
-  return response.data;
+  return response.data.participant;
 };
 
 export const updateParticipant = async (data: {
