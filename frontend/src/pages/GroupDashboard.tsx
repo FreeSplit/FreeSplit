@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
-import { getGroup, getExpensesByGroup, getDebts, deleteExpense } from '../services/api';
-import { Group, Expense, Debt, Participant } from '../services/api';
+import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
+import { Group, Expense, Participant } from '../services/api';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -36,15 +36,11 @@ const GroupDashboard: React.FC = () => {
       setLoading(true);
       const groupResponse = await getGroup(urlSlug!);
       
-      const [expensesResponse, debtsResponse] = await Promise.all([
-        getExpensesByGroup(groupResponse.group.id),
-        getDebts(groupResponse.group.id)
-      ]);
+      const expensesResponse = await getExpensesByGroup(groupResponse.group.id);
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
       setExpenses(expensesResponse);
-      // Note: debts are loaded but not currently displayed in the UI
     } catch (error) {
       console.error('Error loading group data:', error);
     } finally {

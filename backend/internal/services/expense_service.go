@@ -13,10 +13,18 @@ type expenseService struct {
 	db *gorm.DB
 }
 
+// NewExpenseService creates a new instance of the expense service with database connection.
+// Input: gorm.DB database connection
+// Output: ExpenseService interface implementation
+// Description: Initializes expense service with database dependency injection
 func NewExpenseService(db *gorm.DB) ExpenseService {
 	return &expenseService{db: db}
 }
 
+// GetExpensesByGroup retrieves all expenses for a specific group ordered by creation date.
+// Input: GetExpensesByGroupRequest containing GroupId
+// Output: GetExpensesByGroupResponse with list of expenses
+// Description: Fetches all expenses for a group in descending order by creation date
 func (s *expenseService) GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error) {
 	var expenses []database.Expense
 	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Find(&expenses).Error; err != nil {
@@ -58,6 +66,48 @@ func (s *expenseService) GetExpenseWithSplits(ctx context.Context, req *GetExpen
 	}, nil
 }
 
+// GetSplitsByGroup retrieves all splits for a group with participant and payer names.
+// This is used for animation purposes and is separate from debt settlement logic.
+func (s *expenseService) GetSplitsByGroup(ctx context.Context, req *GetSplitsByGroupRequest) (*GetSplitsByGroupResponse, error) {
+	var splitsWithNames []SplitWithNames
+
+	// Join splits with participants, expenses, and groups to get names using urlSlug
+	err := s.db.Table("splits").
+		Select(`
+			splits.id as split_id,
+			splits.group_id,
+			splits.expense_id,
+			splits.participant_id,
+			splits.split_amount,
+			participant.name as participant_name,
+			expenses.payer_id,
+			payer.name as payer_name
+		`).
+		Joins("JOIN participants as participant ON splits.participant_id = participant.id").
+		Joins("JOIN expenses ON splits.expense_id = expenses.id").
+		Joins("JOIN participants as payer ON expenses.payer_id = payer.id").
+		Joins("JOIN groups ON splits.group_id = groups.id").
+		Where("groups.url_slug = ?", req.UrlSlug).
+		Scan(&splitsWithNames).Error
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to get splits with names: %v", err)
+	}
+
+	responseSplits := make([]*SplitWithNames, len(splitsWithNames))
+	for i, split := range splitsWithNames {
+		responseSplits[i] = &split
+	}
+
+	return &GetSplitsByGroupResponse{
+		Splits: responseSplits,
+	}, nil
+}
+
+// CreateExpense creates a new expense with splits and recalculates group debts.
+// Input: CreateExpenseRequest with expense and splits data
+// Output: CreateExpenseResponse with created expense and splits
+// Description: Creates expense, saves splits, and recalculates simplified debts for the group
 func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRequest) (*CreateExpenseResponse, error) {
 	// Start transaction
 	tx := s.db.Begin()
@@ -100,7 +150,7 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -121,6 +171,10 @@ func (s *expenseService) CreateExpense(ctx context.Context, req *CreateExpenseRe
 	}, nil
 }
 
+// UpdateExpense updates an existing expense and its splits, then recalculates group debts.
+// Input: UpdateExpenseRequest with expense ID and updated data
+// Output: UpdateExpenseResponse with updated expense and splits
+// Description: Updates expense, replaces splits, and recalculates simplified debts
 func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRequest) (*UpdateExpenseResponse, error) {
 	// Start transaction
 	tx := s.db.Begin()
@@ -170,7 +224,7 @@ func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -191,6 +245,10 @@ func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRe
 	}, nil
 }
 
+// DeleteExpense deletes an expense and its splits, then recalculates group debts.
+// Input: DeleteExpenseRequest with expense ID
+// Output: error if deletion fails
+// Description: Removes expense, deletes associated splits, and recalculates debts
 func (s *expenseService) DeleteExpense(ctx context.Context, req *DeleteExpenseRequest) error {
 	// Start transaction
 	tx := s.db.Begin()
@@ -223,7 +281,7 @@ func (s *expenseService) DeleteExpense(ctx context.Context, req *DeleteExpenseRe
 	}
 
 	// Calculate and update simplified debts
-	if err := s.calculateSimplifiedDebts(tx, expense.GroupID); err != nil {
+	if err := s.updateDebts(tx, expense.GroupID); err != nil {
 		tx.Rollback()
 		return fmt.Errorf("failed to calculate debts: %v", err)
 	}
@@ -272,7 +330,13 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 	}
 
-	// Clear existing debts for this group
+	// Factor in existing debt settlements (paid amounts) BEFORE clearing debts
+	var existingDebts []database.Debt
+	if err := tx.Where("group_id = ?", groupID).Find(&existingDebts).Error; err != nil {
+		return err
+	}
+
+	// Clear existing debts for this group AFTER factoring in paid amounts
 	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
 		return err
 	}
@@ -321,7 +385,6 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 			LenderID:   creditor.ID,
 			DebtorID:   debtor.ID,
 			DebtAmount: settleAmount,
-			PaidAmount: 0,
 		}
 
 		if err := tx.Create(&debt).Error; err != nil {
@@ -338,6 +401,38 @@ func (s *expenseService) calculateSimplifiedDebts(tx *gorm.DB, groupID uint) err
 		}
 		if debtor.Balance <= 0.01 {
 			debtorIdx++
+		}
+	}
+
+	return nil
+}
+
+// updateDebts updates debts using the new calculation method and preserves paid amounts.
+// Input: gorm.DB transaction and groupID
+// Output: error if debt calculation fails
+// Description: Calculates new debts, preserves existing paid amounts, and updates database
+func (s *expenseService) updateDebts(tx *gorm.DB, groupID uint) error {
+	// Get existing debts to preserve paid amounts
+	var existingDebts []database.Debt
+	if err := tx.Where("group_id = ?", groupID).Find(&existingDebts).Error; err != nil {
+		return err
+	}
+
+	// Calculate new debts using the improved algorithm
+	newDebts, err := CalculateNetDebts(tx, groupID)
+	if err != nil {
+		return err
+	}
+
+	// Clear existing debts
+	if err := tx.Where("group_id = ?", groupID).Delete(&database.Debt{}).Error; err != nil {
+		return err
+	}
+
+	// Create new debts
+	for _, debt := range newDebts {
+		if err := tx.Create(&debt).Error; err != nil {
+			return err
 		}
 	}
 

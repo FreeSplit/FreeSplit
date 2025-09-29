@@ -20,6 +20,7 @@ type ParticipantService interface {
 type ExpenseService interface {
 	GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error)
 	GetExpenseWithSplits(ctx context.Context, req *GetExpenseWithSplitsRequest) (*GetExpenseWithSplitsResponse, error)
+	GetSplitsByGroup(ctx context.Context, req *GetSplitsByGroupRequest) (*GetSplitsByGroupResponse, error)
 	CreateExpense(ctx context.Context, req *CreateExpenseRequest) (*CreateExpenseResponse, error)
 	UpdateExpense(ctx context.Context, req *UpdateExpenseRequest) (*UpdateExpenseResponse, error)
 	DeleteExpense(ctx context.Context, req *DeleteExpenseRequest) error
@@ -27,6 +28,7 @@ type ExpenseService interface {
 
 // DebtService interface
 type DebtService interface {
-	GetDebts(ctx context.Context, req *GetDebtsRequest) (*GetDebtsResponse, error)
-	UpdateDebtPaidAmount(ctx context.Context, req *UpdateDebtPaidAmountRequest) (*UpdateDebtPaidAmountResponse, error)
+	GetDebtsPageData(ctx context.Context, req *GetDebtsRequest) (*GetDebtsPageDataResponse, error)
+	CreatePayment(ctx context.Context, req *CreatePaymentRequest) (*CreatePaymentResponse, error)
+	GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error)
 }

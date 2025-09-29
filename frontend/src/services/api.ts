@@ -86,13 +86,37 @@ export interface Split {
   split_amount: number;
 }
 
+export interface SplitWithNames {
+  split_id: number;
+  group_id: number;
+  expense_id: number;
+  participant_id: number;
+  split_amount: number;
+  participant_name: string;
+  payer_id: number;
+  payer_name: string;
+}
+
 export interface Debt {
   debt_id: number;
   group_id: number;
   lender_id: number;
   debtor_id: number;
   debt_amount: number;
-  paid_amount: number;
+}
+
+// Optimized debt data for the debts page
+export interface DebtPageData {
+  id: number;
+  debt_amount: number;
+  debtor_name: string;
+  lender_name: string;
+  currency: string;
+}
+
+export interface DebtsPageResponse {
+  debts: DebtPageData[];
+  currency: string;
 }
 
 // Group API
@@ -184,6 +208,12 @@ export const getSplitsByParticipant = async (participantId: number): Promise<Spl
   return [];
 };
 
+// Animation API - gets splits with participant names for building raw edges
+export const getSplitsByGroup = async (urlSlug: string): Promise<SplitWithNames[]> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/splits`);
+  return response.data;
+};
+
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
   const response = await axios.get(`${API_BASE_URL}/api/expense/${expenseId}`);
   return {
@@ -226,27 +256,24 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
 
 
 // Debt API
-export const getDebts = async (groupId: number): Promise<Debt[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/debts`);
-  console.log('Getting debts:', response.data);
+// Optimized API for debts page - gets all data in one call
+export const getDebtsPageData = async (urlSlug: string): Promise<DebtsPageResponse> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts-page-data`);
+  console.log('Getting debts page data:', response.data);
   
-  // Transform the response to match the Debt interface
-  return response.data.map((debt: any) => ({
-    debt_id: debt.id,
-    group_id: debt.group_id,
-    lender_id: debt.lender_id,
-    debtor_id: debt.debtor_id,
-    debt_amount: debt.debt_amount,
-    paid_amount: debt.paid_amount
-  }));
+  return {
+    debts: response.data.debts,
+    currency: response.data.currency
+  };
 };
 
-export const updateDebtPaidAmount = async (data: {
+// Creates a payment record aka settles a debt and recalculates all debts for the group
+export const createPayment = async (data: {
   debt_id: number;
   paid_amount: number;
 }): Promise<Debt> => {
   try {
-    console.log('Updating debt paid amount:', data);
+    console.log('Creating payment:', data);
     const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
       debt_id: data.debt_id,
       paid_amount: data.paid_amount

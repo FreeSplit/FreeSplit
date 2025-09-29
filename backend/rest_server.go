@@ -95,10 +95,24 @@ func main() {
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
-		} else if strings.Contains(r.URL.Path, "/debts") {
+		} else if strings.Contains(r.URL.Path, "/splits") {
 			switch r.Method {
 			case "GET":
-				getDebts(w, r, debtService)
+				getSplitsByGroup(w, r, expenseService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		} else if strings.Contains(r.URL.Path, "/debts-page-data") {
+			switch r.Method {
+			case "GET":
+				getDebtsPageData(w, r, debtService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		} else if strings.Contains(r.URL.Path, "/payments") {
+			switch r.Method {
+			case "GET":
+				getPayments(w, r, debtService)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -143,7 +157,7 @@ func main() {
 		if strings.Contains(r.URL.Path, "/paid") {
 			switch r.Method {
 			case "PUT":
-				updateDebtPaidAmount(w, r, debtService)
+				createPayment(w, r, debtService)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -397,6 +411,35 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService s
 	json.NewEncoder(w).Encode(resp.Expenses)
 }
 
+func getSplitsByGroup(w http.ResponseWriter, r *http.Request, expenseService services.ExpenseService) {
+	// Extract urlSlug from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	urlSlug := pathParts[3]
+	if urlSlug == "" {
+		http.Error(w, "Invalid URL slug", http.StatusBadRequest)
+		return
+	}
+
+	serviceReq := &services.GetSplitsByGroupRequest{
+		UrlSlug: urlSlug,
+	}
+
+	resp, err := expenseService.GetSplitsByGroup(context.TODO(), serviceReq)
+	if err != nil {
+		log.Printf("Error getting splits: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp.Splits)
+}
+
 func createExpense(w http.ResponseWriter, r *http.Request, expenseService services.ExpenseService) {
 	var requestData struct {
 		Expense struct {
@@ -552,7 +595,7 @@ func deleteExpense(w http.ResponseWriter, r *http.Request, expenseService servic
 }
 
 // Debt handlers
-func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+func getPayments(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
 	// Extract group ID from URL path
 	pathParts := strings.Split(r.URL.Path, "/")
 	if len(pathParts) < 4 {
@@ -566,22 +609,48 @@ func getDebts(w http.ResponseWriter, r *http.Request, debtService services.DebtS
 		return
 	}
 
-	serviceReq := &services.GetDebtsRequest{
-		GroupId: int32(groupID),
+	// Get payments using service
+	req := &services.GetPaymentsRequest{GroupId: int32(groupID)}
+	response, err := debtService.GetPayments(r.Context(), req)
+	if err != nil {
+		http.Error(w, "Failed to get payments", http.StatusInternalServerError)
+		return
 	}
 
-	resp, err := debtService.GetDebts(context.TODO(), serviceReq)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(response.Payments)
+}
+
+func getDebtsPageData(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+	// Extract group URL slug from URL path
+	pathParts := strings.Split(r.URL.Path, "/")
+	if len(pathParts) < 4 {
+		http.Error(w, "Invalid URL", http.StatusBadRequest)
+		return
+	}
+
+	urlSlug := pathParts[3]
+	if urlSlug == "" {
+		http.Error(w, "Invalid group URL slug", http.StatusBadRequest)
+		return
+	}
+
+	serviceReq := &services.GetDebtsRequest{
+		UrlSlug: urlSlug,
+	}
+
+	resp, err := debtService.GetDebtsPageData(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error getting debts: %v", err)
+		log.Printf("Error getting debts page data: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp.Debts)
+	json.NewEncoder(w).Encode(resp)
 }
 
-func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+func createPayment(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
 	var req struct {
 		DebtID     int32   `json:"debt_id"`
 		PaidAmount float64 `json:"paid_amount"`
@@ -604,14 +673,14 @@ func updateDebtPaidAmount(w http.ResponseWriter, r *http.Request, debtService se
 		return
 	}
 
-	serviceReq := &services.UpdateDebtPaidAmountRequest{
+	serviceReq := &services.CreatePaymentRequest{
 		DebtId:     req.DebtID,
 		PaidAmount: req.PaidAmount,
 	}
 
-	resp, err := debtService.UpdateDebtPaidAmount(context.TODO(), serviceReq)
+	resp, err := debtService.CreatePayment(context.TODO(), serviceReq)
 	if err != nil {
-		log.Printf("Error updating debt %d: %v", req.DebtID, err)
+		log.Printf("Error creating payment for debt %d: %v", req.DebtID, err)
 
 		// Check if it's a business logic error
 		if strings.Contains(err.Error(), "not found") {

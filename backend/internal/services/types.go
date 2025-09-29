@@ -87,6 +87,25 @@ type GetExpenseWithSplitsResponse struct {
 	Splits  []*Split `json:"splits"`
 }
 
+type GetSplitsByGroupRequest struct {
+	UrlSlug string `json:"url_slug"`
+}
+
+type GetSplitsByGroupResponse struct {
+	Splits []*SplitWithNames `json:"splits"`
+}
+
+type SplitWithNames struct {
+	SplitId         int32   `json:"split_id"`
+	GroupId         int32   `json:"group_id"`
+	ExpenseId       int32   `json:"expense_id"`
+	ParticipantId   int32   `json:"participant_id"`
+	SplitAmount     float64 `json:"split_amount"`
+	ParticipantName string  `json:"participant_name"`
+	PayerId         int32   `json:"payer_id"`
+	PayerName       string  `json:"payer_name"`
+}
+
 type UpdateExpenseRequest struct {
 	Expense *Expense `json:"expense"`
 	Splits  []*Split `json:"splits"`
@@ -103,20 +122,39 @@ type DeleteExpenseRequest struct {
 
 // Request and Response types for Debt operations
 type GetDebtsRequest struct {
-	GroupId int32 `json:"group_id"`
+	GroupId int32  `json:"group_id,omitempty"`
+	UrlSlug string `json:"url_slug,omitempty"`
 }
 
-type GetDebtsResponse struct {
-	Debts []*Debt `json:"debts"`
+// Optimized debt data for the debts page
+type DebtPageData struct {
+	Id         int32   `json:"id"`
+	DebtAmount float64 `json:"debt_amount"`
+	DebtorName string  `json:"debtor_name"`
+	LenderName string  `json:"lender_name"`
+	Currency   string  `json:"currency"`
 }
 
-type UpdateDebtPaidAmountRequest struct {
+type GetDebtsPageDataResponse struct {
+	Debts    []*DebtPageData `json:"debts"`
+	Currency string          `json:"currency"`
+}
+
+type CreatePaymentRequest struct {
 	DebtId     int32   `json:"debt_id"`
 	PaidAmount float64 `json:"paid_amount"`
 }
 
-type UpdateDebtPaidAmountResponse struct {
+type CreatePaymentResponse struct {
 	Debt *Debt `json:"debt"`
+}
+
+type GetPaymentsRequest struct {
+	GroupId int32 `json:"group_id"`
+}
+
+type GetPaymentsResponse struct {
+	Payments []*Payment `json:"payments"`
 }
 
 // Data types
@@ -159,7 +197,15 @@ type Debt struct {
 	LenderId   int32   `json:"lender_id"`
 	DebtorId   int32   `json:"debtor_id"`
 	DebtAmount float64 `json:"debt_amount"`
-	PaidAmount float64 `json:"paid_amount"`
+}
+
+type Payment struct {
+	Id        int32     `json:"id"`
+	GroupId   int32     `json:"group_id"`
+	PayerId   int32     `json:"payer_id"`
+	PayeeId   int32     `json:"payee_id"`
+	Amount    float64   `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 // Conversion functions from database models to service types
@@ -211,6 +257,5 @@ func DebtFromDB(dbDebt *database.Debt) *Debt {
 		LenderId:   int32(dbDebt.LenderID),
 		DebtorId:   int32(dbDebt.DebtorID),
 		DebtAmount: dbDebt.DebtAmount,
-		PaidAmount: dbDebt.PaidAmount,
 	}
 }
