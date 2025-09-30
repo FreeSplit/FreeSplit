@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { localStorageService, UserGroup } from '../services/localStorage';
-import { getUserGroupsSummary, getGroupParticipants, UserGroupRequest, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
+import { getUserGroupsSummary, getGroupParticipants, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faPlus, faTimes, faChevronDown } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faPlus, faTimes, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 
 // Remove the local interfaces since we're using the API types now
@@ -167,8 +167,11 @@ const Groups: React.FC = () => {
                       <div className="flex items-center justify-between w-full">
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold mb-1">
-                            {summary?.groupName || group.groupUrlSlug}
+                            {summary?.groupName || 'Untitled Group'}
                           </h3>
+                          <p className="text-xs text-gray-500 mb-2">
+                            {group.groupUrlSlug}
+                          </p>
                           <div className="flex items-center gap-4 text-sm text-gray-600">
                             <span>Last visited: {new Date(group.lastVisited).toLocaleDateString()}</span>
                             {summary && (
@@ -179,12 +182,6 @@ const Groups: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => navigate(`/group/${group.groupUrlSlug}`)}
-                            className="btn btn-sm"
-                          >
-                            View Group
-                          </button>
                           <button
                             onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
                             className="btn btn-sm"
@@ -201,6 +198,13 @@ const Groups: React.FC = () => {
                           >
                             <FontAwesomeIcon icon={faTimes} />
                           </button>
+                          <button
+                            onClick={() => navigate(`/group/${group.groupUrlSlug}`)}
+                            className="btn btn-sm"
+                            title="View Group"
+                          >
+                            <FontAwesomeIcon icon={faChevronRight} />
+                          </button>
                         </div>
                       </div>
                     </div>
@@ -208,7 +212,14 @@ const Groups: React.FC = () => {
                     {/* Expanded Section - Name Selection */}
                     {isExpanded && participants && (
                       <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-3">Select your name in this group:</h4>
+                        <div className="flex items-center gap-3 mb-3">
+                          <h4 className="font-medium">Select your name in this group:</h4>
+                          {group.userParticipantName && (
+                            <span className="text-sm text-gray-600">
+                              Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
+                            </span>
+                          )}
+                        </div>
                         <div className="flex flex-wrap gap-2">
                           {participants.participants.map((participant) => (
                             <button
@@ -228,11 +239,6 @@ const Groups: React.FC = () => {
                             </button>
                           ))}
                         </div>
-                        {group.userParticipantName && (
-                          <p className="mt-2 text-sm text-gray-600">
-                            Currently selected: <span className="font-medium">{group.userParticipantName}</span>
-                          </p>
-                        )}
                       </div>
                     )}
                   </div>
