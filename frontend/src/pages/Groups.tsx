@@ -114,6 +114,9 @@ const Groups: React.FC = () => {
     if (userGroups.length > 0 && groupSummaries.length === 0) {
       // Only load data on initial load, not when participants change
       loadGroupData();
+    } else if (userGroups.length === 0) {
+      // If no groups, stop loading immediately
+      setLoading(false);
     }
   }, [userGroups, loadGroupData, groupSummaries.length]);
 
