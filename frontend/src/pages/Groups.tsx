@@ -254,31 +254,35 @@ const Groups: React.FC = () => {
                           <p className="text-xs text-gray-500 mb-1">
                             {group.groupUrlSlug}
                           </p>
-                          <div className="flex items-center text-xs text-gray-500 mb-2">
-                            <span>
-                              Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric',
-                                hour: 'numeric',
-                                minute: '2-digit',
-                                hour12: true
-                              }).replace(/\./g, '')}
-                            </span>
-                            {group.userParticipantName && (
-                              <span className="text-xs text-gray-600 ml-6">
-                                Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
+                          <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
+                            <div className="flex items-center">
+                              <span>
+                                Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
+                                  year: 'numeric',
+                                  month: 'short',
+                                  day: 'numeric',
+                                  hour: 'numeric',
+                                  minute: '2-digit',
+                                  hour12: true
+                                }).replace(/\./g, '')}
                               </span>
-                            )}
-                            {summary ? (
-                              <span className={`font-medium ${getBalanceColor(summary.net_balance)} ml-4`}>
-                                {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.net_balance).toFixed(2)}
-                              </span>
-                            ) : (
-                              <span className="text-gray-400 ml-4 text-xs">
-                                No balance data
-                              </span>
-                            )}
+                              {group.userParticipantName && (
+                                <span className="text-xs text-gray-600 ml-6">
+                                  Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="mr-4">
+                              {summary ? (
+                                <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
+                                  {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.net_balance).toFixed(2)}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400 text-xs">
+                                  No balance data
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
