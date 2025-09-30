@@ -158,6 +158,17 @@ const Groups: React.FC = () => {
     }
   };
 
+  const handleCopyGroupLink = async (groupUrlSlug: string) => {
+    try {
+      const groupLink = `${window.location.origin}/group/${groupUrlSlug}`;
+      await navigator.clipboard.writeText(groupLink);
+      toast.success('Group link copied');
+    } catch (error) {
+      console.error('Error copying group link:', error);
+      toast.error('Failed to copy group link');
+    }
+  };
+
   const handleParticipantSelect = async (groupUrlSlug: string, participantId: number, participantName: string) => {
     try {
       // Check if this participant is already selected
@@ -270,10 +281,18 @@ const Groups: React.FC = () => {
                     <div className="expense-details">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex-1">
-                          <h3 className="text-lg font-semibold mb-1">
+                          <h3 
+                            className="text-lg font-semibold mb-1 cursor-pointer hover:text-blue-600 transition-colors"
+                            onClick={() => handleCopyGroupLink(group.groupUrlSlug)}
+                            title="Click to copy group link"
+                          >
                             {groupNames[group.groupUrlSlug] || 'Loading...'}
                           </h3>
-                          <p className="text-xs text-gray-500 mb-1">
+                          <p 
+                            className="text-xs text-gray-500 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
+                            onClick={() => handleCopyGroupLink(group.groupUrlSlug)}
+                            title="Click to copy group link"
+                          >
                             {group.groupUrlSlug}
                           </p>
                           <div className="flex items-center justify-between text-xs text-gray-500 mb-2">
