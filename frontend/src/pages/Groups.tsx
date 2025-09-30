@@ -160,7 +160,7 @@ const Groups: React.FC = () => {
 
   const handleCopyGroupLink = async (groupUrlSlug: string) => {
     try {
-      const groupLink = `${window.location.origin}/group/${groupUrlSlug}`;
+      const groupLink = `${window.location.origin}/groups/${groupUrlSlug}`;
       await navigator.clipboard.writeText(groupLink);
       toast.success('Group link copied');
     } catch (error) {
@@ -376,7 +376,7 @@ const Groups: React.FC = () => {
                             <FontAwesomeIcon icon={faTimes} />
                           </button>
                           <button
-                            onClick={() => navigate(`/group/${group.groupUrlSlug}`)}
+                            onClick={() => navigate(`/groups/${group.groupUrlSlug}`)}
                             className="btn btn-sm"
                             title="View Group"
                           >

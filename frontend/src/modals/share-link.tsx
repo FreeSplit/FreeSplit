@@ -12,7 +12,7 @@ type ShareLinkProps = {
 const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
-  const shareUrl = `https://freesplit.ca/group/${group.url_slug}`;
+  const shareUrl = `https://freesplit.ca/groups/${group.url_slug}`;
 
   useEffect(() => {
     return () => {

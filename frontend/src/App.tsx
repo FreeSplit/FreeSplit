@@ -27,7 +27,7 @@ const CatchAllRoute: React.FC = () => {
   if (groupMatch) {
     // Extract the group slug and redirect to that group's dashboard
     const groupSlug = groupMatch[1];
-    return <Navigate to={`/group/${groupSlug}`} replace />;
+    return <Navigate to={`/groups/${groupSlug}`} replace />;
   }
   
   // For all other unmatched routes, redirect to landing page
@@ -43,11 +43,11 @@ function App() {
           <Route path="/create-a-group/" element={<CreateGroup />} />
           <Route path="/groups" element={<Groups />} />
           <Route path="/group" element={<Navigate to="/" replace />} />
-          <Route path="/group/:urlSlug" element={<GroupDashboard />} />
-          <Route path="/group/:urlSlug/expenses/add" element={<AddExpense />} />
-          <Route path="/group/:urlSlug/expenses/:expenseId/edit" element={<EditExpense />} />
-          <Route path="/group/:urlSlug/members" element={<Members />} />
-          <Route path="/group/:urlSlug/debts" element={<Debts />} />
+          <Route path="/groups/:urlSlug" element={<GroupDashboard />} />
+          <Route path="/groups/:urlSlug/expenses/add" element={<AddExpense />} />
+          <Route path="/groups/:urlSlug/expenses/:expenseId/edit" element={<EditExpense />} />
+          <Route path="/groups/:urlSlug/members" element={<Members />} />
+          <Route path="/groups/:urlSlug/debts" element={<Debts />} />
           <Route path="*" element={<CatchAllRoute />} />
         </Routes>
       </Router>

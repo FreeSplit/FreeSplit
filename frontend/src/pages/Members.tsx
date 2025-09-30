@@ -76,7 +76,7 @@ const Members: React.FC = () => {
 
   useEffect(() => {
     if (!loading && !group && urlSlug) {
-      navigate(`/group/${urlSlug}`);
+      navigate(`/groups/${urlSlug}`);
     }
   }, [loading, group, urlSlug, navigate]);
 

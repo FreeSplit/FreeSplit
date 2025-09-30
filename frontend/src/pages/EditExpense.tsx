@@ -1136,7 +1136,7 @@ const EditExpense: React.FC = () => {
       });
 
       toast.success('Expense updated successfully!');
-      navigate(`/group/${urlSlug}`);
+      navigate(`/groups/${urlSlug}`);
     } catch (error) {
       toast.error('Failed to update expense');
       console.error('Error updating expense:', error);
@@ -1157,7 +1157,7 @@ const EditExpense: React.FC = () => {
       setDeleting(true);
       await deleteExpense(expenseIdNumber);
       toast.success('Expense deleted successfully');
-      navigate(`/group/${urlSlug}`);
+      navigate(`/groups/${urlSlug}`);
     } catch (error) {
       toast.error('Failed to delete expense');
       console.error('Error deleting expense:', error);
@@ -1208,7 +1208,7 @@ const EditExpense: React.FC = () => {
             <div className="modal-header">
               <h2>Edit expense</h2>
               <Link
-                to={`/group/${urlSlug}`}
+                to={`/groups/${urlSlug}`}
                 aria-label="Close edit expense"
                 className="is-black"
               >
@@ -1574,7 +1574,7 @@ const EditExpense: React.FC = () => {
             <div className="footer-two-buttons">
               <button
                 type="button"
-                onClick={() => navigate(`/group/${urlSlug}`)}
+                onClick={() => navigate(`/groups/${urlSlug}`)}
                 className="btn--secondary has-full-width"
                 disabled={submitting || deleting}
               >

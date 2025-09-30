@@ -272,7 +272,7 @@ const Debts: React.FC = () => {
               <h2>No debts</h2>
               <p>Add an expense to track your group debts.</p>
               <button
-                 onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                 onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
                 className="btn"
                >
                 <span>Add an expense</span>
