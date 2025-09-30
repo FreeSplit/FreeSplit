@@ -131,6 +131,8 @@ export interface UserGroupSummary {
   group_name: string;
   currency: string;
   net_balance: number;
+  participant_id?: number;
+  participant_name?: string;
 }
 
 export interface UserGroupsSummaryResponse {

@@ -45,36 +45,7 @@ const Groups: React.FC = () => {
       setLoading(true);
       console.log('🔍 [DEBUG] Loading group data for userGroups:', userGroups);
       
-      // Prepare groups with participant info for summary API
-      const groupsWithParticipants = userGroups
-        .filter(group => group.userParticipantId > 0) // Only include groups where user has selected a participant
-        .map(group => ({
-          group_url_slug: group.groupUrlSlug,
-          user_participant_id: group.userParticipantId,
-          user_participant_name: group.userParticipantName
-        }));
-
-      console.log('🔍 [DEBUG] Groups with participants:', groupsWithParticipants);
-
-      // Get group summaries (only for groups where user has selected a participant)
-      let summaries: UserGroupSummary[] = [];
-      if (groupsWithParticipants.length > 0) {
-        console.log('🔍 [DEBUG] Requesting summaries for groups with participants...');
-        console.log('🔍 [DEBUG] Data being sent to API:', groupsWithParticipants);
-        try {
-          const summaryResponse = await getUserGroupsSummary(groupsWithParticipants);
-          console.log('🔍 [DEBUG] Summary response:', summaryResponse);
-          summaries = summaryResponse.groups;
-        } catch (error) {
-          console.error('🔍 [DEBUG] Error getting summaries:', error);
-          console.error('🔍 [DEBUG] Data that caused error:', groupsWithParticipants);
-          // Don't fail the whole operation if summaries fail
-        }
-      } else {
-        console.log('🔍 [DEBUG] No groups with participants selected, skipping summary request');
-      }
-
-      // Get participants for all groups
+      // Get participants for all groups first
       const groupSlugs = userGroups.map(group => group.groupUrlSlug);
       console.log('🔍 [DEBUG] Requesting participants for group slugs:', groupSlugs);
       let participantsResponse: GroupParticipantsResponse = { groups: [] };
@@ -96,11 +67,36 @@ const Groups: React.FC = () => {
           groupNamesMap[groupSlug] = 'Unknown Group';
         }
       }
+
+      // Preload summaries for ALL participants in ALL groups
+      console.log('🔍 [DEBUG] Preloading summaries for all participants...');
+      const allSummaries: UserGroupSummary[] = [];
       
-      console.log('🔍 [DEBUG] Setting summaries:', summaries);
+      for (const group of participantsResponse.groups) {
+        for (const participant of group.participants) {
+          try {
+            const summaryResponse = await getUserGroupsSummary([{
+              group_url_slug: group.group_url_slug,
+              user_participant_id: participant.id,
+              user_participant_name: participant.name
+            }]);
+            // Add participant info to each summary
+            const summariesWithParticipant = summaryResponse.groups.map(s => ({
+              ...s,
+              participant_id: participant.id,
+              participant_name: participant.name
+            }));
+            allSummaries.push(...summariesWithParticipant);
+          } catch (error) {
+            console.error(`🔍 [DEBUG] Error fetching summary for ${participant.name} in ${group.group_url_slug}:`, error);
+          }
+        }
+      }
+      
+      console.log('🔍 [DEBUG] Setting summaries:', allSummaries);
       console.log('🔍 [DEBUG] Setting participants:', participantsResponse.groups);
       console.log('🔍 [DEBUG] Setting group names:', groupNamesMap);
-      setGroupSummaries(summaries);
+      setGroupSummaries(allSummaries);
       setGroupParticipants(participantsResponse.groups);
       setGroupNames(groupNamesMap);
     } catch (error) {
@@ -171,35 +167,15 @@ const Groups: React.FC = () => {
             ? { ...g, userParticipantId: 0, userParticipantName: '' }
             : g
         ));
-        // Remove from summaries
-        setGroupSummaries(prev => prev.filter(s => s.group_url_slug !== groupUrlSlug));
         toast.success(`Deselected ${participantName} for this group`);
       } else {
-        // Select the participant
+        // Select the participant (data is already preloaded)
         await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
         setUserGroups(prev => prev.map(g => 
           g.groupUrlSlug === groupUrlSlug 
             ? { ...g, userParticipantId: participantId, userParticipantName: participantName }
             : g
         ));
-        
-        // Fetch summary for this specific group
-        try {
-          const summaryResponse = await getUserGroupsSummary([{
-            group_url_slug: groupUrlSlug,
-            user_participant_id: participantId,
-            user_participant_name: participantName
-          }]);
-          
-          // Update summaries - remove old and add new
-          setGroupSummaries(prev => {
-            const filtered = prev.filter(s => s.group_url_slug !== groupUrlSlug);
-            return [...filtered, ...summaryResponse.groups];
-          });
-        } catch (error) {
-          console.error('Error fetching summary for selected participant:', error);
-        }
-        
         toast.success(`Selected ${participantName} for this group`);
       }
     } catch (error) {
@@ -224,7 +200,16 @@ const Groups: React.FC = () => {
   };
 
   const getGroupSummary = (groupUrlSlug: string): UserGroupSummary | undefined => {
-    return groupSummaries.find(g => g.group_url_slug === groupUrlSlug);
+    const group = userGroups.find(g => g.groupUrlSlug === groupUrlSlug);
+    if (!group || group.userParticipantId === 0) {
+      return undefined;
+    }
+    
+    // Find summary for the currently selected participant
+    return groupSummaries.find(s => 
+      s.group_url_slug === groupUrlSlug && 
+      s.participant_id === group.userParticipantId
+    );
   };
 
   const findGroupParticipants = (groupUrlSlug: string): GroupParticipantsResponse['groups'][0] | undefined => {
