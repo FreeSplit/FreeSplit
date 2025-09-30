@@ -74,9 +74,7 @@ const Debts: React.FC = () => {
       // Load splits data for animation (separate from debt settlement)
       try {
         const splitsData = await getSplitsByGroup(urlSlug!);
-        console.log('Splits data:', splitsData);
         const rawEdgesData = buildRawEdges(splitsData);
-        console.log('Raw edges data:', rawEdgesData);
         setRawEdges(rawEdgesData);
       } catch (splitsError) {
         console.warn('Failed to load splits for animation:', splitsError);

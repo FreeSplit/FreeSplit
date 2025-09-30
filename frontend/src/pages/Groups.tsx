@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { localStorageService, UserGroup } from '../services/localStorage';
 import { getUserGroupsSummary, getGroupParticipants, getGroup, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
@@ -18,9 +18,6 @@ const Groups: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   
-  // Debug: Track render count
-  const renderCount = useRef(0);
-  renderCount.current += 1;
 
   // Load user groups from local storage
   const loadUserGroups = useCallback(async () => {
@@ -42,33 +39,27 @@ const Groups: React.FC = () => {
 
     try {
       setLoading(true);
-      console.log('🔍 [DEBUG] Loading group data for userGroups:', userGroups);
       
       // Get participants for all groups first
       const groupSlugs = userGroups.map(group => group.groupUrlSlug);
-      console.log('🔍 [DEBUG] Requesting participants for group slugs:', groupSlugs);
       let participantsResponse: GroupParticipantsResponse = { groups: [] };
       if (groupSlugs.length > 0) {
         participantsResponse = await getGroupParticipants(groupSlugs);
-        console.log('🔍 [DEBUG] Participants response:', participantsResponse);
       }
 
       // Get group names for all groups
-      console.log('🔍 [DEBUG] Fetching group names...');
       const groupNamesMap: Record<string, string> = {};
       for (const groupSlug of groupSlugs) {
         try {
           const groupData = await getGroup(groupSlug);
           groupNamesMap[groupSlug] = groupData.group.name;
-          console.log(`🔍 [DEBUG] Group ${groupSlug} name: ${groupData.group.name}`);
         } catch (error) {
-          console.error(`🔍 [DEBUG] Error fetching group name for ${groupSlug}:`, error);
+          console.error(`Error fetching group name for ${groupSlug}:`, error);
           groupNamesMap[groupSlug] = 'Unknown Group';
         }
       }
 
       // Preload summaries for ALL participants in ALL groups
-      console.log('🔍 [DEBUG] Preloading summaries for all participants...');
       const allSummaries: UserGroupSummary[] = [];
       
       for (const group of participantsResponse.groups) {
@@ -87,14 +78,11 @@ const Groups: React.FC = () => {
             }));
             allSummaries.push(...summariesWithParticipant);
           } catch (error) {
-            console.error(`🔍 [DEBUG] Error fetching summary for ${participant.name} in ${group.group_url_slug}:`, error);
+            console.error(`Error fetching summary for ${participant.name} in ${group.group_url_slug}:`, error);
           }
         }
       }
       
-      console.log('🔍 [DEBUG] Setting summaries:', allSummaries);
-      console.log('🔍 [DEBUG] Setting participants:', participantsResponse.groups);
-      console.log('🔍 [DEBUG] Setting group names:', groupNamesMap);
       setGroupSummaries(allSummaries);
       setGroupParticipants(participantsResponse.groups);
       setGroupNames(groupNamesMap);
@@ -120,16 +108,6 @@ const Groups: React.FC = () => {
     }
   }, [userGroups, loadGroupData, groupSummaries.length]);
 
-  // Debug: Track re-renders
-  useEffect(() => {
-    console.log('🔍 [DEBUG] Component re-rendered. State:', {
-      userGroupsLength: userGroups.length,
-      groupSummariesLength: groupSummaries.length,
-      groupParticipantsLength: groupParticipants.length,
-      expandedGroupsSize: expandedGroups.size,
-      loading
-    });
-  });
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -199,16 +177,11 @@ const Groups: React.FC = () => {
   };
 
   const toggleGroupExpansion = (groupUrlSlug: string) => {
-    console.log('🔍 [DEBUG] Toggling dropdown for group:', groupUrlSlug);
-    console.log('🔍 [DEBUG] Current expandedGroups:', Array.from(expandedGroups));
-    
     if (expandedGroups.has(groupUrlSlug)) {
       // If this group is already open, close it
-      console.log('🔍 [DEBUG] Collapsing group:', groupUrlSlug);
       setExpandedGroups(new Set());
     } else {
       // If this group is closed, close all others and open this one
-      console.log('🔍 [DEBUG] Expanding group (closing all others):', groupUrlSlug);
       setExpandedGroups(new Set([groupUrlSlug]));
     }
   };
@@ -265,15 +238,6 @@ const Groups: React.FC = () => {
           const participants = findGroupParticipants(group.groupUrlSlug);
           const isExpanded = expandedGroups.has(group.groupUrlSlug);
           
-          // Debug: Only log when there's an issue
-          if (!summary && group.userParticipantId > 0) {
-            console.log(`🔍 [DEBUG] Group ${group.groupUrlSlug} has participant but no summary:`, {
-              groupUrlSlug: group.groupUrlSlug,
-              userParticipantId: group.userParticipantId,
-              userParticipantName: group.userParticipantName,
-              allSummaries: groupSummaries
-            });
-          }
                 
                 return (
                   <div key={group.groupUrlSlug}>

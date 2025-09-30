@@ -5,14 +5,6 @@ import axios from 'axios';
 const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
 const API_BASE_URL = isLocalhost ? 'http://localhost:8080' : (process.env.REACT_APP_API_URL || 'https://freesplit-backend.onrender.com');
 
-// Debug logging
-console.log('Environment variables:', {
-  REACT_APP_API_URL: process.env.REACT_APP_API_URL,
-  NODE_ENV: process.env.NODE_ENV,
-  API_BASE_URL: API_BASE_URL,
-  isLocalhost: isLocalhost,
-  currentHostname: window.location.hostname
-});
 
 // Create axios instance with cache control
 const apiClient = axios.create({
@@ -27,7 +19,6 @@ const apiClient = axios.create({
 // Add request interceptor for debugging
 apiClient.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url);
     return config;
   },
   (error) => {
@@ -39,7 +30,6 @@ apiClient.interceptors.request.use(
 // Add response interceptor for debugging
 apiClient.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.status, response.config.url);
     return response;
   },
   (error) => {
@@ -290,7 +280,6 @@ export const deleteExpense = async (expenseId: number): Promise<void> => {
 // Optimized API for debts page - gets all data in one call
 export const getDebtsPageData = async (urlSlug: string): Promise<DebtsPageResponse> => {
   const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/debts-page-data`);
-  console.log('Getting debts page data:', response.data);
   
   return {
     debts: response.data.debts,
@@ -304,7 +293,6 @@ export const createPayment = async (data: {
   paid_amount: number;
 }): Promise<Debt> => {
   try {
-    console.log('Creating payment:', data);
     const response = await axios.put(`${API_BASE_URL}/api/debts/paid`, {
       debt_id: data.debt_id,
       paid_amount: data.paid_amount
