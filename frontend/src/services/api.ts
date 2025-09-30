@@ -127,10 +127,10 @@ export interface UserGroupRequest {
 }
 
 export interface UserGroupSummary {
-  groupUrlSlug: string;
-  groupName: string;
+  group_url_slug: string;
+  group_name: string;
   currency: string;
-  netBalance: number;
+  net_balance: number;
 }
 
 export interface UserGroupsSummaryResponse {
@@ -139,10 +139,11 @@ export interface UserGroupsSummaryResponse {
 
 export interface GroupParticipantsResponse {
   groups: Array<{
-    groupUrlSlug: string;
+    group_url_slug: string;
     participants: Array<{
       id: number;
       name: string;
+      group_id: number;
     }>;
   }>;
 }

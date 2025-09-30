@@ -226,34 +226,42 @@ func getUserGroupsSummary(w http.ResponseWriter, r *http.Request, debtService se
 }
 
 func getGroupParticipants(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
+	log.Printf("🔍 [GET_GROUP_PARTICIPANTS] Starting request from %s", r.RemoteAddr)
+
 	var req services.GroupParticipantsRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		log.Printf("Invalid JSON in group participants request: %v", err)
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Invalid JSON in group participants request: %v", err)
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
 		return
 	}
 
+	log.Printf("📝 [GET_GROUP_PARTICIPANTS] Request data: %+v", req)
+
 	// Validate input
 	if len(req.GroupSlugs) == 0 {
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Group slugs list is empty")
 		http.Error(w, "Group slugs list cannot be empty", http.StatusBadRequest)
 		return
 	}
 
 	for _, slug := range req.GroupSlugs {
 		if slug == "" {
+			log.Printf("❌ [GET_GROUP_PARTICIPANTS] Empty group slug found")
 			http.Error(w, "Group slug cannot be empty", http.StatusBadRequest)
 			return
 		}
 	}
 
+	log.Printf("🔄 [GET_GROUP_PARTICIPANTS] Calling service with %d group slugs", len(req.GroupSlugs))
 	resp, err := groupService.GetGroupParticipants(context.TODO(), &req)
 	if err != nil {
-		log.Printf("Error getting group participants: %v", err)
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Error getting group participants: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	log.Printf("✅ [GET_GROUP_PARTICIPANTS] Success! Returning %d groups", len(resp.Groups))
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
 }

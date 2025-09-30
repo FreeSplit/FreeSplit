@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { localStorageService, UserGroup } from '../services/localStorage';
-import { getUserGroupsSummary, getGroupParticipants, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
+import { getUserGroupsSummary, getGroupParticipants, getGroup, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,8 +15,13 @@ const Groups: React.FC = () => {
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [groupSummaries, setGroupSummaries] = useState<UserGroupSummary[]>([]);
   const [groupParticipants, setGroupParticipants] = useState<GroupParticipantsResponse['groups']>([]);
+  const [groupNames, setGroupNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  
+  // Debug: Track render count
+  const renderCount = useRef(0);
+  renderCount.current += 1;
 
   // Load user groups from local storage
   const loadUserGroups = useCallback(async () => {
@@ -38,6 +43,7 @@ const Groups: React.FC = () => {
 
     try {
       setLoading(true);
+      console.log('🔍 [DEBUG] Loading group data for userGroups:', userGroups);
       
       // Prepare groups with participant info for summary API
       const groupsWithParticipants = userGroups
@@ -48,22 +54,53 @@ const Groups: React.FC = () => {
           userParticipantName: group.userParticipantName
         }));
 
+      console.log('🔍 [DEBUG] Groups with participants:', groupsWithParticipants);
+
       // Get group summaries (only for groups where user has selected a participant)
       let summaries: UserGroupSummary[] = [];
       if (groupsWithParticipants.length > 0) {
-        const summaryResponse = await getUserGroupsSummary(groupsWithParticipants);
-        summaries = summaryResponse.groups;
+        console.log('🔍 [DEBUG] Requesting summaries for groups with participants...');
+        try {
+          const summaryResponse = await getUserGroupsSummary(groupsWithParticipants);
+          console.log('🔍 [DEBUG] Summary response:', summaryResponse);
+          summaries = summaryResponse.groups;
+        } catch (error) {
+          console.error('🔍 [DEBUG] Error getting summaries:', error);
+          // Don't fail the whole operation if summaries fail
+        }
+      } else {
+        console.log('🔍 [DEBUG] No groups with participants selected, skipping summary request');
       }
 
       // Get participants for all groups
       const groupSlugs = userGroups.map(group => group.groupUrlSlug);
+      console.log('🔍 [DEBUG] Requesting participants for group slugs:', groupSlugs);
       let participantsResponse: GroupParticipantsResponse = { groups: [] };
       if (groupSlugs.length > 0) {
         participantsResponse = await getGroupParticipants(groupSlugs);
+        console.log('🔍 [DEBUG] Participants response:', participantsResponse);
+      }
+
+      // Get group names for all groups
+      console.log('🔍 [DEBUG] Fetching group names...');
+      const groupNamesMap: Record<string, string> = {};
+      for (const groupSlug of groupSlugs) {
+        try {
+          const groupData = await getGroup(groupSlug);
+          groupNamesMap[groupSlug] = groupData.group.name;
+          console.log(`🔍 [DEBUG] Group ${groupSlug} name: ${groupData.group.name}`);
+        } catch (error) {
+          console.error(`🔍 [DEBUG] Error fetching group name for ${groupSlug}:`, error);
+          groupNamesMap[groupSlug] = 'Unknown Group';
+        }
       }
       
+      console.log('🔍 [DEBUG] Setting summaries:', summaries);
+      console.log('🔍 [DEBUG] Setting participants:', participantsResponse.groups);
+      console.log('🔍 [DEBUG] Setting group names:', groupNamesMap);
       setGroupSummaries(summaries);
       setGroupParticipants(participantsResponse.groups);
+      setGroupNames(groupNamesMap);
     } catch (error) {
       console.error('Error loading group data:', error);
       toast.error('Failed to load group data');
@@ -81,6 +118,17 @@ const Groups: React.FC = () => {
       loadGroupData();
     }
   }, [userGroups, loadGroupData]);
+
+  // Debug: Track re-renders
+  useEffect(() => {
+    console.log('🔍 [DEBUG] Component re-rendered. State:', {
+      userGroupsLength: userGroups.length,
+      groupSummariesLength: groupSummaries.length,
+      groupParticipantsLength: groupParticipants.length,
+      expandedGroupsSize: expandedGroups.size,
+      loading
+    });
+  });
 
   const handleDeleteGroup = async (groupUrlSlug: string) => {
     try {
@@ -105,21 +153,26 @@ const Groups: React.FC = () => {
   };
 
   const toggleGroupExpansion = (groupUrlSlug: string) => {
+    console.log('🔍 [DEBUG] Toggling dropdown for group:', groupUrlSlug);
+    console.log('🔍 [DEBUG] Current expandedGroups:', Array.from(expandedGroups));
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(groupUrlSlug)) {
       newExpanded.delete(groupUrlSlug);
+      console.log('🔍 [DEBUG] Collapsing group:', groupUrlSlug);
     } else {
       newExpanded.add(groupUrlSlug);
+      console.log('🔍 [DEBUG] Expanding group:', groupUrlSlug);
     }
+    console.log('🔍 [DEBUG] New expandedGroups:', Array.from(newExpanded));
     setExpandedGroups(newExpanded);
   };
 
   const getGroupSummary = (groupUrlSlug: string): UserGroupSummary | undefined => {
-    return groupSummaries.find(g => g.groupUrlSlug === groupUrlSlug);
+    return groupSummaries.find(g => g.group_url_slug === groupUrlSlug);
   };
 
   const findGroupParticipants = (groupUrlSlug: string): GroupParticipantsResponse['groups'][0] | undefined => {
-    return groupParticipants.find(g => g.groupUrlSlug === groupUrlSlug);
+    return groupParticipants.find(g => g.group_url_slug === groupUrlSlug);
   };
 
 
@@ -152,10 +205,19 @@ const Groups: React.FC = () => {
           {/* Groups List */}
           {userGroups.length > 0 ? (
             <div className="expenses-container">
-              {userGroups.map((group, index) => {
-                const summary = getGroupSummary(group.groupUrlSlug);
-                const participants = findGroupParticipants(group.groupUrlSlug);
-                const isExpanded = expandedGroups.has(group.groupUrlSlug);
+        {userGroups.map((group, index) => {
+          const summary = getGroupSummary(group.groupUrlSlug);
+          const participants = findGroupParticipants(group.groupUrlSlug);
+          const isExpanded = expandedGroups.has(group.groupUrlSlug);
+          
+          console.log(`🔍 [DEBUG] Render #${renderCount.current} - Rendering group ${group.groupUrlSlug}:`, {
+            group,
+            summary,
+            participants,
+            isExpanded,
+            allParticipants: groupParticipants,
+            allSummaries: groupSummaries
+          });
                 
                 return (
                   <div key={group.groupUrlSlug}>
@@ -164,7 +226,7 @@ const Groups: React.FC = () => {
                       <div className="flex items-center justify-between w-full">
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold mb-1">
-                            {summary?.groupName || 'Loading...'}
+                            {groupNames[group.groupUrlSlug] || 'Loading...'}
                           </h3>
                           <p className="text-xs text-gray-500 mb-1">
                             {group.groupUrlSlug}
@@ -181,8 +243,8 @@ const Groups: React.FC = () => {
                               }).replace(/\./g, '')}
                             </span>
                             {summary && (
-                              <span className={`font-medium ${getBalanceColor(summary.netBalance)}`}>
-                                {summary.netBalance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.netBalance).toFixed(2)}
+                              <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
+                                {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.net_balance).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -227,6 +289,10 @@ const Groups: React.FC = () => {
                           )}
                         </div>
                         <div className="flex flex-wrap gap-2">
+                          {(() => {
+                            console.log(`🔍 [DEBUG] Rendering participants for ${group.groupUrlSlug}:`, participants.participants);
+                            return null;
+                          })()}
                           {participants.participants.map((participant) => (
                             <button
                               key={participant.id}
@@ -245,6 +311,12 @@ const Groups: React.FC = () => {
                             </button>
                           ))}
                         </div>
+                      </div>
+                    )}
+                    {isExpanded && !participants && (
+                      <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p className="text-red-600 text-sm">No participants data found for this group</p>
+                        <p className="text-red-500 text-xs">Group slug: {group.groupUrlSlug}</p>
                       </div>
                     )}
                     </div>
