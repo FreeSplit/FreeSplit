@@ -309,7 +309,7 @@ const CreateGroup: React.FC = () => {
       });
 
       setErrors({});
-      navigate(`/group/${response.url_slug}`);
+      navigate(`/groups/${response.url_slug}`);
     } catch (error) {
       console.error('Error creating group:', error);
     }

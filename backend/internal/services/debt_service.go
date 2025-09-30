@@ -216,3 +216,83 @@ func (s *debtService) updateDebts(tx *gorm.DB, groupID uint) error {
 
 	return nil
 }
+
+// GetUserGroupsSummary retrieves debt summary for multiple groups by slug and participant.
+// Input: UserGroupsSummaryRequest with list of groups and participant info
+// Output: UserGroupsSummaryResponse with group summaries including net balances
+// Description: Calculates net balance for each user in their respective groups
+func (s *debtService) GetUserGroupsSummary(ctx context.Context, req *UserGroupsSummaryRequest) (*UserGroupsSummaryResponse, error) {
+	if len(req.Groups) == 0 {
+		return &UserGroupsSummaryResponse{Groups: []*UserGroupSummary{}}, nil
+	}
+
+	// Get all groups by URL slug
+	groupSlugs := make([]string, len(req.Groups))
+	for i, group := range req.Groups {
+		groupSlugs[i] = group.GroupUrlSlug
+	}
+
+	var groups []database.Group
+	if err := s.db.Where("url_slug IN ?", groupSlugs).Find(&groups).Error; err != nil {
+		return nil, fmt.Errorf("failed to get groups: %v", err)
+	}
+
+	// Create map for quick lookup
+	groupMap := make(map[string]*database.Group)
+	for _, group := range groups {
+		groupMap[group.URLSlug] = &group
+	}
+
+	var summaries []*UserGroupSummary
+
+	for _, userGroup := range req.Groups {
+		group, exists := groupMap[userGroup.GroupUrlSlug]
+		if !exists {
+			continue // Skip groups that don't exist
+		}
+
+		// Calculate net balance for this participant in this group
+		netBalance, err := s.calculateNetBalance(group.ID, userGroup.UserParticipantId)
+		if err != nil {
+			// Log error but continue with other groups
+			fmt.Printf("Error calculating net balance for group %s, participant %d: %v\n",
+				userGroup.GroupUrlSlug, userGroup.UserParticipantId, err)
+			netBalance = 0
+		}
+
+		summaries = append(summaries, &UserGroupSummary{
+			GroupUrlSlug: group.URLSlug,
+			GroupName:    group.Name,
+			Currency:     group.Currency,
+			NetBalance:   netBalance,
+		})
+	}
+
+	return &UserGroupsSummaryResponse{
+		Groups: summaries,
+	}, nil
+}
+
+// calculateNetBalance calculates the net balance for a participant in a group.
+// Positive means they are owed money, negative means they owe money.
+func (s *debtService) calculateNetBalance(groupID uint, participantID int32) (float64, error) {
+	// Get all debts where this participant is involved
+	var debts []database.Debt
+	if err := s.db.Where("group_id = ? AND (lender_id = ? OR debtor_id = ?)",
+		groupID, participantID, participantID).Find(&debts).Error; err != nil {
+		return 0, fmt.Errorf("failed to get debts: %v", err)
+	}
+
+	var netBalance float64
+	for _, debt := range debts {
+		if debt.LenderID == uint(participantID) {
+			// Participant is owed money
+			netBalance += debt.DebtAmount
+		} else if debt.DebtorID == uint(participantID) {
+			// Participant owes money
+			netBalance -= debt.DebtAmount
+		}
+	}
+
+	return netBalance, nil
+}

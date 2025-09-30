@@ -1,10 +1,27 @@
 import FreesplitLogo from '../images/FreeSplit.svg';
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCircleCheck, faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { faCircleCheck, faUserPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons'
+import { localStorageService } from '../services/localStorage'
 
 function Index() {
+  const [hasGroups, setHasGroups] = useState(false);
+
+  useEffect(() => {
+    const checkForGroups = async () => {
+      try {
+        const groups = await localStorageService.getUserGroups();
+        setHasGroups(groups.length > 0);
+      } catch (error) {
+        console.error('Error checking for groups:', error);
+        setHasGroups(false);
+      }
+    };
+
+    checkForGroups();
+  }, []);
+
   return (
     <div className="page">
       <div className="body">
@@ -28,6 +45,16 @@ function Index() {
             </div>
           </div>
         </div>
+        {hasGroups && (
+          <div className="footer-cta">
+            <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
+              <Link to="/groups" className="btn" style={{ fontSize: '0.7em' }}>
+                <span>Your groups</span>
+                <FontAwesomeIcon icon={faChevronRight} aria-hidden="true"/>
+              </Link>
+            </div>
+          </div>
+        )}
         <footer>
           <p className="p2">Created by <a href="https://thomasforsyth.design">Thomas</a> & <a href="https://www.linkedin.com/in/kmfsousa/">Kris</a></p>
         </footer>

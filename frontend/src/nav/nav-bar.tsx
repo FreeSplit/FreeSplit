@@ -12,7 +12,7 @@ const NavBar: React.FC = () => {
     if (!urlSlug) {
       return suffix ? `/${suffix.replace(/^\//, '')}` : '/';
     }
-    const base = `/group/${urlSlug}`;
+    const base = `/groups/${urlSlug}`;
     return suffix ? `${base}/${suffix.replace(/^\//, '')}` : base;
   };
   const items = [

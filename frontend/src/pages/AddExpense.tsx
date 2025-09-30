@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus, faChevronDown, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
@@ -89,6 +90,9 @@ const AddExpense: React.FC = () => {
     cost?: string;
     payer?: string;
   };
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
@@ -1009,7 +1013,7 @@ const AddExpense: React.FC = () => {
       });
 
       toast.success('Expense added successfully!');
-      navigate(`/group/${urlSlug}`);
+      navigate(`/groups/${urlSlug}`);
     } catch (error) {
       toast.error('Failed to add expense');
       console.error('Error adding expense:', error);
@@ -1020,7 +1024,7 @@ const AddExpense: React.FC = () => {
 
   useEffect(() => {
     if (!loading && !group && urlSlug) {
-      navigate(`/group/${urlSlug}`);
+      navigate(`/groups/${urlSlug}`);
     }
   }, [loading, group, urlSlug, navigate]);
 
@@ -1068,7 +1072,7 @@ const AddExpense: React.FC = () => {
             <div className="modal-header">
               <h2>Add an expense</h2>
               <Link
-                to={`/group/${urlSlug}`}
+                to={`/groups/${urlSlug}`}
                 aria-label="Close add an expense"
                 className="is-black"
               >
@@ -1428,7 +1432,7 @@ const AddExpense: React.FC = () => {
             <div className="footer-two-buttons">
               <button
                 type="button"
-                onClick={() => navigate(`/group/${urlSlug}`)}
+                onClick={() => navigate(`/groups/${urlSlug}`)}
                 className="btn--secondary has-full-width"
               >
                 Cancel

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getDebtsPageData, createPayment, getSplitsByGroup } from '../services/api';
 import { DebtPageData, SplitWithNames } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -58,6 +59,9 @@ const Debts: React.FC = () => {
   const [updating, setUpdating] = useState<number | null>(null);
   const [rawEdges, setRawEdges] = useState<AnimationEdge[]>([]);
   const [showAnimation, setShowAnimation] = useState(true);
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
   const loadDebtsData = useCallback(async () => {
     try {
@@ -268,7 +272,7 @@ const Debts: React.FC = () => {
               <h2>No debts</h2>
               <p>Add an expense to track your group debts.</p>
               <button
-                 onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                 onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
                 className="btn"
                >
                 <span>Add an expense</span>

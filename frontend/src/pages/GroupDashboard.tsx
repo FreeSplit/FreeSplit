@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
 import { Group, Expense, Participant } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -29,6 +30,9 @@ const GroupDashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isShareOpen, setShareOpen] = useState(false);
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
 
   const loadGroupData = useCallback(async () => {
@@ -144,7 +148,7 @@ const GroupDashboard: React.FC = () => {
                 <h1>Expenses</h1>
                 <div className="list">
                   {expenses.slice(0, 5).map((expense) => (
-                    <button key={expense.id} onClick={() => navigate(`/group/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
+                    <button key={expense.id} onClick={() => navigate(`/groups/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
                       <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
                         <div className="expense-details">
@@ -164,7 +168,7 @@ const GroupDashboard: React.FC = () => {
             <div className="floating-cta-container">
               <button 
                 className="btn fab-shadow"
-                onClick={() => navigate(`/group/${urlSlug}/expenses/add`)}
+                onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
               >
                 <span>Add a new expense</span>
                 <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />

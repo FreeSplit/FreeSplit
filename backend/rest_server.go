@@ -164,8 +164,106 @@ func main() {
 		}
 	}))
 
+	// User Groups API
+	http.HandleFunc("/api/user-groups/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "/summary") {
+			switch r.Method {
+			case "POST":
+				getUserGroupsSummary(w, r, debtService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		} else if strings.Contains(r.URL.Path, "/participants") {
+			switch r.Method {
+			case "POST":
+				getGroupParticipants(w, r, groupService)
+			default:
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+			}
+		}
+	}))
+
 	log.Println("REST API server listening on :8080")
 	log.Fatal(http.ListenAndServe(":8080", nil))
+}
+
+// User Groups handlers
+func getUserGroupsSummary(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+	var req services.UserGroupsSummaryRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("Invalid JSON in user groups summary request: %v", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	// Validate input
+	if len(req.Groups) == 0 {
+		http.Error(w, "Groups list cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	for _, group := range req.Groups {
+		if group.GroupUrlSlug == "" {
+			http.Error(w, "Group URL slug cannot be empty", http.StatusBadRequest)
+			return
+		}
+		if group.UserParticipantId <= 0 {
+			http.Error(w, "User participant ID must be positive", http.StatusBadRequest)
+			return
+		}
+	}
+
+	resp, err := debtService.GetUserGroupsSummary(context.TODO(), &req)
+	if err != nil {
+		log.Printf("Error getting user groups summary: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
+}
+
+func getGroupParticipants(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
+	log.Printf("🔍 [GET_GROUP_PARTICIPANTS] Starting request from %s", r.RemoteAddr)
+
+	var req services.GroupParticipantsRequest
+
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Invalid JSON in group participants request: %v", err)
+		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		return
+	}
+
+	log.Printf("📝 [GET_GROUP_PARTICIPANTS] Request data: %+v", req)
+
+	// Validate input
+	if len(req.GroupSlugs) == 0 {
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Group slugs list is empty")
+		http.Error(w, "Group slugs list cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	for _, slug := range req.GroupSlugs {
+		if slug == "" {
+			log.Printf("❌ [GET_GROUP_PARTICIPANTS] Empty group slug found")
+			http.Error(w, "Group slug cannot be empty", http.StatusBadRequest)
+			return
+		}
+	}
+
+	log.Printf("🔄 [GET_GROUP_PARTICIPANTS] Calling service with %d group slugs", len(req.GroupSlugs))
+	resp, err := groupService.GetGroupParticipants(context.TODO(), &req)
+	if err != nil {
+		log.Printf("❌ [GET_GROUP_PARTICIPANTS] Error getting group participants: %v", err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("✅ [GET_GROUP_PARTICIPANTS] Success! Returning %d groups", len(resp.Groups))
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(resp)
 }
 
 // Group handlers

@@ -157,6 +157,41 @@ type GetPaymentsResponse struct {
 	Payments []*Payment `json:"payments"`
 }
 
+// User Groups API types
+type UserGroupRequest struct {
+	GroupUrlSlug        string `json:"group_url_slug"`
+	UserParticipantId   int32  `json:"user_participant_id"`
+	UserParticipantName string `json:"user_participant_name"`
+}
+
+type UserGroupsSummaryRequest struct {
+	Groups []*UserGroupRequest `json:"groups"`
+}
+
+type UserGroupSummary struct {
+	GroupUrlSlug string  `json:"group_url_slug"`
+	GroupName    string  `json:"group_name"`
+	Currency     string  `json:"currency"`
+	NetBalance   float64 `json:"net_balance"`
+}
+
+type UserGroupsSummaryResponse struct {
+	Groups []*UserGroupSummary `json:"groups"`
+}
+
+type GroupParticipantsRequest struct {
+	GroupSlugs []string `json:"group_slugs"`
+}
+
+type GroupParticipantsResponse struct {
+	Groups []*GroupParticipants `json:"groups"`
+}
+
+type GroupParticipants struct {
+	GroupUrlSlug string         `json:"group_url_slug"`
+	Participants []*Participant `json:"participants"`
+}
+
 // Data types
 type Group struct {
 	Id        int32     `json:"id"`
