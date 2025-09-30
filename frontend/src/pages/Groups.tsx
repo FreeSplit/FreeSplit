@@ -130,6 +130,22 @@ const Groups: React.FC = () => {
     });
   });
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Check if click is outside any dropdown or dropdown button
+      if (!target.closest('.dropdown-container') && !target.closest('.dropdown-button')) {
+        setExpandedGroups(new Set());
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const handleDeleteGroup = async (groupUrlSlug: string) => {
     try {
       await localStorageService.removeUserGroup(groupUrlSlug);
@@ -266,15 +282,48 @@ const Groups: React.FC = () => {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
-                            className="btn btn-sm"
-                          >
-                            <FontAwesomeIcon
-                              icon={faChevronDown}
-                              className={`transform transition-transform ${isExpanded ? '' : 'rotate-180'}`}
-                            />
-                          </button>
+                          <div className="relative">
+                            <button
+                              onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
+                              className="btn btn-sm dropdown-button"
+                            >
+                              <FontAwesomeIcon
+                                icon={faChevronDown}
+                                className={`transform transition-transform ${isExpanded ? '' : 'rotate-180'}`}
+                              />
+                            </button>
+                            {/* Dropdown - Name Selection */}
+                            {isExpanded && participants && (
+                              <div className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50" style={{backgroundColor: 'var(--color-primary)'}}>
+                                <div className="flex flex-col gap-1">
+                                  {(() => {
+                                    console.log(`🔍 [DEBUG] Rendering participants for ${group.groupUrlSlug}:`, participants.participants);
+                                    return null;
+                                  })()}
+                                  {participants.participants.map((participant) => (
+                                    <button
+                                      key={participant.id}
+                                      onClick={() => handleParticipantSelect(
+                                        group.groupUrlSlug,
+                                        participant.id,
+                                        participant.name
+                                      )}
+                                      className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
+                                        group.userParticipantId === participant.id
+                                          ? 'text-white' 
+                                          : 'text-white hover:opacity-80'
+                                      }`}
+                                      style={{
+                                        backgroundColor: group.userParticipantId === participant.id ? 'var(--color-primary-dark)' : 'transparent'
+                                      }}
+                                    >
+                                      {participant.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                           <button
                             onClick={() => handleDeleteGroup(group.groupUrlSlug)}
                             className="btn btn-sm text-red-600 hover:text-red-800"
@@ -293,37 +342,6 @@ const Groups: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Dropdown - Name Selection */}
-                    {isExpanded && participants && (
-                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
-            <div className="flex items-center gap-3 mb-3">
-              <h4 className="font-medium text-sm">Select your name in this group:</h4>
-            </div>
-                        <div className="flex flex-wrap gap-2">
-                          {(() => {
-                            console.log(`🔍 [DEBUG] Rendering participants for ${group.groupUrlSlug}:`, participants.participants);
-                            return null;
-                          })()}
-                          {participants.participants.map((participant) => (
-                            <button
-                              key={participant.id}
-                              onClick={() => handleParticipantSelect(
-                                group.groupUrlSlug, 
-                                participant.id, 
-                                participant.name
-                              )}
-                              className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                                group.userParticipantId === participant.id
-                                  ? 'bg-blue-600 text-white'
-                                  : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                              }`}
-                            >
-                              {participant.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                     {isExpanded && !participants && (
                       <div className="mt-2 p-3 bg-red-50 rounded-lg border border-red-200">
                         <p className="text-red-600 text-sm">No participants data found for this group</p>
