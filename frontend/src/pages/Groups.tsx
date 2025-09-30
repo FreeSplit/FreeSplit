@@ -2,8 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { localStorageService, UserGroup } from '../services/localStorage';
 import { getUserGroupsSummary, getGroupParticipants, getGroup, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
-import NavBar from "../nav/nav-bar";
-import Header from "../nav/header";
+import FreesplitLogo from '../images/FreeSplit.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faPlus, faTimes, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
@@ -238,9 +237,9 @@ const Groups: React.FC = () => {
   return (
     <div className="page">
       <div className="body">
-        {/* Header */}
-        <Header />
-
+        <div className="logo-header">
+          <img src={FreesplitLogo} alt="Freesplit Logo" />
+        </div>
         <div className="content-section">
           <h1>Your Groups</h1>
 
@@ -394,9 +393,9 @@ const Groups: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Nav */}
-        <NavBar />
+        <footer>
+          <p className="p2">Created by <a href="https://thomasforsyth.design">Thomas</a> & <a href="https://www.linkedin.com/in/kmfsousa/">Kris</a></p>
+        </footer>
       </div>
     </div>
   );
