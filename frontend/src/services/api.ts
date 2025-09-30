@@ -326,7 +326,7 @@ export const getUserGroupsSummary = async (groups: UserGroupRequest[]): Promise<
 
 export const getGroupParticipants = async (groupSlugs: string[]): Promise<GroupParticipantsResponse> => {
   const response = await apiClient.post(`/api/user-groups/participants`, {
-    groupSlugs: groupSlugs
+    group_slugs: groupSlugs
   });
   return response.data;
 };

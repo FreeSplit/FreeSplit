@@ -7,6 +7,7 @@ type GroupService interface {
 	GetGroup(ctx context.Context, req *GetGroupRequest) (*GetGroupResponse, error)
 	CreateGroup(ctx context.Context, req *CreateGroupRequest) (*CreateGroupResponse, error)
 	UpdateGroup(ctx context.Context, req *UpdateGroupRequest) (*UpdateGroupResponse, error)
+	GetGroupParticipants(ctx context.Context, req *GroupParticipantsRequest) (*GroupParticipantsResponse, error)
 }
 
 // ParticipantService interface
@@ -32,5 +33,4 @@ type DebtService interface {
 	CreatePayment(ctx context.Context, req *CreatePaymentRequest) (*CreatePaymentResponse, error)
 	GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error)
 	GetUserGroupsSummary(ctx context.Context, req *UserGroupsSummaryRequest) (*UserGroupsSummaryResponse, error)
-	GetGroupParticipants(ctx context.Context, req *GroupParticipantsRequest) (*GroupParticipantsResponse, error)
 }

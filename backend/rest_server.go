@@ -176,7 +176,7 @@ func main() {
 		} else if strings.Contains(r.URL.Path, "/participants") {
 			switch r.Method {
 			case "POST":
-				getGroupParticipants(w, r, debtService)
+				getGroupParticipants(w, r, groupService)
 			default:
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 			}
@@ -225,7 +225,7 @@ func getUserGroupsSummary(w http.ResponseWriter, r *http.Request, debtService se
 	json.NewEncoder(w).Encode(resp)
 }
 
-func getGroupParticipants(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+func getGroupParticipants(w http.ResponseWriter, r *http.Request, groupService services.GroupService) {
 	var req services.GroupParticipantsRequest
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -247,7 +247,7 @@ func getGroupParticipants(w http.ResponseWriter, r *http.Request, debtService se
 		}
 	}
 
-	resp, err := debtService.GetGroupParticipants(context.TODO(), &req)
+	resp, err := groupService.GetGroupParticipants(context.TODO(), &req)
 	if err != nil {
 		log.Printf("Error getting group participants: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

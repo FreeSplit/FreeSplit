@@ -273,58 +273,6 @@ func (s *debtService) GetUserGroupsSummary(ctx context.Context, req *UserGroupsS
 	}, nil
 }
 
-// GetGroupParticipants retrieves participants for multiple groups by URL slug.
-// Input: GroupParticipantsRequest with list of group slugs
-// Output: GroupParticipantsResponse with participants for each group
-// Description: Fetches all participants for the requested groups
-func (s *debtService) GetGroupParticipants(ctx context.Context, req *GroupParticipantsRequest) (*GroupParticipantsResponse, error) {
-	if len(req.GroupSlugs) == 0 {
-		return &GroupParticipantsResponse{Groups: []*GroupParticipants{}}, nil
-	}
-
-	// Get all groups by URL slug
-	var groups []database.Group
-	if err := s.db.Where("url_slug IN ?", req.GroupSlugs).Find(&groups).Error; err != nil {
-		return nil, fmt.Errorf("failed to get groups: %v", err)
-	}
-
-	// Create map for quick lookup
-	groupMap := make(map[string]*database.Group)
-	for _, group := range groups {
-		groupMap[group.URLSlug] = &group
-	}
-
-	var result []*GroupParticipants
-
-	for _, groupSlug := range req.GroupSlugs {
-		group, exists := groupMap[groupSlug]
-		if !exists {
-			continue // Skip groups that don't exist
-		}
-
-		// Get participants for this group
-		var participants []database.Participant
-		if err := s.db.Where("group_id = ?", group.ID).Find(&participants).Error; err != nil {
-			return nil, fmt.Errorf("failed to get participants for group %s: %v", groupSlug, err)
-		}
-
-		// Convert to service types
-		serviceParticipants := make([]*Participant, len(participants))
-		for i, p := range participants {
-			serviceParticipants[i] = ParticipantFromDB(&p)
-		}
-
-		result = append(result, &GroupParticipants{
-			GroupUrlSlug: groupSlug,
-			Participants: serviceParticipants,
-		})
-	}
-
-	return &GroupParticipantsResponse{
-		Groups: result,
-	}, nil
-}
-
 // calculateNetBalance calculates the net balance for a participant in a group.
 // Positive means they are owed money, negative means they owe money.
 func (s *debtService) calculateNetBalance(groupID uint, participantID int32) (float64, error) {

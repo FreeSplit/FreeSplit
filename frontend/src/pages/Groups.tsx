@@ -57,7 +57,10 @@ const Groups: React.FC = () => {
 
       // Get participants for all groups
       const groupSlugs = userGroups.map(group => group.groupUrlSlug);
-      const participantsResponse = await getGroupParticipants(groupSlugs);
+      let participantsResponse: GroupParticipantsResponse = { groups: [] };
+      if (groupSlugs.length > 0) {
+        participantsResponse = await getGroupParticipants(groupSlugs);
+      }
       
       setGroupSummaries(summaries);
       setGroupParticipants(participantsResponse.groups);
