@@ -6,6 +6,8 @@ import FreesplitLogo from '../images/FreeSplit.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faPlus, faTimes, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
+import LogoHeader from '../nav/logo-header'
+import SigFooter from '../nav/sig-footer'
 
 // Remove the local interfaces since we're using the API types now
 
@@ -224,9 +226,7 @@ const Groups: React.FC = () => {
   return (
     <div className="page">
       <div className="body">
-        <div className="logo-header">
-          <img src={FreesplitLogo} alt="Freesplit Logo" />
-        </div>
+        < LogoHeader />
         <div className="content-section">
           <h1>Your Groups</h1>
 
@@ -380,9 +380,7 @@ const Groups: React.FC = () => {
             </div>
           )}
         </div>
-        <footer>
-          <p className="p2">Created by <a href="https://thomasforsyth.design">Thomas</a> & <a href="https://www.linkedin.com/in/kmfsousa/">Kris</a></p>
-        </footer>
+        < SigFooter />
       </div>
     </div>
   );
