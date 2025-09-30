@@ -314,6 +314,7 @@ const Groups: React.FC = () => {
                             <button
                               onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
                               className="btn btn-sm dropdown-button"
+                              title="Select your user"
                             >
                               <FontAwesomeIcon
                                 icon={faChevronDown}
