@@ -23,7 +23,7 @@
   width: 100%;
   padding: 16px;
   background: var(--color-primary);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: 0; z-index: 11;
   color: var(--color-bg);
   box-shadow: 2px 2px 4px rgba(17, 24, 39, 0.20);
 }
@@ -440,7 +440,7 @@ input[type="number"] {
   box-shadow: var(--shadow-1);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  z-index: 20;
+  z-index: 10;
 }
 
 .floating-action-button:hover {
@@ -629,4 +629,9 @@ input[type="number"] {
   align-items: center;
   width: 100%;
   position: sticky; bottom: 0; z-index: 10;
+}
+
+.header-icon-logo {
+  height: 44px;
+  width: 44px;
 }
