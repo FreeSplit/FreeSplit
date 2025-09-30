@@ -268,17 +268,19 @@ const Groups: React.FC = () => {
                                 </span>
                               )}
                             </div>
-                            <div className="mr-4">
-                              {summary ? (
-                                <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
-                                  {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.net_balance).toFixed(2)}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400 text-xs">
-                                  No balance data
-                                </span>
-                              )}
-                            </div>
+                            {group.userParticipantId > 0 && (
+                              <div className="mr-4">
+                                {summary ? (
+                                  <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
+                                    {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}{Math.abs(summary.net_balance).toFixed(2)}
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400 text-xs">
+                                    No balance data
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
