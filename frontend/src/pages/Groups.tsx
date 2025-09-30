@@ -216,7 +216,14 @@ const Groups: React.FC = () => {
             participants,
             isExpanded,
             allParticipants: groupParticipants,
-            allSummaries: groupSummaries
+            allSummaries: groupSummaries,
+            hasSummary: !!summary,
+            summaryDetails: summary ? {
+              group_url_slug: summary.group_url_slug,
+              group_name: summary.group_name,
+              net_balance: summary.net_balance,
+              currency: summary.currency
+            } : 'No summary'
           });
                 
                 return (
@@ -231,7 +238,7 @@ const Groups: React.FC = () => {
                           <p className="text-xs text-gray-500 mb-1">
                             {group.groupUrlSlug}
                           </p>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                          <div className="flex items-center text-xs text-gray-500 mb-2">
                             <span>
                               Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
                                 year: 'numeric',
@@ -242,9 +249,18 @@ const Groups: React.FC = () => {
                                 hour12: true
                               }).replace(/\./g, '')}
                             </span>
-                            {summary && (
-                              <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
+                            {group.userParticipantName && (
+                              <span className="text-xs text-gray-600 ml-6">
+                                Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
+                              </span>
+                            )}
+                            {summary ? (
+                              <span className={`font-medium ${getBalanceColor(summary.net_balance)} ml-4`}>
                                 {summary.net_balance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.net_balance).toFixed(2)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400 ml-4 text-xs">
+                                No balance data
                               </span>
                             )}
                           </div>
@@ -254,9 +270,9 @@ const Groups: React.FC = () => {
                             onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
                             className="btn btn-sm"
                           >
-                            <FontAwesomeIcon 
-                              icon={faChevronDown} 
-                              className={`transform transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                            <FontAwesomeIcon
+                              icon={faChevronDown}
+                              className={`transform transition-transform ${isExpanded ? '' : 'rotate-180'}`}
                             />
                           </button>
                           <button
@@ -280,14 +296,9 @@ const Groups: React.FC = () => {
                     {/* Dropdown - Name Selection */}
                     {isExpanded && participants && (
                       <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h4 className="font-medium text-sm">Select your name in this group:</h4>
-                          {group.userParticipantName && (
-                            <span className="text-xs text-gray-600">
-                              Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
-                            </span>
-                          )}
-                        </div>
+            <div className="flex items-center gap-3 mb-3">
+              <h4 className="font-medium text-sm">Select your name in this group:</h4>
+            </div>
                         <div className="flex flex-wrap gap-2">
                           {(() => {
                             console.log(`🔍 [DEBUG] Rendering participants for ${group.groupUrlSlug}:`, participants.participants);
