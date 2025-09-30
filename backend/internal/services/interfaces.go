@@ -31,4 +31,6 @@ type DebtService interface {
 	GetDebtsPageData(ctx context.Context, req *GetDebtsRequest) (*GetDebtsPageDataResponse, error)
 	CreatePayment(ctx context.Context, req *CreatePaymentRequest) (*CreatePaymentResponse, error)
 	GetPayments(ctx context.Context, req *GetPaymentsRequest) (*GetPaymentsResponse, error)
+	GetUserGroupsSummary(ctx context.Context, req *UserGroupsSummaryRequest) (*UserGroupsSummaryResponse, error)
+	GetGroupParticipants(ctx context.Context, req *GroupParticipantsRequest) (*GroupParticipantsResponse, error)
 }

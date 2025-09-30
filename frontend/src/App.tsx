@@ -8,6 +8,7 @@ import AddExpense from './pages/AddExpense';
 import EditExpense from './pages/EditExpense';
 import Members from './pages/Members';
 import Debts from './pages/Debts';
+import Groups from './pages/Groups';
 import './styles/global.css';
 import './styles/tokens.css';
 import './styles/components.css';
@@ -40,6 +41,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/create-a-group/" element={<CreateGroup />} />
+          <Route path="/groups" element={<Groups />} />
           <Route path="/group" element={<Navigate to="/" replace />} />
           <Route path="/group/:urlSlug" element={<GroupDashboard />} />
           <Route path="/group/:urlSlug/expenses/add" element={<AddExpense />} />

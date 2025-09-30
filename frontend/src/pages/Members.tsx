@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getGroup, deleteParticipant } from '../services/api';
 import { Group, Participant } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from '../nav/nav-bar';
 import Header from "../nav/header";
@@ -20,6 +21,9 @@ const Members: React.FC = () => {
   const [isAddMemberOpen, setAddMemberOpen] = useState(false);
   const [isEditMemberOpen, setEditMemberOpen] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState<Participant | null>(null);
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
   const loadGroupData = useCallback(async () => {
     try {

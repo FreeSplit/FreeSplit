@@ -119,6 +119,34 @@ export interface DebtsPageResponse {
   currency: string;
 }
 
+// User Groups API types
+export interface UserGroupRequest {
+  groupUrlSlug: string;
+  userParticipantId: number;
+  userParticipantName: string;
+}
+
+export interface UserGroupSummary {
+  groupUrlSlug: string;
+  groupName: string;
+  currency: string;
+  netBalance: number;
+}
+
+export interface UserGroupsSummaryResponse {
+  groups: UserGroupSummary[];
+}
+
+export interface GroupParticipantsResponse {
+  groups: Array<{
+    groupUrlSlug: string;
+    participants: Array<{
+      id: number;
+      name: string;
+    }>;
+  }>;
+}
+
 // Group API
 export const getGroup = async (urlSlug: string): Promise<{group: Group, participants: Participant[]}> => {
   const response = await apiClient.get(`/api/group/${urlSlug}`);
@@ -286,4 +314,19 @@ export const createPayment = async (data: {
     }
     throw error;
   }
+};
+
+// User Groups API
+export const getUserGroupsSummary = async (groups: UserGroupRequest[]): Promise<UserGroupsSummaryResponse> => {
+  const response = await apiClient.post(`/api/user-groups/summary`, {
+    groups: groups
+  });
+  return response.data;
+};
+
+export const getGroupParticipants = async (groupSlugs: string[]): Promise<GroupParticipantsResponse> => {
+  const response = await apiClient.post(`/api/user-groups/participants`, {
+    groupSlugs: groupSlugs
+  });
+  return response.data;
 };

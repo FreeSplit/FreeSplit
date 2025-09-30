@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
 import { Group, Expense, Participant } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -29,6 +30,9 @@ const GroupDashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isShareOpen, setShareOpen] = useState(false);
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
 
   const loadGroupData = useCallback(async () => {

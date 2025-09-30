@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getGroup, getExpenseWithSplits, updateExpense, deleteExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
+import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus, faChevronDown, faXmark, faTrash, faCheck } from '@fortawesome/free-solid-svg-icons';
@@ -89,6 +90,9 @@ const EditExpense: React.FC = () => {
     cost?: string;
     payer?: string;
   };
+
+  // Track group visit for user groups feature
+  useGroupTracking();
 
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
