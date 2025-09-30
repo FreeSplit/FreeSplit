@@ -156,24 +156,34 @@ const Groups: React.FC = () => {
           {/* Groups List */}
           {userGroups.length > 0 ? (
             <div className="expenses-container">
-              {userGroups.map((group) => {
+              {userGroups.map((group, index) => {
                 const summary = getGroupSummary(group.groupUrlSlug);
                 const participants = findGroupParticipants(group.groupUrlSlug);
                 const isExpanded = expandedGroups.has(group.groupUrlSlug);
                 
                 return (
-                  <div key={group.groupUrlSlug} className="expense">
+                  <div key={group.groupUrlSlug}>
+                    <div className="expense">
                     <div className="expense-details">
                       <div className="flex items-center justify-between w-full">
                         <div className="flex-1">
                           <h3 className="text-lg font-semibold mb-1">
-                            {summary?.groupName || 'Untitled Group'}
+                            {summary?.groupName || 'Loading...'}
                           </h3>
-                          <p className="text-xs text-gray-500 mb-2">
+                          <p className="text-xs text-gray-500 mb-1">
                             {group.groupUrlSlug}
                           </p>
+                          <p className="text-xs text-gray-500 mb-2">
+                            Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            }).replace(/\./g, '')}
+                          </p>
                           <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>Last visited: {new Date(group.lastVisited).toLocaleDateString()}</span>
                             {summary && (
                               <span className={`font-medium ${getBalanceColor(summary.netBalance)}`}>
                                 {formatBalance(summary.netBalance, summary.currency)}
@@ -240,6 +250,10 @@ const Groups: React.FC = () => {
                           ))}
                         </div>
                       </div>
+                    )}
+                    </div>
+                    {index < userGroups.length - 1 && (
+                      <div className="border-b border-gray-300 my-2"></div>
                     )}
                   </div>
                 );

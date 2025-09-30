@@ -523,7 +523,6 @@ input[type="number"] {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
   padding: 8px 0px 8px 0px;
-  border-bottom-color: var(--color-muted); border-bottom-width: 1px;
 }
 
 .expense {
