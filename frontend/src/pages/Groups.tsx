@@ -49,9 +49,9 @@ const Groups: React.FC = () => {
       const groupsWithParticipants = userGroups
         .filter(group => group.userParticipantId > 0) // Only include groups where user has selected a participant
         .map(group => ({
-          groupUrlSlug: group.groupUrlSlug,
-          userParticipantId: group.userParticipantId,
-          userParticipantName: group.userParticipantName
+          group_url_slug: group.groupUrlSlug,
+          user_participant_id: group.userParticipantId,
+          user_participant_name: group.userParticipantName
         }));
 
       console.log('🔍 [DEBUG] Groups with participants:', groupsWithParticipants);
@@ -60,12 +60,14 @@ const Groups: React.FC = () => {
       let summaries: UserGroupSummary[] = [];
       if (groupsWithParticipants.length > 0) {
         console.log('🔍 [DEBUG] Requesting summaries for groups with participants...');
+        console.log('🔍 [DEBUG] Data being sent to API:', groupsWithParticipants);
         try {
           const summaryResponse = await getUserGroupsSummary(groupsWithParticipants);
           console.log('🔍 [DEBUG] Summary response:', summaryResponse);
           summaries = summaryResponse.groups;
         } catch (error) {
           console.error('🔍 [DEBUG] Error getting summaries:', error);
+          console.error('🔍 [DEBUG] Data that caused error:', groupsWithParticipants);
           // Don't fail the whole operation if summaries fail
         }
       } else {
@@ -226,21 +228,15 @@ const Groups: React.FC = () => {
           const participants = findGroupParticipants(group.groupUrlSlug);
           const isExpanded = expandedGroups.has(group.groupUrlSlug);
           
-          console.log(`🔍 [DEBUG] Render #${renderCount.current} - Rendering group ${group.groupUrlSlug}:`, {
-            group,
-            summary,
-            participants,
-            isExpanded,
-            allParticipants: groupParticipants,
-            allSummaries: groupSummaries,
-            hasSummary: !!summary,
-            summaryDetails: summary ? {
-              group_url_slug: summary.group_url_slug,
-              group_name: summary.group_name,
-              net_balance: summary.net_balance,
-              currency: summary.currency
-            } : 'No summary'
-          });
+          // Debug: Only log when there's an issue
+          if (!summary && group.userParticipantId > 0) {
+            console.log(`🔍 [DEBUG] Group ${group.groupUrlSlug} has participant but no summary:`, {
+              groupUrlSlug: group.groupUrlSlug,
+              userParticipantId: group.userParticipantId,
+              userParticipantName: group.userParticipantName,
+              allSummaries: groupSummaries
+            });
+          }
                 
                 return (
                   <div key={group.groupUrlSlug}>
@@ -300,10 +296,6 @@ const Groups: React.FC = () => {
                             {isExpanded && participants && (
                               <div className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50" style={{backgroundColor: 'var(--color-primary)'}}>
                                 <div className="flex flex-col gap-1">
-                                  {(() => {
-                                    console.log(`🔍 [DEBUG] Rendering participants for ${group.groupUrlSlug}:`, participants.participants);
-                                    return null;
-                                  })()}
                                   {participants.participants.map((participant) => (
                                     <button
                                       key={participant.id}

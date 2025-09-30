@@ -121,9 +121,9 @@ export interface DebtsPageResponse {
 
 // User Groups API types
 export interface UserGroupRequest {
-  groupUrlSlug: string;
-  userParticipantId: number;
-  userParticipantName: string;
+  group_url_slug: string;
+  user_participant_id: number;
+  user_participant_name: string;
 }
 
 export interface UserGroupSummary {
