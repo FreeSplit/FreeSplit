@@ -122,10 +122,6 @@ const Groups: React.FC = () => {
     return groupParticipants.find(g => g.groupUrlSlug === groupUrlSlug);
   };
 
-  const formatBalance = (balance: number, currency: string) => {
-    const sign = balance >= 0 ? '+' : '';
-    return `${sign}${currency}${balance.toFixed(2)}`;
-  };
 
   const getBalanceColor = (balance: number) => {
     if (balance > 0) return 'text-green-600';
@@ -173,20 +169,20 @@ const Groups: React.FC = () => {
                           <p className="text-xs text-gray-500 mb-1">
                             {group.groupUrlSlug}
                           </p>
-                          <p className="text-xs text-gray-500 mb-2">
-                            Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit',
-                              hour12: true
-                            }).replace(/\./g, '')}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <div className="flex items-center gap-4 text-xs text-gray-500 mb-2">
+                            <span>
+                              Last visited: {new Date(group.lastVisited).toLocaleString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric',
+                                hour: 'numeric',
+                                minute: '2-digit',
+                                hour12: true
+                              }).replace(/\./g, '')}
+                            </span>
                             {summary && (
                               <span className={`font-medium ${getBalanceColor(summary.netBalance)}`}>
-                                {formatBalance(summary.netBalance, summary.currency)}
+                                {summary.netBalance >= 0 ? 'Owed' : 'Owing'} {summary.currency}${Math.abs(summary.netBalance).toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -219,13 +215,13 @@ const Groups: React.FC = () => {
                       </div>
                     </div>
 
-                    {/* Expanded Section - Name Selection */}
+                    {/* Dropdown - Name Selection */}
                     {isExpanded && participants && (
-                      <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                      <div className="mt-2 p-3 bg-gray-50 rounded-lg border">
                         <div className="flex items-center gap-3 mb-3">
-                          <h4 className="font-medium">Select your name in this group:</h4>
+                          <h4 className="font-medium text-sm">Select your name in this group:</h4>
                           {group.userParticipantName && (
-                            <span className="text-sm text-gray-600">
+                            <span className="text-xs text-gray-600">
                               Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
                             </span>
                           )}
