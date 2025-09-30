@@ -171,16 +171,16 @@ const Groups: React.FC = () => {
   const toggleGroupExpansion = (groupUrlSlug: string) => {
     console.log('🔍 [DEBUG] Toggling dropdown for group:', groupUrlSlug);
     console.log('🔍 [DEBUG] Current expandedGroups:', Array.from(expandedGroups));
-    const newExpanded = new Set(expandedGroups);
-    if (newExpanded.has(groupUrlSlug)) {
-      newExpanded.delete(groupUrlSlug);
+    
+    if (expandedGroups.has(groupUrlSlug)) {
+      // If this group is already open, close it
       console.log('🔍 [DEBUG] Collapsing group:', groupUrlSlug);
+      setExpandedGroups(new Set());
     } else {
-      newExpanded.add(groupUrlSlug);
-      console.log('🔍 [DEBUG] Expanding group:', groupUrlSlug);
+      // If this group is closed, close all others and open this one
+      console.log('🔍 [DEBUG] Expanding group (closing all others):', groupUrlSlug);
+      setExpandedGroups(new Set([groupUrlSlug]));
     }
-    console.log('🔍 [DEBUG] New expandedGroups:', Array.from(newExpanded));
-    setExpandedGroups(newExpanded);
   };
 
   const getGroupSummary = (groupUrlSlug: string): UserGroupSummary | undefined => {
