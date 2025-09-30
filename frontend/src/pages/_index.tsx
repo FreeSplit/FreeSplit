@@ -48,8 +48,8 @@ function Index() {
         {hasGroups && (
           <div className="footer-cta">
             <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%' }}>
-              <Link to="/groups" className="btn">
-                <span>Your Groups</span>
+              <Link to="/groups" className="btn" style={{ fontSize: '0.7em' }}>
+                <span>Your groups</span>
                 <FontAwesomeIcon icon={faChevronRight} aria-hidden="true"/>
               </Link>
             </div>
