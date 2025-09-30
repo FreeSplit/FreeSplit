@@ -39,7 +39,7 @@ function Index() {
             </Link>
             {hasGroups && (
               <Link to="/groups" className="a">
-                View my groups
+                View your groups
               </Link>
             )}
           </div>
