@@ -112,10 +112,11 @@ const Groups: React.FC = () => {
   }, [loadUserGroups]);
 
   useEffect(() => {
-    if (userGroups.length > 0) {
+    if (userGroups.length > 0 && groupSummaries.length === 0) {
+      // Only load data on initial load, not when participants change
       loadGroupData();
     }
-  }, [userGroups, loadGroupData]);
+  }, [userGroups, loadGroupData, groupSummaries.length]);
 
   // Debug: Track re-renders
   useEffect(() => {
