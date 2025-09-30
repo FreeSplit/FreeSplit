@@ -161,9 +161,47 @@ const Groups: React.FC = () => {
 
   const handleParticipantSelect = async (groupUrlSlug: string, participantId: number, participantName: string) => {
     try {
-      await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
-      await loadUserGroups();
-      toast.success(`Selected ${participantName} for this group`);
+      // Check if this participant is already selected
+      const currentGroup = userGroups.find(g => g.groupUrlSlug === groupUrlSlug);
+      if (currentGroup && currentGroup.userParticipantId === participantId) {
+        // Deselect the participant
+        await localStorageService.updateGroupParticipant(groupUrlSlug, 0, '');
+        setUserGroups(prev => prev.map(g => 
+          g.groupUrlSlug === groupUrlSlug 
+            ? { ...g, userParticipantId: 0, userParticipantName: '' }
+            : g
+        ));
+        // Remove from summaries
+        setGroupSummaries(prev => prev.filter(s => s.group_url_slug !== groupUrlSlug));
+        toast.success(`Deselected ${participantName} for this group`);
+      } else {
+        // Select the participant
+        await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
+        setUserGroups(prev => prev.map(g => 
+          g.groupUrlSlug === groupUrlSlug 
+            ? { ...g, userParticipantId: participantId, userParticipantName: participantName }
+            : g
+        ));
+        
+        // Fetch summary for this specific group
+        try {
+          const summaryResponse = await getUserGroupsSummary([{
+            group_url_slug: groupUrlSlug,
+            user_participant_id: participantId,
+            user_participant_name: participantName
+          }]);
+          
+          // Update summaries - remove old and add new
+          setGroupSummaries(prev => {
+            const filtered = prev.filter(s => s.group_url_slug !== groupUrlSlug);
+            return [...filtered, ...summaryResponse.groups];
+          });
+        } catch (error) {
+          console.error('Error fetching summary for selected participant:', error);
+        }
+        
+        toast.success(`Selected ${participantName} for this group`);
+      }
     } catch (error) {
       console.error('Error updating participant:', error);
       toast.error('Failed to update participant selection');
