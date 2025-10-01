@@ -170,7 +170,7 @@ p {
   font-family: var(--font-body);
   font-size: var(--fs-md);
   color: var(--color-text);
-  line-height: 1.25; 
+  line-height: 1.25;
 }
 
 .p {
@@ -223,6 +223,10 @@ p {
 
 .has-full-width {
   width: 100%;
+}
+
+.has-full-height {
+  height: 100%;
 }
 
 .has-color-muted {
@@ -523,6 +527,7 @@ input[type="number"] {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
   padding: 8px 0px 8px 0px;
+  border-bottom: 1px solid var(--color-muted);;
 }
 
 .expense {
@@ -613,6 +618,10 @@ input[type="number"] {
 .floating-cta-container {
   padding: 16px;
   background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 10%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .has-shadow {
@@ -634,4 +643,10 @@ input[type="number"] {
 .header-icon-logo {
   height: 44px;
   width: 44px;
+}
+
+.split-breakdown-amount {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

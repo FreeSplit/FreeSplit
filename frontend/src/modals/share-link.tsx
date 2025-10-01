@@ -73,7 +73,7 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
             </button>
           </div>
-        <p>Share the link below with your friends to invite them to the group.</p>
+        <p className="has-full-width">Share the link below with your friends to invite them to the group.</p>
         </div>
         <div
           className="link-share-container"

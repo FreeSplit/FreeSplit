@@ -6,11 +6,11 @@ import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
+import SimplifyModal from "../modals/simplification"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDollarSign, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faDollarSign, faPlus, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import SimplifyAnimationFM, { Edge as AnimationEdge, AnimationNode } from "../animations/SimplifyAnimation";
 import { ring } from 'ldrs'; ring.register();
-
 
 const roundToTwo = (value: number) => Math.round(value * 100) / 100;
 
@@ -59,6 +59,7 @@ const Debts: React.FC = () => {
   const [updating, setUpdating] = useState<number | null>(null);
   const [rawEdges, setRawEdges] = useState<AnimationEdge[]>([]);
   const [showAnimation, setShowAnimation] = useState(true);
+  const [isSimplifyOpen, setSimplifyOpen] = useState(false);
 
   // Track group visit for user groups feature
   useGroupTracking();
@@ -161,7 +162,6 @@ const Debts: React.FC = () => {
   }, [rawEdges, nodeIdSet]);
 
   const rawEdgeCount = displayRawEdges.length;
-  const transactionsSaved = Math.max(rawEdgeCount - debts.length, 0);
 
   const handleSettleDebt = async (debt: DebtPageData) => {
     try {
@@ -191,10 +191,14 @@ const Debts: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading debts data...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading debt data...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -207,47 +211,53 @@ const Debts: React.FC = () => {
         <Header />
 
         <div className="content-section">
-          <h1>Debts</h1>
-
-          {/* Animation Section */}
-          {debts.length > 0 && showAnimation && (
-            <div className="v-flex align-center gap-16px">
-              <SimplifyAnimationFM
-                nodes={nodes}
-                rawEdges={displayRawEdges}
-                simplifiedEdges={simplifiedEdges}
-                width={720}
-                height={360}
-                cycleMs={2800}
-                autoplay
-                currency={currency}
-                onClose={() => setShowAnimation(false)}
-              />
-              <p>
-                Debts simplified from
-                {' '}
-                <span className="text-is-error is-bold">{rawEdgeCount}</span>
-                {' '}to{' '}
-                <span className="text-is-success is-bold">{debts.length}</span>
-                {' '}transactions.{' '}
-                <span className="text-is-success is-bold">{transactionsSaved}</span>
-                {' '}transactions saved.
-              </p>
-            </div>
-          )}
-
-          {/* Debts List */}
+          {/* W/ Debts */}
           {debts.length > 0 && (
-            <div className="expenses-container">
+            <>
+            <h1>Debts</h1>
+            
+            {/* Animation Section */}
+            {debts.length > 0 && showAnimation && (
+              <div className="v-flex align-center gap-16px">
+                <SimplifyAnimationFM
+                  nodes={nodes}
+                  rawEdges={displayRawEdges}
+                  simplifiedEdges={simplifiedEdges}
+                  width={720}
+                  height={360}
+                  cycleMs={2800}
+                  autoplay
+                  currency={currency}
+                  onClose={() => setShowAnimation(false)}
+                />
+                <div className="h-flex align-center gap-4px">
+                  <p>
+                    Simplified from
+                    {' '}
+                    <span className="text-is-error is-bold">{rawEdgeCount}</span>
+                    {' '}payments to{' '}
+                    <span className="text-is-success is-bold">{debts.length}</span>
+                    .
+                  </p>
+                  <button
+                    onClick={() => setSimplifyOpen(true)}
+                    aria-label="More info about simplification"
+                  >
+                    <FontAwesomeIcon icon={faCircleInfo} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Debts List */}
+            <div className="list">
               {debts.map((debt, index) => {
                 return (
-                  <div key={debt.id || `debt-${index}`} className="expense">
-                    <div className="expense-details">
+                  <div key={debt.id || `debt-${index}`} className="expenses-container">
+                    <div className="expense">
                       <p>
-                        {debt.debtor_name} owes {debt.lender_name} {currency}{debt.debt_amount.toFixed(2)}
+                        <span className="is-bold">{debt.debtor_name}</span> owes <span className="is-bold">{debt.lender_name}</span> <span className="is-bold text-is-success">{currency}{debt.debt_amount.toFixed(2)}</span>
                       </p>
-                    </div>
-                    <div className="flex items-center space-x-2">
                       <button
                         type="button"
                         className="link"
@@ -261,27 +271,40 @@ const Debts: React.FC = () => {
                 );
               })}
             </div>
+            </>
           )}
 
           {/* No Debts */}
           {debts.length === 0 && (
             <div className="content-container">
               <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-              <h2>No debts</h2>
-              <p>Add an expense to track your group debts.</p>
-              <button
-                 onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
-                className="btn"
-               >
-                <span>Add an expense</span>
-                <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-              </button>
+              <div className="v-flex gap-8px">
+                <h2>No debts</h2>
+                <p>Add an expense to track your group debts.</p>
+              </div>
             </div>
           )}
+          
+        </div>
+        
+        {/* Nav */}
+        <div className="floating-cta-footer">
+          <div className="floating-cta-container">
+            <button 
+              className="btn fab-shadow"
+              onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
+            >
+              <span>Add a new expense</span>
+              <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+            </button>
+          </div>
+          < NavBar />
         </div>
 
-        {/* Nav */}
-        <NavBar />
+        {isSimplifyOpen && (
+        <SimplifyModal onClose={() => setSimplifyOpen(false)} />
+      )}
+
       </div>
     </div>
   );

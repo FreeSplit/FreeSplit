@@ -1030,7 +1030,7 @@ const AddExpense: React.FC = () => {
 
   if (loading) {
     return (
-            <div className="page">
+      <div className="page">
         <div className="body">
           <div className="content-section align-center">
             <div className="content-container">

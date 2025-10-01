@@ -214,10 +214,14 @@ const Groups: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your groups...</p>
+      <div className="page">
+        <div className="body">
+          <div className="content-section align-center">
+            <div className="content-container">
+              <l-ring size="44" color="var(--color-primary)" />
+              <h2>Loading your groups...</h2>
+            </div>
+          </div>
         </div>
       </div>
     );

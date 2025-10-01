@@ -20,3 +20,55 @@
 }
 
 .sa-edge { opacity:0.9; }
+
+.simplify-container {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 1px solid var(--color-muted);
+  border-radius: 12px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+.simplify-node {
+  background-color: var(--color-primary);
+  color: var(--color-card);
+  border-radius: 50%;
+  height: 36px;
+  width: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+}
+
+.dollar-node {
+  background-color: var(--color-bg);
+  border-radius: 50%;
+  height: 24px;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 400;
+}
+
+.position-top {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+}
+
+.position-left {
+  position: absolute;
+  bottom: 20%;
+  left: 25%;
+}
+
+.position-right {
+  position: absolute;
+  bottom: 20%;
+  right: 25%;
+}
