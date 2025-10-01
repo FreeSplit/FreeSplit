@@ -68,13 +68,21 @@ const SimplifyAnimation: React.FC = () => {
             >
                 <p className='has-color-white'>S</p>
             </motion.div>
+            <motion.div
+                className="simplify-node position-bottom"
+                initial={{ x: "50%", y: "50%" }}
+                animate={{ scale: [0, 1, 1, 0], x: "50%", y: "50%" }}
+                transition={{ duration: 7.5, times: [0, 0.199, 0.999, 1] }}
+            >
+                <p className='has-color-white'>C</p>
+            </motion.div>
             <svg
                 viewBox="0 0 100 56.25"
                 preserveAspectRatio="xMidYMid meet"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >
                 <motion.path
-                    d="m 50 10 l -25 35"
+                    d="m 50 10 l -25 20"
                     ref={pathRef}
                     fill="transparent"
                     stroke="var(--color-error)"
@@ -89,7 +97,7 @@ const SimplifyAnimation: React.FC = () => {
                 initial={{ left: '50%', top: '20%',}}
                 animate={{
                     left: ['50%', '50%', '50%', '50%', '25%', '25%'],
-                    top: ['20%', '20%', '20%', '20%', '80%', '80%'],
+                    top: ['20%', '20%', '20%', '20%', '50%', '50%'],
                     opacity: [0, 0, 1, 1, 1, 0],
                 }}
                 transition={{
@@ -111,7 +119,7 @@ const SimplifyAnimation: React.FC = () => {
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >
                 <motion.path
-                    d="m 50 10 l 25 35"
+                    d="m 50 10 l 25 20"
                     ref={pathRef}
                     fill="transparent"
                     stroke="var(--color-error)"
@@ -126,7 +134,7 @@ const SimplifyAnimation: React.FC = () => {
                 initial={{ left: '50%', top: '20%',}}
                 animate={{
                     left: ['50%', '50%', '50%', '75%', '75%'],
-                    top: ['20%', '20%', '20%', '80%', '80%'],
+                    top: ['20%', '20%', '20%', '50%', '50%'],
                     opacity: [0, 0, 1, 1, 0],
                 }}
                 transition={{
@@ -143,7 +151,7 @@ const SimplifyAnimation: React.FC = () => {
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >
                 <motion.path
-                    d="m 75 45 l -50 0"
+                    d="m 75 28.125 l -50 0"
                     fill="transparent"
                     stroke="var(--color-error)"
                     strokeWidth="2"
@@ -153,10 +161,41 @@ const SimplifyAnimation: React.FC = () => {
             </svg>
             <motion.div
                 className="dollar-node"
-                style={{ position: 'absolute', bottom: '20%' }}
+                style={{ position: 'absolute', bottom: '50%' }}
                 initial={{ left: '75%', x: "-50%", y: "50%",}}
                 animate={{
                     left: ['75%', '75%', '75%', '25%', '25%'],
+                    opacity: [0, 0, 1, 1, 0],
+                }}
+                transition={{
+                    duration: 7.5,
+                    ease: 'easeInOut',
+                    times: [0, 0.199, 0.520, 0.652, 0.999],
+                }}
+            >
+                <FontAwesomeIcon icon={faDollarSign} style={{ width: 16, height: 16, fontSize: 16, color: 'var(--color-error)' }} aria-hidden="true" />
+            </motion.div>
+            <svg
+                viewBox="0 0 100 56.25"
+                preserveAspectRatio="xMidYMid meet"
+                style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
+            >
+                <motion.path
+                    d="m 75 28.125 l -25 20"
+                    fill="transparent"
+                    stroke="var(--color-error)"
+                    strokeWidth="2"
+                    animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [1, 1, 1, 1, 0] }}
+                    transition={{ duration: 7.5, times: [0, 0.520, 0.652, 0.999, 1], ease: "easeInOut" }}
+                />
+            </svg>
+            <motion.div
+                className="dollar-node"
+                style={{ position: 'absolute', bottom: '50%' }}
+                initial={{ left: '75%', x: "-50%", y: "50%",}}
+                animate={{
+                    left: ['75%', '75%', '75%', '50%', '50%'],
+                    bottom: ['50%', '50%', '50%', '20%', '20%'],
                     opacity: [0, 0, 1, 1, 0],
                 }}
                 transition={{
@@ -204,19 +243,27 @@ const SimplifyAnimation: React.FC = () => {
             >
                 <p className='has-color-white'>S</p>
             </motion.div>
+            <motion.div
+                className="simplify-node position-bottom"
+                initial={{ x: "50%", y: "50%" }}
+                animate={{ scale: [0, 1, 1, 0], x: "50%", y: "50%" }}
+                transition={{ delay: 7.5, duration: 7.5, times: [0, 0.199, 0.999, 1] }}
+            >
+                <p className='has-color-white'>C</p>
+            </motion.div>
             <svg
                 viewBox="0 0 100 56.25"
                 preserveAspectRatio="xMidYMid meet"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >
                 <motion.path
-                    d="m 50 10 l -25 35"
+                    d="m 50 10 l 0 40"
                     ref={pathRef}
                     fill="transparent"
                     stroke="var(--color-success)"
                     strokeWidth="2"
                     animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [1, 1, 1, 1, 0] }}
-                    transition={{ delay: 7.5,  duration: 7.5, times: [0, 0.266, 0.388, 0.999, 1 ], ease: "easeInOut" }}
+                    transition={{ delay: 7.5, duration: 7.5, times: [0, 0.266, 0.388, 0.999, 1 ], ease: "easeInOut" }}
                 />
             </svg>
             <motion.div
@@ -224,7 +271,7 @@ const SimplifyAnimation: React.FC = () => {
                 style={{ position: 'absolute', transform: 'translate(-50%, -50%)' }}
                 initial={{ left: '50%', top: '20%',}}
                 animate={{
-                    left: ['50%', '50%', '50%', '50%', '25%', '25%'],
+                    left: ['50%', '50%', '50%', '50%', '50%', '50%'],
                     top: ['20%', '20%', '20%', '20%', '80%', '80%'],
                     opacity: [0, 0, 1, 1, 1, 0],
                 }}
@@ -248,29 +295,27 @@ const SimplifyAnimation: React.FC = () => {
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
             >
                 <motion.path
-                    d="m 50 10 l 25 35"
-                    ref={pathRef}
+                    d="m 75 28.125 l -50 0"
                     fill="transparent"
                     stroke="var(--color-success)"
                     strokeWidth="2"
                     animate={{ pathLength: [0, 0, 1, 1, 1], opacity: [1, 1, 1, 1, 0] }}
-                    transition={{ delay: 7.5, duration: 7.5, times: [0, 0.388, 0.520, 0.999, 1], ease: "easeInOut" }}
+                    transition={{ delay: 7.5, duration: 7.5, times: [0, 0.520, 0.652, 0.999, 1], ease: "easeInOut" }}
                 />
             </svg>
             <motion.div
                 className="dollar-node"
-                style={{ position: 'absolute', transform: 'translate(-50%, -50%)' }}
-                initial={{ left: '50%', top: '20%',}}
+                style={{ position: 'absolute', bottom: '50%' }}
+                initial={{ left: '75%', x: "-50%", y: "50%",}}
                 animate={{
-                    left: ['50%', '50%', '50%', '75%', '75%'],
-                    top: ['20%', '20%', '20%', '80%', '80%'],
+                    left: ['75%', '75%', '75%', '25%', '25%'],
                     opacity: [0, 0, 1, 1, 0],
                 }}
                 transition={{
                     delay: 7.5, 
                     duration: 7.5,
                     ease: 'easeInOut',
-                    times: [0, 0.199, 0.388, 0.520, 0.999],
+                    times: [0, 0.199, 0.520, 0.652, 0.999],
                 }}
             >
                 <FontAwesomeIcon icon={faDollarSign} style={{ width: 16, height: 16, fontSize: 16, color: 'var(--color-success)' }} aria-hidden="true" />

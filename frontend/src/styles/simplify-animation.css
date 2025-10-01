@@ -30,6 +30,7 @@
   justify-content: center;
   overflow: hidden;
   position: relative;
+  background-color: var(--color-bg);
 }
 
 .simplify-node {
@@ -63,12 +64,18 @@
 
 .position-left {
   position: absolute;
-  bottom: 20%;
+  bottom: 50%;
   left: 25%;
 }
 
 .position-right {
   position: absolute;
-  bottom: 20%;
+  bottom: 50%;
   right: 25%;
+}
+
+.position-bottom {
+  position: absolute;
+  bottom: 20%;
+  right: 50%;
 }
