@@ -1,26 +1,3 @@
-.sa-wrap { margin: 12px auto; width: 100%; }
-
-.sa-svg { background:#fff; border-radius:12px; box-shadow:0 2px 6px rgba(17,24,39,0.08); width:100%; height:auto; }
-
-.sa-node-pill {
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:2px 6px;
-  border-radius:999px;
-  background:var(--color-primary);
-  color:#fff;
-  font-weight:700;
-  font-size:14px;
-  pointer-events:none;
-  box-shadow:0 1px 3px rgba(15,23,42,0.15);
-  white-space:nowrap;
-}
-
-.sa-edge { opacity:0.9; }
-
 .simplify-container {
   width: 100%;
   aspect-ratio: 16 / 9;
@@ -48,8 +25,8 @@
 .dollar-node {
   background-color: var(--color-bg);
   border-radius: 50%;
-  height: 24px;
-  width: 24px;
+  height: 36px;
+  width: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,4 +55,24 @@
   position: absolute;
   bottom: 20%;
   right: 50%;
+}
+
+.red-pill {
+  padding: 2px 6px;
+  background: var(--color-error);
+  color: var(--color-card);
+  position: absolute;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.green-pill {
+  padding: 2px 6px;
+  background: var(--color-success);
+  color: var(--color-card);
+  position: absolute;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 12px;
 }
