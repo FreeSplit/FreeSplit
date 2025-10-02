@@ -250,6 +250,10 @@ export const getPaymentsByGroup = async (groupId: number): Promise<Payment[]> =>
   return response.data;
 };
 
+export const deletePayment = async (paymentId: number): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/api/payments/${paymentId}`);
+};
+
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {
   const response = await axios.get(`${API_BASE_URL}/api/expense/${expenseId}`);
   return {

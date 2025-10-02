@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getDebtsPageData, createPayment, getSplitsByGroup, getGroup, getPaymentsByGroup } from '../services/api';
-import { DebtPageData, SplitWithNames } from '../services/api';
+import { getDebtsPageData, createPayment, getSplitsByGroup, getGroup, getPaymentsByGroup, deletePayment } from '../services/api';
+import { DebtPageData, SplitWithNames, Participant, Payment } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import SimplifyModal from "../modals/simplification"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDollarSign, faPlus, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
+import { faDollarSign, faPlus, faCircleInfo,} from '@fortawesome/free-solid-svg-icons';
 import { ring } from 'ldrs'; ring.register();
 
 const Debts: React.FC = () => {
@@ -21,6 +21,9 @@ const Debts: React.FC = () => {
   const [isSimplifyOpen, setSimplifyOpen] = useState(false);
   const [rawPaymentCount, setRawPaymentCount] = useState<number | null>(null);
   const [simplifiedPaymentCount, setSimplifiedPaymentCount] = useState<number | null>(null);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [participantNames, setParticipantNames] = useState<Record<number, string>>({});
+  const [undoingPaymentId, setUndoingPaymentId] = useState<number | null>(null);
 
   const countChargeableSplits = useCallback((splits: SplitWithNames[]): number => (
     splits.reduce((count, split) => (
@@ -37,38 +40,48 @@ const Debts: React.FC = () => {
       setRawPaymentCount(null);
       setSimplifiedPaymentCount(null);
       const debtsResponse = await getDebtsPageData(urlSlug!);
-      
+
       setDebts(debtsResponse.debts);
       setCurrency(debtsResponse.currency);
+      setPayments([]);
+      setParticipantNames({});
 
       let groupId: number | null = null;
 
       try {
+        const groupResponse = await getGroup(urlSlug!);
+        groupId = groupResponse.group.id;
+        const participantMap: Record<number, string> = {};
+        (groupResponse.participants ?? []).forEach((participant: Participant) => {
+          participantMap[participant.id] = participant.name;
+        });
+        setParticipantNames(participantMap);
+      } catch (groupError) {
+        console.warn('Failed to load group for simplification banner:', groupError);
+      }
+
+      try {
         const splitsData = await getSplitsByGroup(urlSlug!);
         setRawPaymentCount(countChargeableSplits(splitsData));
-        groupId = splitsData[0]?.group_id ?? null;
+        if (!groupId && splitsData.length > 0) {
+          groupId = splitsData[0].group_id ?? null;
+        }
       } catch (splitsError) {
         console.warn('Failed to load splits for simplification banner:', splitsError);
       }
 
-      if (!groupId) {
-        try {
-          const groupResponse = await getGroup(urlSlug!);
-          groupId = groupResponse.group.id;
-        } catch (groupError) {
-          console.warn('Failed to load group for simplification banner:', groupError);
-        }
-      }
-
       if (groupId) {
         try {
-          const payments = await getPaymentsByGroup(groupId);
-          setSimplifiedPaymentCount(debtsResponse.debts.length + payments.length);
+          const paymentsResponse = await getPaymentsByGroup(groupId);
+          setPayments(paymentsResponse);
+          setSimplifiedPaymentCount(debtsResponse.debts.length + paymentsResponse.length);
         } catch (paymentsError) {
           console.warn('Failed to load payments for simplification banner:', paymentsError);
+          setPayments([]);
           setSimplifiedPaymentCount(debtsResponse.debts.length);
         }
       } else {
+        setPayments([]);
         setSimplifiedPaymentCount(debtsResponse.debts.length);
       }
       
@@ -109,6 +122,21 @@ const Debts: React.FC = () => {
     }
   };
 
+  const handleUndoPayment = useCallback(async (payment: Payment) => {
+    try {
+      setUndoingPaymentId(payment.id);
+      await deletePayment(payment.id);
+      toast.success('Payment reverted');
+      await loadDebtsData();
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Failed to undo payment';
+      toast.error(errorMessage);
+      console.error('Error undoing payment:', error);
+    } finally {
+      setUndoingPaymentId(null);
+    }
+  }, [loadDebtsData]);
+
 
   // All debts returned from backend are current (unsettled) debts
   // No need for status checking since settled debts are not returned
@@ -136,7 +164,7 @@ const Debts: React.FC = () => {
 
         <div className="content-section">
           {/* W/ Debts */}
-          {debts.length > 0 && (
+          {(debts.length > 0 || payments.length > 0) && (
             <>
             <div className="v-flex gap-8px">
               <h1>Debts</h1>
@@ -165,9 +193,14 @@ const Debts: React.FC = () => {
                 return (
                   <div key={debt.id || `debt-${index}`} className="expenses-container">
                     <div className="expense">
-                      <p>
-                        <span className="is-bold">{debt.debtor_name}</span> owes <span className="is-bold">{debt.lender_name}</span> <span className="is-bold text-is-success">{currency}{debt.debt_amount.toFixed(2)}</span>
-                      </p>
+                      <div className="v-flex">
+                        <p>
+                          <span className="is-bold">{debt.debtor_name}</span> owes <span className="is-bold">{debt.lender_name}</span>
+                        </p>
+                        <p>
+                          <span className="p2 is-bold text-is-success">{currency}{debt.debt_amount.toFixed(2)}</span>
+                        </p>
+                      </div>
                       <button
                         type="button"
                         className="link"
@@ -180,12 +213,42 @@ const Debts: React.FC = () => {
                   </div>
                 );
               })}
+              {payments.map((payment) => {
+                const payerName = participantNames[payment.payer_id] ?? 'Someone';
+                const payeeName = participantNames[payment.payee_id] ?? 'Someone';
+
+                return (
+                  <div key={`payment-${payment.id}`} className="expenses-container">
+                    <div className="expense">
+                      <div className="v-flex">
+                      <p className="text-is-muted ">
+                        <span className="is-bold">{payerName}</span> paid <span className="is-bold">{payeeName}</span>{' '}
+                      </p>
+                      <p>
+                        <span className="p2 is-bold">{currency}{payment.amount.toFixed(2)}</span>
+                      </p>
+                      </div>
+                      <div className="h-flex gap-8px">
+                        <button
+                          type="button"
+                          className="pill bg-is-red"
+                          onClick={() => handleUndoPayment(payment)}
+                          disabled={undoingPaymentId === payment.id}
+                        >
+                          {undoingPaymentId === payment.id ? 'Undoing…' : 'Undo'}
+                        </button>
+                        <span className="text-is-muted">Settled</span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
             </>
           )}
 
           {/* No Debts */}
-          {debts.length === 0 && (
+          {debts.length === 0 && payments.length === 0 && (
             <div className="content-container">
               <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
               <div className="v-flex gap-8px align-center">

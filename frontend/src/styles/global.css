@@ -616,7 +616,7 @@ input[type="number"] {
 
 .floating-cta-container {
   padding: 16px;
-  background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 10%);
+  background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 25%);
   width: 100%;
   display: flex;
   justify-content: center;
@@ -648,4 +648,16 @@ input[type="number"] {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.pill {
+  padding: 2px 6px;
+  color: var(--color-card);
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.bg-is-red {
+  background-color: var(--color-error);
 }

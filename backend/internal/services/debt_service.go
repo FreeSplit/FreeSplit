@@ -191,6 +191,47 @@ func (s *debtService) GetPayments(ctx context.Context, req *GetPaymentsRequest) 
 	}, nil
 }
 
+// DeletePayment removes a payment and recalculates debts for the group.
+// Input: DeletePaymentRequest with PaymentId
+// Output: DeletePaymentResponse confirming deletion
+// Description: Deletes a payment record, recalculates debts, and returns success
+func (s *debtService) DeletePayment(ctx context.Context, req *DeletePaymentRequest) (*DeletePaymentResponse, error) {
+	if req.PaymentId <= 0 {
+		return nil, fmt.Errorf("invalid payment ID")
+	}
+
+	var payment database.Payment
+	if err := s.db.First(&payment, req.PaymentId).Error; err != nil {
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("payment not found")
+		}
+		return nil, fmt.Errorf("failed to get payment: %v", err)
+	}
+
+	tx := s.db.Begin()
+	defer func() {
+		if r := recover(); r != nil {
+			tx.Rollback()
+		}
+	}()
+
+	if err := tx.Delete(&payment).Error; err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to delete payment: %v", err)
+	}
+
+	if err := s.updateDebts(tx, payment.GroupID); err != nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("failed to recalculate debts: %v", err)
+	}
+
+	if err := tx.Commit().Error; err != nil {
+		return nil, fmt.Errorf("failed to commit transaction: %v", err)
+	}
+
+	return &DeletePaymentResponse{}, nil
+}
+
 // updateDebts recalculates and updates debts in the database after payments
 // Input: gorm.DB transaction and groupID
 // Output: error if debt calculation fails
