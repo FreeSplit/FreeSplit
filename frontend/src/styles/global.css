@@ -656,8 +656,16 @@ input[type="number"] {
   border-radius: 24px;
   font-weight: 700;
   font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
 }
 
 .bg-is-red {
   background-color: var(--color-error);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
 }

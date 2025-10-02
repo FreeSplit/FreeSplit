@@ -4,7 +4,7 @@ import { localStorageService, UserGroup } from '../services/localStorage';
 import { getUserGroupsSummary, getGroupParticipants, getGroup, UserGroupSummary, GroupParticipantsResponse } from '../services/api';
 import FreesplitLogo from '../images/FreeSplit.svg';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUsers, faPlus, faTimes, faChevronDown, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faPlus, faTimes, faChevronDown, faChevronRight, faTrash } from '@fortawesome/free-solid-svg-icons';
 import toast from 'react-hot-toast';
 import LogoHeader from '../nav/logo-header'
 import SigFooter from '../nav/sig-footer'
@@ -248,14 +248,57 @@ const Groups: React.FC = () => {
                     <div className="expense">
                     <div className="expense-details">
                       <div className="flex items-center justify-between w-full">
-                        <div className="flex-1">
-                          <h3 
-                            className="text-lg font-semibold mb-1 cursor-pointer hover:text-blue-600 transition-colors"
-                            onClick={() => handleCopyGroupLink(group.groupUrlSlug)}
-                            title="Click to copy group link"
-                          >
-                            {groupNames[group.groupUrlSlug] || 'Loading...'}
-                          </h3>
+                        <div className="v-flex gap-4px">
+                          <div className="h-flex align-center gap-8px">
+                            <button
+                              onClick={() => navigate(`/groups/${group.groupUrlSlug}`)}
+                              title="View group"
+                            >
+                              <h2>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
+                            </button>
+                              <div className="relative">
+                                <button
+                                  onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
+                                  className="pill bg-primary"
+                                  title="Select your user"
+                                >
+                                  {group.userParticipantName && (
+                                    <span>{group.userParticipantName}</span>
+                                  )}
+                                  <FontAwesomeIcon
+                                    icon={faChevronDown}
+                                  />
+                                </button>
+                                {/* Dropdown - Name Selection */}
+                                {isExpanded && participants && (
+                                  <div className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50" style={{backgroundColor: 'var(--color-primary)'}}>
+                                    <div className="flex flex-col gap-1">
+                                      {participants.participants.map((participant) => (
+                                        <button
+                                          key={participant.id}
+                                          onClick={() => handleParticipantSelect(
+                                            group.groupUrlSlug,
+                                            participant.id,
+                                            participant.name
+                                          )}
+                                          className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
+                                            group.userParticipantId === participant.id
+                                              ? 'text-white' 
+                                              : 'text-white hover:opacity-80'
+                                          }`}
+                                          style={{
+                                            backgroundColor: group.userParticipantId === participant.id ? 'var(--color-primary-dark)' : 'transparent'
+                                          }}
+                                        >
+                                          {participant.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                          </div>
+                            
                           <p 
                             className="text-xs text-gray-500 mb-1 cursor-pointer hover:text-blue-600 transition-colors"
                             onClick={() => handleCopyGroupLink(group.groupUrlSlug)}
@@ -275,13 +318,12 @@ const Groups: React.FC = () => {
                                   hour12: true
                                 }).replace(/\./g, '')}
                               </span>
-                              {group.userParticipantName && (
-                                <span className="text-xs text-gray-600 ml-6">
-                                  Currently: <span className="font-medium text-blue-600">{group.userParticipantName}</span>
-                                </span>
-                              )}
                             </div>
-                            {group.userParticipantId > 0 && (
+                            
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {group.userParticipantId > 0 && (
                               <div className="mr-4">
                                 {summary ? (
                                   <span className={`font-medium ${getBalanceColor(summary.net_balance)}`}>
@@ -294,61 +336,11 @@ const Groups: React.FC = () => {
                                 )}
                               </div>
                             )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <div className="relative">
-                            <button
-                              onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
-                              className="btn btn-sm dropdown-button"
-                              title="Select your user"
-                            >
-                              <FontAwesomeIcon
-                                icon={faChevronDown}
-                                className={`transform transition-transform ${isExpanded ? '' : 'rotate-180'}`}
-                              />
-                            </button>
-                            {/* Dropdown - Name Selection */}
-                            {isExpanded && participants && (
-                              <div className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50" style={{backgroundColor: 'var(--color-primary)'}}>
-                                <div className="flex flex-col gap-1">
-                                  {participants.participants.map((participant) => (
-                                    <button
-                                      key={participant.id}
-                                      onClick={() => handleParticipantSelect(
-                                        group.groupUrlSlug,
-                                        participant.id,
-                                        participant.name
-                                      )}
-                                      className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
-                                        group.userParticipantId === participant.id
-                                          ? 'text-white' 
-                                          : 'text-white hover:opacity-80'
-                                      }`}
-                                      style={{
-                                        backgroundColor: group.userParticipantId === participant.id ? 'var(--color-primary-dark)' : 'transparent'
-                                      }}
-                                    >
-                                      {participant.name}
-                                    </button>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
                           <button
                             onClick={() => handleDeleteGroup(group.groupUrlSlug)}
-                            className="btn btn-sm text-red-600 hover:text-red-800"
                             title="Remove from your groups"
                           >
-                            <FontAwesomeIcon icon={faTimes} />
-                          </button>
-                          <button
-                            onClick={() => navigate(`/groups/${group.groupUrlSlug}`)}
-                            className="btn btn-sm"
-                            title="View Group"
-                          >
-                            <FontAwesomeIcon icon={faChevronRight} />
+                            <FontAwesomeIcon icon={faTrash} style={{ color: 'var(--color-error', fontSize: 20, }} />
                           </button>
                         </div>
                       </div>
