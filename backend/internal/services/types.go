@@ -149,6 +149,12 @@ type CreatePaymentResponse struct {
 	Debt *Debt `json:"debt"`
 }
 
+type DeletePaymentRequest struct {
+	PaymentId int32 `json:"payment_id"`
+}
+
+type DeletePaymentResponse struct{}
+
 type GetPaymentsRequest struct {
 	GroupId int32 `json:"group_id"`
 }

@@ -87,6 +87,16 @@ export interface SplitWithNames {
   payer_name: string;
 }
 
+export interface Payment {
+  id: number;
+  group_id: number;
+  payer_id: number;
+  payee_id: number;
+  amount: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Debt {
   debt_id: number;
   group_id: number;
@@ -233,6 +243,15 @@ export const getSplitsByParticipant = async (participantId: number): Promise<Spl
 export const getSplitsByGroup = async (urlSlug: string): Promise<SplitWithNames[]> => {
   const response = await axios.get(`${API_BASE_URL}/api/group/${urlSlug}/splits`);
   return response.data;
+};
+
+export const getPaymentsByGroup = async (groupId: number): Promise<Payment[]> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/payments`);
+  return response.data;
+};
+
+export const deletePayment = async (paymentId: number): Promise<void> => {
+  await axios.delete(`${API_BASE_URL}/api/payments/${paymentId}`);
 };
 
 export const getExpenseWithSplits = async (expenseId: number): Promise<{expense: Expense, splits: Split[]}> => {

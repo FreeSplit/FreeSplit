@@ -42,7 +42,7 @@ function App() {
           <Route path="/" element={<Index />} />
           <Route path="/create-a-group/" element={<CreateGroup />} />
           <Route path="/groups" element={<Groups />} />
-          <Route path="/group" element={<Navigate to="/" replace />} />
+          <Route path="/group" element={<Navigate to="/groups" replace />} />
           <Route path="/groups/:urlSlug" element={<GroupDashboard />} />
           <Route path="/groups/:urlSlug/expenses/add" element={<AddExpense />} />
           <Route path="/groups/:urlSlug/expenses/:expenseId/edit" element={<EditExpense />} />

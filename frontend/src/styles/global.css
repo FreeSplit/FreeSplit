@@ -23,7 +23,7 @@
   width: 100%;
   padding: 16px;
   background: var(--color-primary);
-  position: sticky; top: 0; z-index: 10;
+  position: sticky; top: 0; z-index: 11;
   color: var(--color-bg);
   box-shadow: 2px 2px 4px rgba(17, 24, 39, 0.20);
 }
@@ -170,7 +170,7 @@ p {
   font-family: var(--font-body);
   font-size: var(--fs-md);
   color: var(--color-text);
-  line-height: 1.25; 
+  line-height: 1.25;
 }
 
 .p {
@@ -223,6 +223,10 @@ p {
 
 .has-full-width {
   width: 100%;
+}
+
+.has-full-height {
+  height: 100%;
 }
 
 .has-color-muted {
@@ -440,7 +444,7 @@ input[type="number"] {
   box-shadow: var(--shadow-1);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  z-index: 20;
+  z-index: 10;
 }
 
 .floating-action-button:hover {
@@ -523,6 +527,7 @@ input[type="number"] {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
   padding: 8px 0px 8px 0px;
+  border-bottom: 1px solid var(--color-muted);;
 }
 
 .expense {
@@ -590,7 +595,6 @@ input[type="number"] {
 .v-flex {
   display: flex;
   flex-direction: column;
-  align-items: center;
   width: 100%;
 }
 
@@ -612,7 +616,11 @@ input[type="number"] {
 
 .floating-cta-container {
   padding: 16px;
-  background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 10%);
+  background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 25%);
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .has-shadow {
@@ -629,4 +637,35 @@ input[type="number"] {
   align-items: center;
   width: 100%;
   position: sticky; bottom: 0; z-index: 10;
+}
+
+.header-icon-logo {
+  height: 44px;
+  width: 44px;
+}
+
+.split-breakdown-amount {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pill {
+  padding: 2px 6px;
+  color: var(--color-card);
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+}
+
+.bg-is-red {
+  background-color: var(--color-error);
+}
+
+.bg-primary {
+  background-color: var(--color-primary);
 }

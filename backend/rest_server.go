@@ -164,6 +164,15 @@ func main() {
 		}
 	}))
 
+	http.HandleFunc("/api/payments/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case "DELETE":
+			deletePayment(w, r, debtService)
+		default:
+			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		}
+	}))
+
 	// User Groups API
 	http.HandleFunc("/api/user-groups/", corsMiddleware(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "/summary") {
@@ -799,4 +808,25 @@ func createPayment(w http.ResponseWriter, r *http.Request, debtService services.
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(resp)
+}
+
+func deletePayment(w http.ResponseWriter, r *http.Request, debtService services.DebtService) {
+	paymentIDStr := strings.TrimPrefix(r.URL.Path, "/api/payments/")
+	paymentID, err := strconv.Atoi(paymentIDStr)
+	if err != nil || paymentID <= 0 {
+		http.Error(w, "Invalid payment ID", http.StatusBadRequest)
+		return
+	}
+
+	req := &services.DeletePaymentRequest{
+		PaymentId: int32(paymentID),
+	}
+
+	if _, err := debtService.DeletePayment(context.TODO(), req); err != nil {
+		log.Printf("Error deleting payment %d: %v", paymentID, err)
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

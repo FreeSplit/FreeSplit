@@ -113,14 +113,12 @@ const Members: React.FC = () => {
           <h1>Members ({participants.length})</h1>
           <div className="list">
             {participants.length === 0 ? (
-              <div className="content-container">
+              <div className="content-container text-is-centered">
                 <FontAwesomeIcon icon={faUserXmark} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-                <h2>No members</h2>
-                <p>I'm not sure how you've done this. Try add some people.</p>
-                <button onClick={() => setAddMemberOpen(true)} className="btn">
-                  <span>Add a member</span>
-                  <FontAwesomeIcon icon={faPlus} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
-                </button>
+                <div className="v-flex gap-8px align-center">
+                  <h2>No members</h2>
+                  <p>I'm not sure how you've done this. Try add some people.</p>
+                </div>
               </div>
             ) : (
               participants.map((participant) => (

@@ -1432,8 +1432,10 @@ const EditExpense: React.FC = () => {
                       )}
 
                       {formData.split_type === 'amount' && (
-                        <div className="split-breakdown-amount-split-container amount">
-                          <p className={isIncluded ? undefined : 'text-is-muted'}>{group.currency}</p>
+                        <div className="split-breakdown-amount-split-container amount hide-scrollbar">
+                          <p className={isIncluded ? undefined : 'text-is-muted'}>
+                            {group.currency}
+                          </p>
                           <input
                             type="text"
                             value={draftSplits.hasOwnProperty(participant.id)
@@ -1448,8 +1450,8 @@ const EditExpense: React.FC = () => {
                                 commitSplitChange(participant.id, displayedSplit);
                               }
                             }}
-                            className="split-input right-align-text"
-                            style={{ WebkitAppearance: 'none', MozAppearance: 'textfield' }}
+                            className="split-input"
+                            
                             disabled={!isIncluded || submitting || deleting}
                             inputMode="decimal"
                             pattern="[0-9]*\\.?[0-9]*"
