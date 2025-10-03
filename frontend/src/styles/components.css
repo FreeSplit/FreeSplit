@@ -26,6 +26,7 @@
   cursor: pointer;
   transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
   font-family: var(--font-body); font-size: var(--fs-md); line-height: 100%;
+  text-decoration: none;
 }
 
 .btn--delete {

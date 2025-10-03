@@ -2,7 +2,7 @@
 
 .page {
   display: flex;
-  background-color: var(--color-bg);
+  background-color: var(--color-text);
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -10,6 +10,7 @@
 
 .body {
   display: flex; 
+  background-color: var(--color-bg);
   flex-direction: column;
   justify-content: center;
   align-items: center;
@@ -141,6 +142,7 @@ a {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   line-height: 1;
+  text-decoration: underline;
 }
 
 .a {
@@ -148,6 +150,10 @@ a {
   font-family: var(--font-body);
   font-size: var(--fs-sm);
   line-height: 1;
+}
+
+.a:hover {
+  color: var(--color-darker);
 }
 
 .a:disabled {
@@ -164,6 +170,7 @@ h2 {
   font-family: var(--font-heading);
   font-size: var(--fs-lg);
   line-height: 1.1;
+  text-align: left;
 }
 
 p {
@@ -668,4 +675,18 @@ input[type="number"] {
 
 .bg-primary {
   background-color: var(--color-primary);
+}
+
+.icon-link-container {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: 8px;
+}
+
+.no-decoration {
+  text-decoration: none;
 }
