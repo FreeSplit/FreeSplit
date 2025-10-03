@@ -291,7 +291,7 @@ const Groups: React.FC = () => {
                         <div className="expense-details">
                           <div className="flex items-center justify-between w-full">
                             <div className="v-flex gap-8px">
-                              <div className="h-flex align-center gap-8px">
+                              
                                 <h2 style={{ color: 'var(--color-text)'}}>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
                                 <div className="relative">
                                   <button
@@ -311,10 +311,10 @@ const Groups: React.FC = () => {
                                   {/* Dropdown - Name Selection */}
                                   {isExpanded && participants && (
                                     <div
-                                      className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
+                                      className="dropdown-container left"
                                       style={{ backgroundColor: 'var(--color-primary)' }}
                                     >
-                                      <div className="flex flex-col gap-1">
+                                      <div className="list">
                                         {participants.participants.map((participant) => (
                                           <button
                                             key={participant.id}
@@ -327,16 +327,12 @@ const Groups: React.FC = () => {
                                               );
                                               setExpandedParticipants(new Set());
                                             }}
-                                            className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
-                                              group.userParticipantId === participant.id
-                                                ? 'text-white'
-                                                : 'text-white hover:opacity-80'
-                                            }`}
+                                            className="item"
                                             style={{
                                               backgroundColor:
                                                 group.userParticipantId === participant.id
-                                                  ? 'var(--color-primary-dark)'
-                                                  : 'transparent'
+                                                  ? 'var(--color-primary-darkest)'
+                                                  : undefined
                                             }}
                                           >
                                             {participant.name}
@@ -353,7 +349,7 @@ const Groups: React.FC = () => {
                                   )}
 
                                 </div>
-                              </div>
+                              
                               <div className="h-flex align-start gap-8px">
                                 <div className="h-flex align-center gap-4px">
                                   <p className="p2">Last visited:</p>
@@ -374,7 +370,7 @@ const Groups: React.FC = () => {
                                           </p>
                                         </>
                                       ) : (
-                                        <span className="text-gray-400 text-xs">No balance data</span>
+                                        <span className="p2">No balance data</span>
                                       )}
                                     </div>
                                   </>
@@ -399,14 +395,13 @@ const Groups: React.FC = () => {
                                 {/* Dropdown - Options */}
                                 {isOptionsExpanded && (
                                   <div
-                                    className="absolute right-0 top-full mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
-                                    style={{ backgroundColor: 'var(--color-primary)' }}
+                                    className="dropdown-container right"
                                   >
-                                    <div className="flex flex-col gap-1">
+                                    <div className="list">
                                       <Link
                                         to={`/groups/${group.groupUrlSlug}`}
                                         title="View group"
-                                        className="px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap text-white hover:opacity-80 no-decoration"
+                                        className="item"
                                         onClick={(event) => event.stopPropagation()}
                                       >
                                         View group
@@ -420,7 +415,7 @@ const Groups: React.FC = () => {
                                             setExpandedOptions(new Set());
                                           }
                                         }}
-                                        className="px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap text-white hover:opacity-80"
+                                        className="item"
                                       >
                                         Copy group URL
                                       </button>
@@ -433,7 +428,7 @@ const Groups: React.FC = () => {
                                             setExpandedOptions(new Set());
                                           }
                                         }}
-                                        className="px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap text-white hover:opacity-80"
+                                        className="item"
                                       >
                                         Delete group
                                       </button>

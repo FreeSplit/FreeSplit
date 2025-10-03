@@ -540,7 +540,7 @@ input[type="number"] {
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
-  padding: 8px 0px 8px 0px;
+  padding: 16px 0px;
   border-bottom: 1px solid var(--color-muted);
 }
 
@@ -687,13 +687,20 @@ input[type="number"] {
 .dropdown-container {
   position: absolute;
   top: 100%;
-  left: 0;
   margin-top: 8px;
   border-radius: 8px;
   padding: 8px;
   z-index: 50; 
   box-shadow: var(--elevation-3);
   background-color: var(--color-primary);
+}
+
+.dropdown-container.left {
+  left: 0;
+}
+
+.dropdown-container.right {
+  right: 0;
 }
 
 .dropdown-container .list {
@@ -738,10 +745,10 @@ input[type="number"] {
 }
 
 .header-dropdown {
-  padding: 16px;
+  padding: 8px;
   color: var(--color-card);
   background-color: var(--color-primary);
-  border-radius: 24px;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 14px;
   display: flex;

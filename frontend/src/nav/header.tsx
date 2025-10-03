@@ -151,7 +151,7 @@ const Header: React.FC = () => {
           </button>
           {isDropdownOpen && (
             <div
-              className="dropdown-container"
+              className="dropdown-container left"
             >
               <div className="list">
                 {userGroups.map((userGroup) => (
