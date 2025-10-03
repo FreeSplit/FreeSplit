@@ -167,12 +167,12 @@ func (s *groupService) GetGroupParticipants(ctx context.Context, req *GroupParti
 	}, nil
 }
 
-// generateURLSlug generates a unique 32-character hexadecimal URL slug for groups.
+// generateURLSlug generates a unique 10-character hexadecimal URL slug for groups.
 // Input: none
 // Output: string URL slug and error
-// Description: Creates cryptographically secure random 32-character hex string for group URLs
+// Description: Creates cryptographically secure random 10-character hex string for group URLs
 func generateURLSlug() (string, error) {
-	bytes := make([]byte, 16)
+	bytes := make([]byte, 5)
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
