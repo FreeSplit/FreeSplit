@@ -669,6 +669,23 @@ input[type="number"] {
   align-items: center;
 }
 
+.dropdown-pill {
+  padding: 2px 6px;
+  color: var(--color-card);
+  background-color: var(--color-primary);
+  border-radius: 24px;
+  font-weight: 700;
+  font-size: 14px;
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+}
+
+.dropdown-pill:hover {
+  background-color: var(--color-primary-dark);
+}
+
 .bg-is-red {
   background-color: var(--color-error);
 }
@@ -685,6 +702,10 @@ input[type="number"] {
   align-items: center;
   flex-shrink: 0;
   border-radius: 8px;
+}
+
+.icon-link-container:hover {
+  background-color: var(--color-bg-hover);
 }
 
 .no-decoration {

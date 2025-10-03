@@ -139,6 +139,10 @@ const Groups: React.FC = () => {
     };
   }, []);
 
+  const handleViewGroup = (groupUrlSlug: string) => {
+    navigate(`/groups/${groupUrlSlug}`);
+  };
+
   const handleDeleteGroup = async (groupUrlSlug: string) => {
     try {
       await localStorageService.removeUserGroup(groupUrlSlug);
@@ -269,24 +273,35 @@ const Groups: React.FC = () => {
                   const isOptionsExpanded = expandedOptions.has(group.groupUrlSlug);
 
                   return (
-                    <div key={group.groupUrlSlug} className="expenses-container">
+                    <div
+                      key={group.groupUrlSlug}
+                      className="expenses-container"
+                      role="link"
+                      tabIndex={0}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => handleViewGroup(group.groupUrlSlug)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleViewGroup(group.groupUrlSlug);
+                        }
+                      }}
+                    >
                       <div className="expense">
                         <div className="expense-details">
                           <div className="flex items-center justify-between w-full">
                             <div className="v-flex gap-8px">
                               <div className="h-flex align-center gap-8px">
-                                <Link
-                                  to={`/groups/${group.groupUrlSlug}`}
-                                  title="View group"
-                                  style={{ color: 'var(--color-text)'}}
-                                >
-                                  <h2>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
-                                </Link>
+                                <h2 style={{ color: 'var(--color-text)'}}>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
                                 <div className="relative">
                                   <button
-                                    onClick={() => toggleGroupExpansion(group.groupUrlSlug)}
-                                    className="pill bg-primary dropdown-button"
+                                    onClick={(event) => {
+                                      event.stopPropagation();
+                                      toggleGroupExpansion(group.groupUrlSlug);
+                                    }}
+                                    className="dropdown-pill dropdown-button"
                                     title="Select your name"
+                                    style={{ position: 'relative', zIndex: 2 }}
                                   >
                                     <FontAwesomeIcon icon={faUser} />
                                     <span>{group.userParticipantName || 'Select your name'}</span>
@@ -303,7 +318,8 @@ const Groups: React.FC = () => {
                                         {participants.participants.map((participant) => (
                                           <button
                                             key={participant.id}
-                                            onClick={async () => {
+                                            onClick={async (event) => {
+                                              event.stopPropagation();
                                               await handleParticipantSelect(
                                                 group.groupUrlSlug,
                                                 participant.id,
@@ -368,7 +384,10 @@ const Groups: React.FC = () => {
                             <div className="h-flex align-center gap-16px">
                               <div className="relative">
                                 <button
-                                  onClick={() => toggleOptionsDropdown(group.groupUrlSlug)}
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    toggleOptionsDropdown(group.groupUrlSlug);
+                                  }}
                                   className="dropdown-button icon-link-container"
                                   title="Group options"
                                   aria-haspopup="menu"
@@ -388,11 +407,13 @@ const Groups: React.FC = () => {
                                         to={`/groups/${group.groupUrlSlug}`}
                                         title="View group"
                                         className="px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap text-white hover:opacity-80 no-decoration"
+                                        onClick={(event) => event.stopPropagation()}
                                       >
                                         View group
                                       </Link>
                                       <button
-                                       onClick={async () => {
+                                        onClick={async (event) => {
+                                          event.stopPropagation();
                                           try {
                                             await handleCopyGroupLink(group.groupUrlSlug);
                                           } finally {
@@ -404,7 +425,8 @@ const Groups: React.FC = () => {
                                         Copy group URL
                                       </button>
                                       <button
-                                        onClick={async () => {
+                                        onClick={async (event) => {
+                                          event.stopPropagation();
                                           try {
                                             await handleDeleteGroup(group.groupUrlSlug);
                                           } finally {
@@ -418,8 +440,8 @@ const Groups: React.FC = () => {
                                     </div>
                                   </div>
                                 )}
-                              </div>
                             </div>
+                          </div>
                           </div>
                         </div>
                       </div>
