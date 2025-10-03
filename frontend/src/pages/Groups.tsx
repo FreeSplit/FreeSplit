@@ -170,24 +170,17 @@ const Groups: React.FC = () => {
       // Check if this participant is already selected
       const currentGroup = userGroups.find(g => g.groupUrlSlug === groupUrlSlug);
       if (currentGroup && currentGroup.userParticipantId === participantId) {
-        // Deselect the participant
-        await localStorageService.updateGroupParticipant(groupUrlSlug, 0, '');
-        setUserGroups(prev => prev.map(g => 
-          g.groupUrlSlug === groupUrlSlug 
-            ? { ...g, userParticipantId: 0, userParticipantName: '' }
-            : g
-        ));
-        toast.success(`Deselected ${participantName} for this group`);
-      } else {
-        // Select the participant (data is already preloaded)
-        await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
-        setUserGroups(prev => prev.map(g => 
-          g.groupUrlSlug === groupUrlSlug 
-            ? { ...g, userParticipantId: participantId, userParticipantName: participantName }
-            : g
-        ));
-        toast.success(`Selected ${participantName} for this group`);
+        return;
       }
+
+      // Select the participant (data is already preloaded)
+      await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
+      setUserGroups(prev => prev.map(g => 
+        g.groupUrlSlug === groupUrlSlug 
+          ? { ...g, userParticipantId: participantId, userParticipantName: participantName }
+          : g
+      ));
+      toast.success(`Selected ${participantName} for this group`);
     } catch (error) {
       console.error('Error updating participant:', error);
       toast.error('Failed to update participant selection');
@@ -290,7 +283,7 @@ const Groups: React.FC = () => {
                       <div className="expense">
                         <div className="expense-details">
                           <div className="flex items-center justify-between w-full">
-                            <div className="v-flex gap-8px">
+                            <div className="v-flex gap-4px">
                               
                                 <h2 style={{ color: 'var(--color-text)'}}>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
                                 <div className="relative">
