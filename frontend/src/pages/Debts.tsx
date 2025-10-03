@@ -251,7 +251,7 @@ const Debts: React.FC = () => {
           {debts.length === 0 && payments.length === 0 && (
             <div className="content-container">
               <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-              <div className="v-flex gap-8px align-center">
+              <div className="v-flex gap-8px align-center text-is-centered">
                 <h2>No debts</h2>
                 <p>Add an expense to track your group debts.</p>
               </div>

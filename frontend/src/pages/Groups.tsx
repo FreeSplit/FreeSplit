@@ -296,7 +296,6 @@ const Groups: React.FC = () => {
                                     title="Select your name"
                                     style={{ position: 'relative', zIndex: 2 }}
                                   >
-                                    <FontAwesomeIcon icon={faUser} />
                                     <span>{group.userParticipantName || 'Select your name'}</span>
                                     <FontAwesomeIcon icon={faChevronDown} />
                                   </button>
@@ -377,7 +376,7 @@ const Groups: React.FC = () => {
                                     event.stopPropagation();
                                     toggleOptionsDropdown(group.groupUrlSlug);
                                   }}
-                                  className="dropdown-button icon-link-container"
+                                  className="dropdown-button icon-link-container w-hover"
                                   title="Group options"
                                   aria-haspopup="menu"
                                   aria-expanded={isOptionsExpanded}
@@ -442,7 +441,7 @@ const Groups: React.FC = () => {
             /* No Groups */
             <div className="content-container">
               <FontAwesomeIcon icon={faUsers} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-              <div className="v-flex align-center gap-8px">
+              <div className="v-flex align-center gap-8px text-is-centered">
                 <h2>No groups found</h2>
                 <p>Visit an existing group or create a new one to add it to your list.</p>
               </div>
