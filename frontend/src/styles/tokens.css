@@ -37,9 +37,13 @@
   --space-6: 24px;
   --space-8: 32px;
 
-  /* Radius & shadow */
+  /* Radius */
   --radius-sm: 4px;
   --radius-md: 12px;
   --radius-l:  40px;
-  --shadow-1:  2px 2px 4px rgba(0, 0, 0, 0.025);
+
+  /* Elevation */
+  --elevation-1: 2px 2px 4px rgba(0, 0, 0, 0.025);
+  --elevation-2: 4px 4px 8px rgba(0, 0, 0, 0.025);
+  --elevation-3: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
