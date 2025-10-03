@@ -534,7 +534,11 @@ input[type="number"] {
   display: flex; flex-direction: column; align-items: left;
   width: 100%;
   padding: 8px 0px 8px 0px;
-  border-bottom: 1px solid var(--color-muted);;
+  border-bottom: 1px solid var(--color-muted);
+}
+
+.list .expenses-container:last-child {
+  border-bottom: none;
 }
 
 .expense {
@@ -592,6 +596,10 @@ input[type="number"] {
   align-items: center;
   align-self: stretch;
   border-bottom: 1px solid var(--color-muted);
+}
+
+.list .list-item:last-child {
+  border-bottom: none;
 }
 
 .h-flex {
