@@ -26,6 +26,18 @@ const Header: React.FC = () => {
     return `${name.slice(0, 15)}...`;
   };
 
+  const getGroupDisplayName = (slug: string | null | undefined) => {
+    if (!slug) {
+      return 'Select a group';
+    }
+
+    if (slug === urlSlug && group?.name) {
+      return group.name;
+    }
+
+    return groupNames[slug] ?? 'Loading...';
+  };
+
   useEffect(() => {
     const loadGroup = async () => {
       if (!urlSlug) return;
@@ -56,11 +68,6 @@ const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (userGroups.length <= 1) {
-      setGroupNames({});
-      return;
-    }
-
     let isCancelled = false;
 
     const populateGroupNames = async () => {
@@ -138,59 +145,55 @@ const Header: React.FC = () => {
       <Link to="/" className="icon-link-container">
         <FontAwesomeIcon className="has-color-white" icon={faHouse} style={{ fontSize: 20 }} aria-hidden="true" />
       </Link>
-      {userGroups.length > 1 ? (
-        <div className="relative" ref={dropdownRef}>
-          <button
-            className="dropdown-button header-dropdown"
-            style={{ position: 'relative', zIndex: 2 }}
-            onClick={() => setDropdownOpen((prev) => !prev)}
-            title="Switch groups"
+      <div className="relative" ref={dropdownRef}>
+        <button
+          className="dropdown-button header-dropdown"
+          style={{ position: 'relative', zIndex: 2 }}
+          onClick={() => setDropdownOpen((prev) => !prev)}
+          title="Switch groups"
+        >
+          <h1 className="h2">{truncateGroupName(getGroupDisplayName(urlSlug))}</h1>
+          <FontAwesomeIcon icon={faChevronDown} />
+        </button>
+        {isDropdownOpen && (
+          <div
+            className="dropdown-container left"
           >
-            <h1 className="h2">{truncateGroupName(group?.name ?? groupNames[urlSlug ?? ''] ?? 'Select a group')}</h1>
-            <FontAwesomeIcon icon={faChevronDown} />
-          </button>
-          {isDropdownOpen && (
-            <div
-              className="dropdown-container left"
-            >
-              <div className="list">
-                {userGroups.map((userGroup) => (
-                  <button
-                    key={userGroup.groupUrlSlug}
-                    className="item"
-                    style={{
-                      backgroundColor:
-                        userGroup.groupUrlSlug === urlSlug
-                          ? 'var(--color-primary-darkest)'
-                          : undefined
-                    }}
-                    onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
-                  >
-                    {truncateGroupName(groupNames[userGroup.groupUrlSlug] ?? userGroup.groupUrlSlug)}
-                  </button>
-                ))}
-                <div className="dropdown-divider" />
-                <Link
-                  to="/groups/"
+            <div className="list">
+              {userGroups.map((userGroup) => (
+                <button
+                  key={userGroup.groupUrlSlug}
                   className="item"
-                  onClick={() => setDropdownOpen(false)}
+                  style={{
+                    backgroundColor:
+                      userGroup.groupUrlSlug === urlSlug
+                        ? 'var(--color-primary-darkest)'
+                        : undefined
+                  }}
+                  onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
                 >
-                  View my groups
-                </Link>
-                <Link
-                  to="/create-a-group/"
-                  className="item"
-                  onClick={() => setDropdownOpen(false)}
-                >
-                  Create a group
-                </Link>
-              </div>
+                  {truncateGroupName(getGroupDisplayName(userGroup.groupUrlSlug))}
+                </button>
+              ))}
+              <div className="dropdown-divider" />
+              <Link
+                to="/groups/"
+                className="item"
+                onClick={() => setDropdownOpen(false)}
+              >
+                View my groups
+              </Link>
+              <Link
+                to="/create-a-group/"
+                className="item"
+                onClick={() => setDropdownOpen(false)}
+              >
+                Create a group
+              </Link>
             </div>
-          )}
-        </div>
-      ) : (
-        <h1 className="is-bold has-color-white">{group?.name ?? ''}</h1>
-      )}
+          </div>
+        )}
+      </div>
       <button
         className="icon-link-container"
         onClick={() => setShareOpen(true)}
