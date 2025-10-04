@@ -124,7 +124,10 @@ const EditExpense: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
-  const splitTypeSelectRef = useRef<HTMLSelectElement | null>(null);
+  const [isSplitTypeDropdownOpen, setSplitTypeDropdownOpen] = useState(false);
+  const splitTypeDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [isPayerDropdownOpen, setPayerDropdownOpen] = useState(false);
+  const payerDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const expenseIdNumber = expenseId ? parseInt(expenseId, 10) : null;
 
@@ -152,6 +155,15 @@ const EditExpense: React.FC = () => {
   } else if (formData.payer_id) {
     payerContainerClasses.push('is-complete');
   }
+
+  const selectedPayer = participants.find(participant => participant.id === formData.payer_id);
+  const splitTypeOptions = [
+    { value: 'equal', label: 'Equal' },
+    { value: 'amount', label: 'Amount' },
+    { value: 'shares', label: 'Shares' },
+    { value: 'percentage', label: 'Percentage' }
+  ];
+  const selectedSplitType = splitTypeOptions.find(option => option.value === formData.split_type)?.label ?? 'Equal';
 
   const openEmojiPicker = useCallback(() => {
     if (deleting) {
@@ -207,6 +219,72 @@ const EditExpense: React.FC = () => {
       }
     };
   }, [isEmojiPickerOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!splitTypeDropdownRef.current) {
+        return;
+      }
+
+      if (!splitTypeDropdownRef.current.contains(event.target as Node)) {
+        setSplitTypeDropdownOpen(false);
+      }
+    };
+
+    if (isSplitTypeDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSplitTypeDropdownOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!payerDropdownRef.current) {
+        return;
+      }
+
+      if (!payerDropdownRef.current.contains(event.target as Node)) {
+        setPayerDropdownOpen(false);
+      }
+    };
+
+    if (isPayerDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPayerDropdownOpen]);
+
+  useEffect(() => {
+    if (submitting || deleting) {
+      setSplitTypeDropdownOpen(false);
+      setPayerDropdownOpen(false);
+    }
+  }, [submitting, deleting]);
+
+  const handleSplitTypeSelect = (nextSplitType: string) => {
+    if (submitting || deleting) {
+      return;
+    }
+    setSplitTypeDropdownOpen(false);
+    if (nextSplitType === formData.split_type) {
+      return;
+    }
+    handleInputChange('split_type', nextSplitType);
+  };
+
+  const handlePayerSelect = (participantId: number) => {
+    if (submitting || deleting) {
+      return;
+    }
+    setPayerDropdownOpen(false);
+    handleInputChange('payer_id', participantId);
+  };
 
   const adjustShare = (participantId: number, delta: number) => {
     if (!includedParticipants[participantId] || submitting || deleting) {
@@ -645,20 +723,6 @@ const EditExpense: React.FC = () => {
       return changed ? next : prev;
     });
   }, [participants]);
-
-  const openSplitTypeDropdown = useCallback(() => {
-    const selectEl = splitTypeSelectRef.current;
-    if (!selectEl) {
-      return;
-    }
-    const anySelect = selectEl as HTMLSelectElement & { showPicker?: () => void };
-    if (typeof anySelect.showPicker === 'function') {
-      anySelect.showPicker();
-      return;
-    }
-    selectEl.focus();
-    selectEl.click();
-  }, []);
 
   const handleInputChange = (field: string, value: string | number) => {
     let nextValue = value;
@@ -1329,27 +1393,53 @@ const EditExpense: React.FC = () => {
                   Paid by
                 </label>
                 <div className={payerContainerClasses.join(' ')}>
-                  <div className="select-wrapper">
-                    <select
+                  <div className="relative" ref={payerDropdownRef} style={{ flex: 1 }}>
+                    <button
+                      type="button"
                       id="payer"
-                      value={formData.payer_id}
-                      onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value, 10))}
-                      className="form-input"
+                      className="name-select dropdown-button"
+                      style={{ position: 'relative', zIndex: 2, width: '100%' }}
+                      onClick={() => {
+                        if (submitting || deleting) {
+                          return;
+                        }
+                        setPayerDropdownOpen(prev => !prev);
+                      }}
+                      aria-haspopup="menu"
+                      aria-expanded={isPayerDropdownOpen}
                       aria-invalid={payerHasError}
                       aria-describedby={payerHasError ? 'edit-expense-payer-error' : undefined}
-                      required
                       disabled={submitting || deleting}
                     >
-                      <option value={0} disabled hidden>Select payer</option>
-                      {participants.map(participant => (
-                        <option key={participant.id} value={participant.id}>
-                          {participant.name}
-                        </option>
-                      ))}
-                    </select>
-                    <span className="select-icon select-icon--text">
+                      <span>{selectedPayer?.name ?? 'Select payer'}</span>
                       <FontAwesomeIcon icon={faChevronDown} />
-                    </span>
+                    </button>
+                    {isPayerDropdownOpen && (
+                      <div
+                        className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
+                        style={{ backgroundColor: 'var(--color-primary)' }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          {participants.map(participant => (
+                            <button
+                              key={participant.id}
+                              className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
+                                participant.id === formData.payer_id ? 'text-white' : 'text-white hover:opacity-80'
+                              }`}
+                              style={
+                                participant.id === formData.payer_id
+                                  ? { backgroundColor: 'var(--color-primary-dark)' }
+                                  : undefined
+                              }
+                              onClick={() => handlePayerSelect(participant.id)}
+                              disabled={submitting || deleting}
+                            >
+                              {participant.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {payerHasError && (
@@ -1364,29 +1454,51 @@ const EditExpense: React.FC = () => {
                   <label htmlFor="split_type" className="form-label">
                     Split
                   </label>
-                  <div className="split-breakdown-dropdown">
-                    <select
-                      id="split_type"
-                      className="split-breakdown-dropdown-input"
-                      value={formData.split_type}
-                      onChange={(e) => handleInputChange('split_type', e.target.value)}
-                      ref={splitTypeSelectRef}
-                      disabled={submitting || deleting}
-                    >
-                      <option value="equal">Equal</option>
-                      <option value="amount">Amount</option>
-                      <option value="shares">Shares</option>
-                      <option value="percentage">Percentage</option>
-                    </select>
+                  <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
                     <button
                       type="button"
-                      className="select-icon"
-                      onClick={openSplitTypeDropdown}
-                      aria-label="Open split type options"
+                      id="split_type"
+                      className="dropdown-pill dropdown-button"
+                      style={{ position: 'relative', zIndex: 2 }}
+                      onClick={() => {
+                        if (submitting || deleting) {
+                          return;
+                        }
+                        setSplitTypeDropdownOpen(prev => !prev);
+                      }}
+                      aria-haspopup="menu"
+                      aria-expanded={isSplitTypeDropdownOpen}
                       disabled={submitting || deleting}
                     >
+                      <span>{selectedSplitType}</span>
                       <FontAwesomeIcon icon={faChevronDown} />
                     </button>
+                    {isSplitTypeDropdownOpen && (
+                      <div
+                        className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
+                        style={{ backgroundColor: 'var(--color-primary)' }}
+                      >
+                        <div className="flex flex-col gap-1">
+                          {splitTypeOptions.map(option => (
+                            <button
+                              key={option.value}
+                              className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
+                                option.value === formData.split_type ? 'text-white' : 'text-white hover:opacity-80'
+                              }`}
+                              style={
+                                option.value === formData.split_type
+                                  ? { backgroundColor: 'var(--color-primary-dark)' }
+                                  : undefined
+                              }
+                              onClick={() => handleSplitTypeSelect(option.value)}
+                              disabled={submitting || deleting}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1533,15 +1645,6 @@ const EditExpense: React.FC = () => {
 
                 
               </div>
-              <button
-                  type="button"
-                  className="btn--delete has-full-width"
-                  onClick={handleDelete}
-                  disabled={submitting || deleting}
-                >
-                  {deleting ? 'Deleting…' : 'Delete expense'}
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
             </form>
           </div>
 
@@ -1575,13 +1678,13 @@ const EditExpense: React.FC = () => {
             </div>
             <div className="footer-two-buttons">
               <button
-                type="button"
-                onClick={() => navigate(`/groups/${urlSlug}`)}
-                className="btn--secondary has-full-width"
-                disabled={submitting || deleting}
-              >
-                Cancel
-              </button>
+                  type="button"
+                  className="btn--delete has-full-width"
+                  onClick={handleDelete}
+                  disabled={submitting || deleting}
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
               <button
                 type="submit"
                 form="edit-expense"

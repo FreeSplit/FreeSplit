@@ -110,12 +110,16 @@ const Members: React.FC = () => {
         <Header />
 
         <div className="content-section">
-          <h1>Members ({participants.length})</h1>
+          <div className="v-flex align-start gap-8px">
+            <h1>Members ({participants.length})</h1>
+            <p>Select a group member to edit or delete them.</p>
+          </div>
+          
           <div className="list">
             {participants.length === 0 ? (
               <div className="content-container text-is-centered">
                 <FontAwesomeIcon icon={faUserXmark} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
-                <div className="v-flex gap-8px align-center">
+                <div className="v-flex gap-8px align-center text-is-centered">
                   <h2>No members</h2>
                   <p>I'm not sure how you've done this. Try add some people.</p>
                 </div>

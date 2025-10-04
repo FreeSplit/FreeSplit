@@ -37,6 +37,12 @@
   padding: 0px;
 }
 
+.split-breakdown-dropdown-menu {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
 .split-breakdown-participant-container {
   display: flex;
   padding: 8px 0;
@@ -150,6 +156,14 @@
     color: var(--color-bg);
     cursor: pointer;
     align-self: stretch;
+}
+
+.share-adjust__button:hover {
+  background: var(--color-primary-dark);
+}
+
+.share-adjust__button:active:not(:disabled) {
+  background: var(--color-primary-darkest);
 }
 
 .share-adjust__button:disabled {

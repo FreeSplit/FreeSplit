@@ -122,7 +122,10 @@ const AddExpense: React.FC = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isEmojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
-  const splitTypeSelectRef = useRef<HTMLSelectElement | null>(null);
+  const [isSplitTypeDropdownOpen, setSplitTypeDropdownOpen] = useState(false);
+  const splitTypeDropdownRef = useRef<HTMLDivElement | null>(null);
+  const [isPayerDropdownOpen, setPayerDropdownOpen] = useState(false);
+  const payerDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const nameHasError = Boolean(errors.name);
   const costHasError = Boolean(errors.cost);
@@ -148,6 +151,15 @@ const AddExpense: React.FC = () => {
   } else if (formData.payer_id) {
     payerContainerClasses.push('is-complete');
   }
+
+  const selectedPayer = participants.find(participant => participant.id === formData.payer_id);
+  const splitTypeOptions = [
+    { value: 'equal', label: 'Equal' },
+    { value: 'amount', label: 'Amount' },
+    { value: 'shares', label: 'Shares' },
+    { value: 'percentage', label: 'Percentage' }
+  ];
+  const selectedSplitType = splitTypeOptions.find(option => option.value === formData.split_type)?.label ?? 'Equal';
 
   const openEmojiPicker = useCallback(() => {
     setEmojiPickerOpen(true);
@@ -200,6 +212,59 @@ const AddExpense: React.FC = () => {
       }
     };
   }, [isEmojiPickerOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!splitTypeDropdownRef.current) {
+        return;
+      }
+
+      if (!splitTypeDropdownRef.current.contains(event.target as Node)) {
+        setSplitTypeDropdownOpen(false);
+      }
+    };
+
+    if (isSplitTypeDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSplitTypeDropdownOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (!payerDropdownRef.current) {
+        return;
+      }
+
+      if (!payerDropdownRef.current.contains(event.target as Node)) {
+        setPayerDropdownOpen(false);
+      }
+    };
+
+    if (isPayerDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isPayerDropdownOpen]);
+
+  const handleSplitTypeSelect = (nextSplitType: string) => {
+    setSplitTypeDropdownOpen(false);
+    if (nextSplitType === formData.split_type) {
+      return;
+    }
+    handleInputChange('split_type', nextSplitType);
+  };
+
+  const handlePayerSelect = (participantId: number) => {
+    setPayerDropdownOpen(false);
+    handleInputChange('payer_id', participantId);
+  };
 
   const adjustShare = (participantId: number, delta: number) => {
     if (!includedParticipants[participantId]) {
@@ -513,20 +578,6 @@ const AddExpense: React.FC = () => {
       return changed ? next : prev;
     });
   }, [participants]);
-
-  const openSplitTypeDropdown = useCallback(() => {
-    const selectEl = splitTypeSelectRef.current;
-    if (!selectEl) {
-      return;
-    }
-    const anySelect = selectEl as HTMLSelectElement & { showPicker?: () => void };
-    if (typeof anySelect.showPicker === 'function') {
-      anySelect.showPicker();
-      return;
-    }
-    selectEl.focus();
-    selectEl.click();
-  }, []);
 
   const handleInputChange = (field: string, value: string | number) => {
     let nextValue = value;
@@ -1126,7 +1177,7 @@ const AddExpense: React.FC = () => {
                     Cost
                   </label>
                     <div className={costContainerClasses.join(' ')}>
-                      <p className="is-black">
+                      <p className="is-black padding-left-8px">
                         {group.currency}
                       </p>
                       <input
@@ -1193,26 +1244,42 @@ const AddExpense: React.FC = () => {
                     Paid by
                   </label>
                   <div className={payerContainerClasses.join(' ')}>
-                    <div className="select-wrapper">
-                      <select
+                    <div className="relative has-full-width" ref={payerDropdownRef}>
+                      <button
+                        type="button"
                         id="payer"
-                        value={formData.payer_id}
-                        onChange={(e) => handleInputChange('payer_id', parseInt(e.target.value))}
-                        className="form-input"
+                        className="name-select dropdown-button"
+                        onClick={() => setPayerDropdownOpen(prev => !prev)}
+                        aria-haspopup="menu"
+                        aria-expanded={isPayerDropdownOpen}
                         aria-invalid={payerHasError}
                         aria-describedby={payerHasError ? 'add-expense-payer-error' : undefined}
-                        required
                       >
-                      <option value={0} disabled hidden>Select payer</option>
-                        {participants.map(participant => (
-                          <option key={participant.id} value={participant.id}>
-                            {participant.name}
-                          </option>
-                        ))}
-                      </select>
-                      <span className="select-icon select-icon--text">
-                        <FontAwesomeIcon icon={faChevronDown} />
-                      </span>
+                        <span>{selectedPayer?.name ?? 'Select payer'}</span>
+                        <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 20, color: 'var(--color-text)' }} />
+                      </button>
+                      {isPayerDropdownOpen && (
+                        <div
+                          className="dropdown-container left"
+                        >
+                          <div className="list">
+                            {participants.map(participant => (
+                              <button
+                                key={participant.id}
+                                className="item"
+                                style={
+                                  participant.id === formData.payer_id
+                                    ? { backgroundColor: 'var(--color-primary-darkest)' }
+                                    : undefined
+                                }
+                                onClick={() => handlePayerSelect(participant.id)}
+                              >
+                                {participant.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                   {payerHasError && (
@@ -1228,27 +1295,41 @@ const AddExpense: React.FC = () => {
                     <label htmlFor="split_type" className="form-label">
                       Split
                     </label>
-                    <div className="split-breakdown-dropdown">
-                      <select
-                        id="split_type"
-                        className="split-breakdown-dropdown-input"
-                        value={formData.split_type}
-                        onChange={(e) => handleInputChange('split_type', e.target.value)}
-                        ref={splitTypeSelectRef}
-                      >
-                        <option value="equal">Equal</option>
-                        <option value="amount">Amount</option>
-                        <option value="shares">Shares</option>
-                        <option value="percentage">Percentage</option>
-                      </select>
+                    <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
                       <button
                         type="button"
-                        className="select-icon"
-                        onClick={openSplitTypeDropdown}
-                        aria-label="Open split type options"
+                        id="split_type"
+                        className="dropdown-pill dropdown-button"
+                        style={{ position: 'relative', zIndex: 2 }}
+                        onClick={() => setSplitTypeDropdownOpen(prev => !prev)}
+                        aria-haspopup="menu"
+                        aria-expanded={isSplitTypeDropdownOpen}
                       >
+                        <span>{selectedSplitType}</span>
                         <FontAwesomeIcon icon={faChevronDown} />
                       </button>
+                      {isSplitTypeDropdownOpen && (
+                        <div
+                          className="dropdown-container right"
+                        >
+                          <div className="list">
+                            {splitTypeOptions.map(option => (
+                              <button
+                                key={option.value}
+                                className="item"
+                                style={
+                                  option.value === formData.split_type
+                                    ? { backgroundColor: 'var(--color-primary-darkest)' }
+                                    : undefined
+                                }
+                                onClick={() => handleSplitTypeSelect(option.value)}
+                              >
+                                {option.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
 
