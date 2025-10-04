@@ -137,6 +137,12 @@ const Debts: React.FC = () => {
     }
   }, [loadDebtsData]);
 
+  const simplificationReduction =
+    rawPaymentCount !== null && simplifiedPaymentCount !== null
+      ? rawPaymentCount - simplifiedPaymentCount
+      : null;
+  const showSimplificationBanner = (simplificationReduction ?? 0) > 0;
+
 
   // All debts returned from backend are current (unsettled) debts
   // No need for status checking since settled debts are not returned
@@ -168,23 +174,25 @@ const Debts: React.FC = () => {
             <>
             <div className="v-flex gap-8px">
               <h1>Debts</h1>
-              
+
               {/* Value section */}
-              <div className="h-flex align-center gap-4px">
-                <p>
-                  Simplified from{' '}
-                  <span className="text-is-error is-bold">{rawPaymentCount ?? '—'}</span>
-                  {' '}payments to{' '}
-                  <span className="text-is-success is-bold">{simplifiedPaymentCount ?? debts.length}</span>
-                  .
-                </p>
-                <button
-                  onClick={() => setSimplifyOpen(true)}
-                  aria-label="More info about simplification"
-                >
-                  <FontAwesomeIcon icon={faCircleInfo} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
-                </button>
-              </div>
+              {showSimplificationBanner && (
+                <div className="h-flex align-center gap-4px">
+                  <p>
+                    Simplified from{' '}
+                    <span className="text-is-error is-bold">{rawPaymentCount ?? '—'}</span>
+                    {' '}payments to{' '}
+                    <span className="text-is-success is-bold">{simplifiedPaymentCount ?? debts.length}</span>
+                    .
+                  </p>
+                  <button
+                    onClick={() => setSimplifyOpen(true)}
+                    aria-label="More info about simplification"
+                  >
+                    <FontAwesomeIcon icon={faCircleInfo} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Debts List */}
@@ -203,7 +211,7 @@ const Debts: React.FC = () => {
                       </div>
                       <button
                         type="button"
-                        className="link"
+                        className="pill bg-primary"
                         onClick={() => handleSettleDebt(debt)}
                         disabled={updating === debt.id}
                       >
@@ -237,7 +245,7 @@ const Debts: React.FC = () => {
                         >
                           {undoingPaymentId === payment.id ? 'Undoing…' : 'Undo'}
                         </button>
-                        <span className="text-is-muted">Settled</span>
+                        <span className="pill bg-muted">Settled</span>
                       </div>
                     </div>
                   </div>

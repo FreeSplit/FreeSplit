@@ -778,6 +778,10 @@ input[type="number"] {
   background-color: var(--color-primary);
 }
 
+.bg-muted {
+  background-color: var(--color-muted);
+}
+
 .icon-link-container {
   display: flex;
   width: 44px;
