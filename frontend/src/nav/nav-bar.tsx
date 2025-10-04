@@ -37,10 +37,10 @@ const NavBar: React.FC = () => {
             onClick={() => navigate(path)}
             className={`nav-item${isActive ? ' is-active' : ''}`}
           >
+            {isActive && <div className="nav-indicator" />}
             <FontAwesomeIcon
               icon={icon}
               className={`nav-bar-icon${isActive ? ' is-active' : ''}`}
-              style={{ fontSize: 16 }}
               aria-hidden="true"
             />
             <p className={`nav-bar-text${isActive ? ' is-active' : ''}`}>{label}</p>
