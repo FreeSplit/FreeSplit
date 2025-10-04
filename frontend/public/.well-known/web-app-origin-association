@@ -1,0 +1,12 @@
+{
+  "web_apps": [
+    {
+      "manifest": "https://freesplit.ca/manifest.json",
+      "details": {
+        "paths": ["/*"]
+      }
+    }
+  ]
+}
+
+

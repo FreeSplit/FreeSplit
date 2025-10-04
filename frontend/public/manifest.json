@@ -8,7 +8,12 @@
     { "src": "/icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" },
     { "src": "/icon.svg", "type": "image/svg+xml", "sizes": "any", "purpose": "any" }
   ],
-  "start_url": ".",
+  "start_url": "/",
+  "scope": "/",
+  "launch_handler": { "client_mode": "navigate-existing" },
+  "url_handlers": [
+    { "origin": "https://freesplit.ca" }
+  ],
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
