@@ -703,6 +703,7 @@ input[type="number"] {
   z-index: 50; 
   box-shadow: var(--elevation-3);
   background-color: var(--color-primary);
+  max-height: 16rem; overflow-y: auto;
 }
 
 .dropdown-container.left {
