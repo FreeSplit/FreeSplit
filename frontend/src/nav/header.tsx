@@ -21,11 +21,11 @@ const Header: React.FC = () => {
   const feedbackDropdownRef = useRef<HTMLDivElement | null>(null);
 
   const truncateGroupName = (name: string) => {
-    if (name.length <= 15) {
+    if (name.length <= 11) {
       return name;
     }
 
-    return `${name.slice(0, 15)}...`;
+    return `${name.slice(0, 11)}...`;
   };
 
   const getGroupDisplayName = (slug: string | null | undefined) => {
@@ -171,7 +171,7 @@ const Header: React.FC = () => {
           onClick={() => setDropdownOpen((prev) => !prev)}
           title="Switch groups"
         >
-          <h1 className="h2">{truncateGroupName(getGroupDisplayName(urlSlug))}</h1>
+          <h1 className="h2 truncate-text">{(getGroupDisplayName(urlSlug))}</h1>
           <FontAwesomeIcon icon={faChevronDown} />
         </button>
         {isDropdownOpen && (

@@ -20,7 +20,7 @@
 }
 
 .header {
-  display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+  display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px;
   width: 100%;
   padding: 8px 0px;
   background: var(--color-primary);
@@ -767,6 +767,8 @@ input[type="number"] {
   gap: 4px;
   align-items: center;
   height: 44px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .header-dropdown:hover {
@@ -831,4 +833,19 @@ input[type="number"] {
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
+}
+
+.truncate-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.relative {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex: 0 1 auto; 
 }
