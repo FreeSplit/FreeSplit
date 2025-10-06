@@ -169,7 +169,7 @@ const Members: React.FC = () => {
                 className="btn fab-shadow"
                 onClick={() => setAddMemberOpen(true)}
               >
-                <span>Add a new member</span>
+                <span>Add new members</span>
                 <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
               </button>
             </div>
