@@ -217,7 +217,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
       <div className="card">
         <div className="modal-header">
           <h2>Add new members</h2>
-          <button type="button" onClick={onClose} aria-label="Close add member modal">
+          <button className="icon-link-container w-hover" type="button" onClick={onClose} aria-label="Close add member modal">
             <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
           </button>
         </div>

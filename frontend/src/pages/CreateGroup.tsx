@@ -324,7 +324,8 @@ const CreateGroup: React.FC = () => {
             <Link
               to="/"
               aria-label="Close create a group"
-              className="is-black"
+              className="is-black icon-link-container w-hover"
+              
             >
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} className="is-black"/>
             </Link>

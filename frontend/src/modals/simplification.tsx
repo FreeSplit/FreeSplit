@@ -28,7 +28,7 @@ const SimplifyModal: React.FC<SimplifyProps> = ({ onClose }) => {
       <div className="card">
           <div className="modal-header">
             <h2>How we simplify</h2>
-            <button type="button" onClick={onClose} aria-label="Close share modal">
+            <button className="icon-link-container w-hover" type="button" onClick={onClose} aria-label="Close share modal">
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
             </button>
           </div>

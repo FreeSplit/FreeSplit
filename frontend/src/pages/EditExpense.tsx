@@ -1274,7 +1274,7 @@ const EditExpense: React.FC = () => {
               <Link
                 to={`/groups/${urlSlug}`}
                 aria-label="Close edit expense"
-                className="is-black"
+                className="is-black icon-link-container w-hover"
               >
                 <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} className="is-black" />
               </Link>
