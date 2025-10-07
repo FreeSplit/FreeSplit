@@ -76,11 +76,6 @@ footer.has-gradient-bg {
   background: linear-gradient(180deg, rgba(249, 250, 251, 0.00) 0%, #F9FAFB 10%);
 }
 
-.keyboard-aware-footer {
-  transition: transform 180ms ease;
-  will-change: transform;
-}
-
 .footer-two-buttons {
   display: flex; flex-direction: row; align-items: center; justify-content: center;
   width: 100%;
@@ -704,6 +699,7 @@ input[type="number"] {
   box-shadow: var(--elevation-3);
   background-color: var(--color-primary);
   max-height: 16rem; overflow-y: auto;
+  max-width: 100%
 }
 
 .dropdown-container.left {
@@ -846,6 +842,13 @@ input[type="number"] {
 .relative {
   position: relative;
   display: flex;
+  min-width: 0;
+  flex: 0 1 auto; 
+}
+
+.header .relative {
+  position: relative;
+  display: inline-flex;
   min-width: 0;
   flex: 0 1 auto; 
 }

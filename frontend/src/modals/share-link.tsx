@@ -69,7 +69,7 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
         <div className="v-flex gap-8px">
           <div className="modal-header">
             <h2>Share {group.name}</h2>
-            <button className="icon-link-container w-hover"type="button" onClick={onClose} aria-label="Close share modal">
+            <button className="icon-link-container w-hover" type="button" onClick={onClose} aria-label="Close share modal">
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
             </button>
           </div>

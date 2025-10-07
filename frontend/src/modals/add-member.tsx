@@ -253,7 +253,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
                 onKeyDown={handleInputKeyDown}
                 onPaste={handleInputPaste}
                 onBlur={handleInputBlur}
-                placeholder={pendingMembers.length === 0 ? 'Use enter or comma to separate names.' : ''}
+                placeholder={pendingMembers.length === 0 ? 'Use comma or enter to separate names.' : ''}
                 aria-label="Add member"
                 aria-invalid={Boolean(inputError)}
                 disabled={submitting}

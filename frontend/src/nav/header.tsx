@@ -182,7 +182,7 @@ const Header: React.FC = () => {
               {userGroups.map((userGroup) => (
                 <button
                   key={userGroup.groupUrlSlug}
-                  className="item"
+                  className="item truncate-text"
                   style={{
                     backgroundColor:
                       userGroup.groupUrlSlug === urlSlug
@@ -191,7 +191,7 @@ const Header: React.FC = () => {
                   }}
                   onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
                 >
-                  {truncateGroupName(getGroupDisplayName(userGroup.groupUrlSlug))}
+                  {(getGroupDisplayName(userGroup.groupUrlSlug))}
                 </button>
               ))}
               <div className="dropdown-divider" />

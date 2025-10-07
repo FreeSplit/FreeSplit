@@ -23,7 +23,6 @@ const CreateGroup: React.FC = () => {
   const [participantValue, setParticipantValue] = useState('');
   const [participantError, setParticipantError] = useState<string | null>(null);
   const participantErrorTimerRef = useRef<number | null>(null);
-  const [keyboardOffset, setKeyboardOffset] = useState(0);
   // Derived form completeness state
   const currentValidParticipants = formData.participants.filter(name => name.trim() !== '');
   const isFormComplete =
@@ -89,82 +88,6 @@ const CreateGroup: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    let rafId = 0;
-
-    const updateFromViewport = () => {
-      if (!window.visualViewport) {
-        setKeyboardOffset(0);
-        return;
-      }
-      const { height, offsetTop } = window.visualViewport;
-      const bottomInset = Math.max(0, window.innerHeight - (height + offsetTop));
-      setKeyboardOffset(bottomInset);
-    };
-
-    const scheduleUpdate = () => {
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
-      rafId = window.requestAnimationFrame(updateFromViewport);
-    };
-
-    const vv = window.visualViewport;
-    if (vv) {
-      vv.addEventListener('resize', scheduleUpdate);
-      vv.addEventListener('scroll', scheduleUpdate);
-      scheduleUpdate();
-    }
-
-    let removeVirtualKeyboardListener: (() => void) | null = null;
-    const maybeVirtualKeyboard = (navigator as any).virtualKeyboard;
-    if (maybeVirtualKeyboard && 'overlaysContent' in maybeVirtualKeyboard) {
-      try {
-        maybeVirtualKeyboard.overlaysContent = true;
-      } catch (error) {
-        // Ignore: overlaysContent may throw on unsupported platforms
-      }
-
-      const handleGeometryChange = () => {
-        const rect = maybeVirtualKeyboard.boundingRect;
-        if (rect && rect.height > 0) {
-          const inset = Math.max(0, window.innerHeight - rect.top);
-          setKeyboardOffset(inset);
-        } else {
-          updateFromViewport();
-        }
-      };
-
-      if (typeof maybeVirtualKeyboard.addEventListener === 'function') {
-        maybeVirtualKeyboard.addEventListener('geometrychange', handleGeometryChange);
-        removeVirtualKeyboardListener = () => {
-          maybeVirtualKeyboard.removeEventListener('geometrychange', handleGeometryChange);
-          try {
-            maybeVirtualKeyboard.overlaysContent = false;
-          } catch (error) {
-            // Ignore: reset may fail on unsupported platforms
-          }
-        };
-      }
-    }
-
-    const handleWindowResize = () => scheduleUpdate();
-    window.addEventListener('resize', handleWindowResize);
-
-    return () => {
-      if (vv) {
-        vv.removeEventListener('resize', scheduleUpdate);
-        vv.removeEventListener('scroll', scheduleUpdate);
-      }
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
-      }
-      window.removeEventListener('resize', handleWindowResize);
-      if (removeVirtualKeyboardListener) {
-        removeVirtualKeyboardListener();
-      }
-    };
-  }, []);
 
   const showParticipantError = useCallback((message: string) => {
     setParticipantError(message);
@@ -407,7 +330,7 @@ const CreateGroup: React.FC = () => {
                   onKeyDown={handleParticipantKeyDown}
                   onPaste={handleParticipantPaste}
                   onBlur={handleParticipantBlur}
-                  placeholder={formData.participants.length === 0 ? 'Use enter to separate names.' : ''}
+                  placeholder={formData.participants.length === 0 ? 'Use comma or enter to separate names.' : ''}
                   aria-label="Add participant"
                   aria-invalid={participantsHaveError}
                 />
@@ -428,10 +351,7 @@ const CreateGroup: React.FC = () => {
   
           </form>
         </div>
-        <footer
-          className="has-gradient-bg keyboard-aware-footer"
-          style={keyboardOffset > 0 ? { transform: `translate3d(0, -${Math.max(0, keyboardOffset - 16)}px, 0)` } : undefined}
-        >
+        <footer className="has-gradient-bg">
           <button
             type="submit"
             className={`btn has-full-width${isButtonDisabled ? ' is-disabled' : ''}`}

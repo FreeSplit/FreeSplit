@@ -229,6 +229,14 @@ const Groups: React.FC = () => {
     return 'text-gray-600';
   };
 
+  const truncateParticipantName = (name: string, maxLength = 21) => {
+    if (name.length <= maxLength) {
+      return name;
+    }
+
+    return `${name.slice(0, maxLength)}...`;
+  };
+
   if (loading) {
     return (
       <div className="page">
@@ -264,6 +272,9 @@ const Groups: React.FC = () => {
                   const participants = findGroupParticipants(group.groupUrlSlug);
                   const isExpanded = expandedParticipants.has(group.groupUrlSlug);
                   const isOptionsExpanded = expandedOptions.has(group.groupUrlSlug);
+                  const selectedParticipantLabel = group.userParticipantName
+                    ? truncateParticipantName(group.userParticipantName)
+                    : 'Select your name';
 
                   return (
                     <div
@@ -283,9 +294,15 @@ const Groups: React.FC = () => {
                       <div className="expense">
                         <div className="expense-details">
                           <div className="flex items-center justify-between w-full">
-                            <div className="v-flex gap-4px">
+                            <div className="v-flex gap-4px" style={{ minWidth: 0 }}>
                               
-                                <h2 style={{ color: 'var(--color-text)'}}>{groupNames[group.groupUrlSlug] || 'Loading...'}</h2>
+                                <h2 
+                                  style={{ color: 'var(--color-text)'}} 
+                                  className="truncate-text" 
+                                  title={groupNames[group.groupUrlSlug] || 'Loading...'}
+                                >
+                                  {groupNames[group.groupUrlSlug] || 'Loading...'}
+                                </h2>
                                 <div className="relative">
                                   <button
                                     onClick={(event) => {
@@ -296,7 +313,7 @@ const Groups: React.FC = () => {
                                     title="Select your name"
                                     style={{ position: 'relative', zIndex: 2 }}
                                   >
-                                    <span>{group.userParticipantName || 'Select your name'}</span>
+                                    <span title={group.userParticipantName || undefined}>{selectedParticipantLabel}</span>
                                     <FontAwesomeIcon icon={faChevronDown} />
                                   </button>
 
@@ -327,7 +344,9 @@ const Groups: React.FC = () => {
                                                   : undefined
                                             }}
                                           >
-                                            {participant.name}
+                                            <span title={participant.name}>
+                                              {truncateParticipantName(participant.name)}
+                                            </span>
                                          </button>
                                         ))}
                                       </div>
@@ -344,19 +363,19 @@ const Groups: React.FC = () => {
                               
                               <div className="h-flex align-start gap-8px">
                                 <div className="h-flex align-center gap-4px">
-                                  <p className="p2">Last visited:</p>
+                                  <p className="p2">Visited:</p>
                                   <p>{formatTimeAgo(group.lastVisited)}</p>
                                 </div>
                                 {group.userParticipantId > 0 && (
                                   <>
                                     <p>|</p>
-                                    <div className="h-flex align-center gap-4px">
+                                    <div className="h-flex align-center gap-4px" style={{ minWidth: 0 }}>
                                       {summary ? (
                                         <>
                                           <span className="p2">
-                                            {summary.net_balance >= 0 ? 'You owe:' : 'Owed:'}
+                                            {summary.net_balance >= 0 ? 'Owed:' : 'You owe:'}
                                           </span>
-                                          <p className={`${getBalanceColor(summary.net_balance)}`}>
+                                          <p className={`truncate-text ${getBalanceColor(summary.net_balance)}`} title={`${summary.currency}${Math.abs(summary.net_balance).toFixed(2)}`}>
                                             {summary.currency}
                                             {Math.abs(summary.net_balance).toFixed(2)}
                                           </p>
