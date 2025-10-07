@@ -590,10 +590,6 @@ input[type="number"] {
   text-align: right;
 }
 
-.left-align-text {
-  text-align: left;
-}
-
 .text-is-muted {
   color: var(--color-muted);
 }
@@ -843,6 +839,30 @@ input[type="number"] {
   white-space: nowrap;
 }
 
+.debt-line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.debt-line .debt-name {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.debt-line .debt-name.is-flex {
+  flex: 1 1 0;
+}
+
+.debt-line .debt-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .relative {
   position: relative;
   display: flex;
@@ -855,12 +875,4 @@ input[type="number"] {
   display: inline-flex;
   min-width: 0;
   flex: 0 1 auto; 
-}
-
-.clamp-two-lines {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;   /* number of lines */
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
