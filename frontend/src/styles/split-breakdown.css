@@ -51,6 +51,7 @@
   align-self: stretch;
   border-bottom: 1px solid var(--color-muted);
   width: 100%;
+  gap: 8px;
 }
 
 .split-breakdown-details-container {
@@ -115,26 +116,30 @@
 }
 
 .split-breakdown-even-split-container {
-    display: flex;
-    padding: 2px 6px;
-    align-items: center;
-    border-radius: 4px;
-    background: var(--color-text);
-    color: var(--color-bg);
-    border: 1px solid var(--color-text);
-    align-self: stretch;
+  display: flex;
+  padding: 2px 6px;
+  align-items: center;
+  border-radius: 4px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  border: 1px solid var(--color-text);
+  align-self: stretch;
+  max-width: 127px;
 }
 
 .split-breakdown-amount-split-container {
     display: flex;
     padding: 2px 6px;
     align-items: center;
+    justify-content: flex-end;
     border-radius: 4px;
     border: 1px solid var(--color-text);
     background: var(--color-bg);
     color: var(--color-text);
     align-self: stretch;
     overflow: hidden;
+    width: 127px;
+    flex-shrink: 0;
 }
 
 
@@ -214,6 +219,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: flex-end;
     gap: 4px;
 }
 
@@ -257,10 +263,3 @@
   width: 52px;
 }
 
-.split-breakdown-amount-split-container.amount {
-  width: 120px;
-}
-
-.split-breakdown-amount-split-container.percent {
-  width: 80px;
-}

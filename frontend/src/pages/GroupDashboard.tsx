@@ -152,8 +152,12 @@ const GroupDashboard: React.FC = () => {
                       <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
                         <div className="expense-details" style={{ minWidth: 0 }}>
-                          <p className="truncate-text">{expense.name}</p>
-                          <p className="p2 clamp-two-lines"><span className="truncate-text">{getParticipantName(expense.payer_id)}</span> paid <span className="is-green truncate-text">{group.currency}{formatAmount(expense.cost)}</span></p>
+                          <p className="truncate-text is-bold">{expense.name}</p>
+                          <p className="p2 clamp-two-lines" style={{ display: 'flex', gap: 4, alignItems: 'baseline', minWidth: 0 }}>
+                            <span className="truncate-text auto-width" style={{ flex: '0 1 auto', display: 'inline-block', maxWidth: '50%' }}>{getParticipantName(expense.payer_id)}</span>
+                            <span>paid</span>
+                            <span className="is-green truncate-text auto-width" style={{ flex: '0 1 auto', display: 'inline-block', maxWidth: '50%' }}>{group.currency}{formatAmount(expense.cost)}</span>
+                          </p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
                       </div>

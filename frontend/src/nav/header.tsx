@@ -236,7 +236,7 @@ const Header: React.FC = () => {
             <FontAwesomeIcon className="has-color-white" icon={faEllipsisV} style={{ fontSize: 20 }} aria-hidden="true" />
           </button>
           {isFeedbackOpen && (
-            <div className="dropdown-container right">
+            <div className="dropdown-container right" style={{ width: 'max-content', maxWidth: 'none' }}> 
               <div className="list">
                 <a
                   href="https://docs.google.com/forms/d/e/1FAIpQLSdWTIo2DnKLBNX2TBrNlJq4KB3tRBGf2EaRVS39hbe2NMBJXA/viewform?usp=header"

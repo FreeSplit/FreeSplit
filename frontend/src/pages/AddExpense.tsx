@@ -1244,18 +1244,19 @@ const AddExpense: React.FC = () => {
                     Paid by
                   </label>
                   <div className={payerContainerClasses.join(' ')}>
-                    <div className="relative has-full-width" ref={payerDropdownRef}>
+                    <div className="relative payer-dropdown" ref={payerDropdownRef} style={{ minWidth: 0 }}>
                       <button
                         type="button"
                         id="payer"
-                        className="name-select dropdown-button"
+                        className="name-select dropdown-button left-align-text"
                         onClick={() => setPayerDropdownOpen(prev => !prev)}
                         aria-haspopup="menu"
                         aria-expanded={isPayerDropdownOpen}
                         aria-invalid={payerHasError}
                         aria-describedby={payerHasError ? 'add-expense-payer-error' : undefined}
+                        style={{ minWidth: 0 }}
                       >
-                        <span>{selectedPayer?.name ?? 'Select payer'}</span>
+                        <span className="truncate-text">{selectedPayer?.name ?? 'Select payer'}</span>
                         <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 20, color: 'var(--color-text)' }} />
                       </button>
                       {isPayerDropdownOpen && (
@@ -1266,7 +1267,7 @@ const AddExpense: React.FC = () => {
                             {participants.map(participant => (
                               <button
                                 key={participant.id}
-                                className="item"
+                                className="item truncate-text"
                                 style={
                                   participant.id === formData.payer_id
                                     ? { backgroundColor: 'var(--color-primary-darkest)' }
@@ -1310,7 +1311,7 @@ const AddExpense: React.FC = () => {
                       </button>
                       {isSplitTypeDropdownOpen && (
                         <div
-                          className="dropdown-container right"
+                          className="dropdown-container right" style={{ width: 'max-content', maxWidth: 'none' }}
                         >
                           <div className="list">
                             {splitTypeOptions.map(option => (
@@ -1348,7 +1349,7 @@ const AddExpense: React.FC = () => {
                           key={participant.id}
                           className={`split-breakdown-participant-container${isIncluded ? '' : ' is-excluded'}`}
                         >
-                          <div className="split-breakdown-details-container">
+                          <div className="split-breakdown-details-container" style={{ minWidth: 0 }}>
                             <label className="split-breakdown-checkbox">
                               <input
                                 type="checkbox"
@@ -1361,18 +1362,18 @@ const AddExpense: React.FC = () => {
                               </span>
                             </label>
                             <div className="split-breakdown-participant-details">
-                              <p className={isIncluded ? undefined : 'text-is-muted'}>
+                              <p className={`truncate-text ${isIncluded ? '' : 'text-is-muted'}`}>
                                 {participant.name}
                               </p>
-                              <p className={isIncluded ? 'p2' : 'p2 text-is-muted'}>
+                              <p className={`truncate-text ${isIncluded ? 'p2' : 'p2 text-is-muted'}`}>
                                 {group.currency}{formatAmount(displayedSplit)}
                               </p>
-                            </div>
+                           </div>
                           </div>
 
                           {formData.split_type === 'equal' && (
                             <div className={`split-breakdown-even-split-container${isIncluded ? '' : ' is-disabled'}`}>
-                              <span>
+                              <span className="truncate-text">
                                 {group.currency}{formatAmount(displayedSplit)}
                               </span>
                             </div>
@@ -1449,7 +1450,7 @@ const AddExpense: React.FC = () => {
                           )}
 
                           {formData.split_type === 'percentage' && (
-                            <div className="split-breakdown-amount-split-container percent">
+                            <div className="split-breakdown-amount-split-container">
                               <input
                                 type="text"
                                 value={draftPercentages.hasOwnProperty(participant.id)
@@ -1483,15 +1484,15 @@ const AddExpense: React.FC = () => {
             </form>
         </div>
         <footer className="has-gradient-bg">
-            <div className="breakdown-container">
-              <div className="breakdown-details">
+            <div className="breakdown-container" style={{ minWidth: 0 }}>
+              <div className="breakdown-details truncate-text">
                 <p>Total Attributed: </p>
-                <h2>
+                <h2 className="truncate-text auto-width" style={{ flex: '0 1 auto' }}>
                   {group.currency}{formatAmount(totalAssigned)}
                 </h2>
               </div>
               {formData.split_type === 'amount' && (
-                <div className="p2">
+                <div className="p2 truncate-text">
                   Remaining: <span className={Math.abs(remainingAmount) < 0.01 ? 'text-is-success' : 'text-is-error'}>
                     {group.currency}{formatAmount(remainingAmount)}
                   </span>

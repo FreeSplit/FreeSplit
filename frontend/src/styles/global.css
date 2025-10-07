@@ -590,6 +590,10 @@ input[type="number"] {
   text-align: right;
 }
 
+.left-align-text {
+  text-align: left;
+}
+
 .text-is-muted {
   color: var(--color-muted);
 }
@@ -834,9 +838,18 @@ input[type="number"] {
 .truncate-text {
   flex: 1;
   min-width: 0;
+  width: 100%;
+  display: inline-block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.payer-dropdown {
+  display: inline-flex;
+  width: 100%;
+  min-width: 0;
+  position: relative;
 }
 
 .debt-line {
@@ -875,4 +888,10 @@ input[type="number"] {
   display: inline-flex;
   min-width: 0;
   flex: 0 1 auto; 
+}
+
+.auto-width {
+  display: inline-block;
+  width: fit-content;
+  max-width: 100%;
 }

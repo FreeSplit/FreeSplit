@@ -283,10 +283,24 @@ const Groups: React.FC = () => {
                       role="link"
                       tabIndex={0}
                       style={{ cursor: 'pointer' }}
-                      onClick={() => handleViewGroup(group.groupUrlSlug)}
+                      onClick={(event) => {
+                        if (expandedParticipants.size || expandedOptions.size) {
+                          event.stopPropagation();
+                          event.preventDefault();
+                          setExpandedParticipants(new Set());
+                          setExpandedOptions(new Set());
+                          return;
+                        }
+                        handleViewGroup(group.groupUrlSlug);
+                      }}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
+                          if (expandedParticipants.size || expandedOptions.size) {
+                            setExpandedParticipants(new Set());
+                            setExpandedOptions(new Set());
+                            return;
+                          }
                           handleViewGroup(group.groupUrlSlug);
                         }
                       }}
@@ -406,7 +420,7 @@ const Groups: React.FC = () => {
                                 {/* Dropdown - Options */}
                                 {isOptionsExpanded && (
                                   <div
-                                    className="dropdown-container right"
+                                    className="dropdown-container right" style={{ width: 'max-content', maxWidth: 'none' }}
                                   >
                                     <div className="list">
                                       <Link
