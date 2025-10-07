@@ -68,12 +68,12 @@ const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
       <div className="card">
         <div className="v-flex gap-8px">
           <div className="modal-header">
-            <h2>Share {group.name}</h2>
+            <h2 className='clamp-two-lines'>Share {group.name}</h2>
             <button className="icon-link-container w-hover" type="button" onClick={onClose} aria-label="Close share modal">
               <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
             </button>
           </div>
-        <p className="has-full-width">Share the link below with your friends to invite them to the group.</p>
+        <p className="has-full-width">Share the link below to invite friends to your group. Group members can add expenses, update members and settle debts.</p>
         </div>
         <div
           className="link-share-container"

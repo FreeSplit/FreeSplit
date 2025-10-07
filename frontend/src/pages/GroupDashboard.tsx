@@ -151,9 +151,9 @@ const GroupDashboard: React.FC = () => {
                     <button key={expense.id} onClick={() => navigate(`/groups/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
                       <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
-                        <div className="expense-details">
-                          <p>{expense.name}</p>
-                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{formatAmount(expense.cost)}</span></p>
+                        <div className="expense-details" style={{ minWidth: 0 }}>
+                          <p className="truncate-text">{expense.name}</p>
+                          <p className="p2 clamp-two-lines"><span className="truncate-text">{getParticipantName(expense.payer_id)}</span> paid <span className="is-green truncate-text">{group.currency}{formatAmount(expense.cost)}</span></p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
                       </div>

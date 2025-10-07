@@ -130,8 +130,9 @@ const Members: React.FC = () => {
                   key={participant.id}
                   className="list-item"
                   onClick={() => openEditModal(participant)}
+                  style={{ minWidth: 0}}
                 >
-                  <p>{participant.name}</p>
+                  <p className="truncate-text left-align-text">{participant.name}</p>
                   <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
                 </button>
               ))

@@ -590,6 +590,10 @@ input[type="number"] {
   text-align: right;
 }
 
+.left-align-text {
+  text-align: left;
+}
+
 .text-is-muted {
   color: var(--color-muted);
 }
@@ -851,4 +855,12 @@ input[type="number"] {
   display: inline-flex;
   min-width: 0;
   flex: 0 1 auto; 
+}
+
+.clamp-two-lines {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;   /* number of lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
