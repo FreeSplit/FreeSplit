@@ -266,6 +266,7 @@ const Groups: React.FC = () => {
                 <h1>Your Groups</h1>
                 <p>Visit an existing group or create a new one to add them to your groups.</p>
               </div>
+              <div className="dark-divider"></div>
               <div className="list">
                 {userGroups.map((group) => {
                   const summary = getGroupSummary(group.groupUrlSlug);
@@ -389,9 +390,9 @@ const Groups: React.FC = () => {
                                           <span className="p2">
                                             {summary.net_balance >= 0 ? 'Owed:' : 'You owe:'}
                                           </span>
-                                          <p className={`truncate-text ${getBalanceColor(summary.net_balance)}`} title={`${summary.currency}${Math.abs(summary.net_balance).toFixed(2)}`}>
+                                          <p className={`truncate-text ${getBalanceColor(summary.net_balance)}`} title={`${summary.currency}${Math.abs(summary.net_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}>
                                             {summary.currency}
-                                            {Math.abs(summary.net_balance).toFixed(2)}
+                                            {Math.abs(summary.net_balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                           </p>
                                         </>
                                       ) : (

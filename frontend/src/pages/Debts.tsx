@@ -198,6 +198,8 @@ const Debts: React.FC = () => {
               )}
             </div>
 
+            <div className="dark-divider"></div>
+
             {/* Debts List */}
             <div className="list">
               {debts.map((debt, index) => {

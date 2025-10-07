@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import NavBar from '../nav/nav-bar';
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faPlus, faUserXmark } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faPlus, faUserXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import AddMemberModal from '../modals/add-member';
 import EditMemberModal from '../modals/edit-member';
 import { ring } from 'ldrs'; ring.register();
@@ -114,6 +114,8 @@ const Members: React.FC = () => {
             <h1>Members ({participants.length})</h1>
             <p>Select a group member to edit or delete them.</p>
           </div>
+
+          <div className="dark-divider"></div>
           
           <div className="list">
             {participants.length === 0 ? (
@@ -171,7 +173,7 @@ const Members: React.FC = () => {
                 onClick={() => setAddMemberOpen(true)}
               >
                 <span>Add new members</span>
-                <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+                <FontAwesomeIcon icon={faUserPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
               </button>
             </div>
             < NavBar />
