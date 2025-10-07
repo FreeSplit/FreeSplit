@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getDebtsPageData, createPayment, getSplitsByGroup, getGroup, getPaymentsByGroup, deletePayment } from '../services/api';
 import { DebtPageData, SplitWithNames, Participant, Payment } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -17,6 +18,7 @@ ring.register();
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [debts, setDebts] = useState<DebtPageData[]>([]);
   const [currency, setCurrency] = useState<string>('');
   const [loading, setLoading] = useState(true);

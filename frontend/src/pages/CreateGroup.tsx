@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom';
 import { createGroup } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import '../styles/participants-form.css';
 
 const CreateGroup: React.FC = () => {
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   type FormErrors = {
     name?: string;
     currency?: string;

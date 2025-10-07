@@ -7,11 +7,13 @@ import { faUsers, faChevronDown, faUser, faEllipsisV } from '@fortawesome/free-s
 import toast from 'react-hot-toast';
 import LogoHeader from '../nav/logo-header'
 import SigFooter from '../nav/sig-footer'
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 
 // Remove the local interfaces since we're using the API types now
 
 const Groups: React.FC = () => {
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [userGroups, setUserGroups] = useState<UserGroup[]>([]);
   const [groupSummaries, setGroupSummaries] = useState<UserGroupSummary[]>([]);
   const [groupParticipants, setGroupParticipants] = useState<GroupParticipantsResponse['groups']>([]);

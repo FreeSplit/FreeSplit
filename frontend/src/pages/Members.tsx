@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getGroup, deleteParticipant } from '../services/api';
 import { Group, Participant } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from '../nav/nav-bar';
 import Header from "../nav/header";
@@ -15,6 +16,7 @@ import { ring } from 'ldrs'; ring.register();
 const Members: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);

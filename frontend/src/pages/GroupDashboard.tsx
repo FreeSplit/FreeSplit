@@ -4,6 +4,7 @@ import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
 import { Group, Expense, Participant } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -25,6 +26,7 @@ const formatAmount = (value: number): string => {
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);

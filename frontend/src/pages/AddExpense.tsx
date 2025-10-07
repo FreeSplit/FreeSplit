@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getGroup, createExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus, faChevronDown, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
@@ -85,6 +86,7 @@ const toFixedString = (value: number): string => value.toFixed(2);
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   type FormErrors = {
     name?: string;
     cost?: string;
