@@ -308,7 +308,7 @@ const SimplifyAnimation: React.FC = () => {
                     delay: 7.9, 
                     duration: 5.5,
                     ease: 'easeInOut',
-                    times: [0, 0.267, 0.3, 0.364, 0.505, 1], repeat: Infinity, repeatType: 'loop', repeatDelay: 7.7,
+                    times: [0, 0.267, 0.3, 0.364, 0.545, 1], repeat: Infinity, repeatType: 'loop', repeatDelay: 7.7,
                 }}
             >
                 <FontAwesomeIcon icon={faDollarSign} style={{ width: 16, height: 16, fontSize: 16, color: 'var(--color-success)' }} aria-hidden="true" />

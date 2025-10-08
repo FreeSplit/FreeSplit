@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { getGroup, getExpenseWithSplits, updateExpense, deleteExpense } from '../services/api';
 import { Group, Participant, Expense, Split } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMinus, faPlus, faChevronDown, faXmark, faTrash, faCheck } from '@fortawesome/free-solid-svg-icons';
@@ -85,6 +86,7 @@ const toFixedString = (value: number): string => value.toFixed(2);
 const EditExpense: React.FC = () => {
   const { urlSlug, expenseId } = useParams<{ urlSlug: string; expenseId: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   type FormErrors = {
     name?: string;
     cost?: string;
@@ -1274,7 +1276,7 @@ const EditExpense: React.FC = () => {
               <Link
                 to={`/groups/${urlSlug}`}
                 aria-label="Close edit expense"
-                className="is-black"
+                className="is-black icon-link-container w-hover"
               >
                 <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} className="is-black" />
               </Link>
@@ -1393,16 +1395,14 @@ const EditExpense: React.FC = () => {
                   Paid by
                 </label>
                 <div className={payerContainerClasses.join(' ')}>
-                  <div className="relative" ref={payerDropdownRef} style={{ flex: 1 }}>
+                  <div className="relative payer-dropdown" ref={payerDropdownRef} style={{ minWidth: 0 }}>
                     <button
                       type="button"
                       id="payer"
-                      className="name-select dropdown-button"
-                      style={{ position: 'relative', zIndex: 2, width: '100%' }}
+                      className="name-select dropdown-button left-align-text"
+                      style={{ position: 'relative', zIndex: 2, minWidth: 0 }}
                       onClick={() => {
-                        if (submitting || deleting) {
-                          return;
-                        }
+                        if (submitting || deleting) return;
                         setPayerDropdownOpen(prev => !prev);
                       }}
                       aria-haspopup="menu"
@@ -1411,21 +1411,18 @@ const EditExpense: React.FC = () => {
                       aria-describedby={payerHasError ? 'edit-expense-payer-error' : undefined}
                       disabled={submitting || deleting}
                     >
-                      <span>{selectedPayer?.name ?? 'Select payer'}</span>
-                      <FontAwesomeIcon icon={faChevronDown} />
+                      <span className="truncate-text">{selectedPayer?.name ?? 'Select payer'}</span>
+                      <FontAwesomeIcon icon={faChevronDown} style={{ fontSize: 20, color: 'var(--color-text)' }} />
                     </button>
                     {isPayerDropdownOpen && (
                       <div
-                        className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
-                        style={{ backgroundColor: 'var(--color-primary)' }}
+                        className="dropdown-container left"
                       >
-                        <div className="flex flex-col gap-1">
+                        <div className="list">
                           {participants.map(participant => (
                             <button
                               key={participant.id}
-                              className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
-                                participant.id === formData.payer_id ? 'text-white' : 'text-white hover:opacity-80'
-                              }`}
+                              className="item truncate-text"
                               style={
                                 participant.id === formData.payer_id
                                   ? { backgroundColor: 'var(--color-primary-dark)' }
@@ -1449,12 +1446,12 @@ const EditExpense: React.FC = () => {
                 )}
               </div>
 
-              <div className="split-breakdown-container">
-                <div className="split-breakdown-header">
-                  <label htmlFor="split_type" className="form-label">
-                    Split
-                  </label>
-                  <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
+                <div className="split-breakdown-container">
+                  <div className="split-breakdown-header">
+                    <label htmlFor="split_type" className="form-label">
+                      Split
+                    </label>
+                    <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
                     <button
                       type="button"
                       id="split_type"
@@ -1475,16 +1472,14 @@ const EditExpense: React.FC = () => {
                     </button>
                     {isSplitTypeDropdownOpen && (
                       <div
-                        className="absolute top-full left-0 mt-1 rounded-lg p-2 shadow-lg dropdown-container z-50"
-                        style={{ backgroundColor: 'var(--color-primary)' }}
+                        className="dropdown-container right"
+                        style={{ width: 'max-content', maxWidth: 'none' }}
                       >
-                        <div className="flex flex-col gap-1">
+                        <div className="list">
                           {splitTypeOptions.map(option => (
                             <button
                               key={option.value}
-                              className={`px-3 py-2 rounded-md text-base font-medium transition-colors text-left whitespace-nowrap ${
-                                option.value === formData.split_type ? 'text-white' : 'text-white hover:opacity-80'
-                              }`}
+                              className="item"
                               style={
                                 option.value === formData.split_type
                                   ? { backgroundColor: 'var(--color-primary-dark)' }
@@ -1516,8 +1511,8 @@ const EditExpense: React.FC = () => {
                       key={participant.id}
                       className={`split-breakdown-participant-container${isIncluded ? '' : ' is-excluded'}`}
                     >
-                      <div className="split-breakdown-details-container">
-                        <label className="split-breakdown-checkbox">
+                    <div className="split-breakdown-details-container" style={{ minWidth: 0 }}>
+                      <label className="split-breakdown-checkbox">
                           <input
                             type="checkbox"
                             checked={isIncluded}
@@ -1530,8 +1525,8 @@ const EditExpense: React.FC = () => {
                           </span>
                         </label>
                         <div className="split-breakdown-participant-details">
-                          <p className={isIncluded ? undefined : 'text-is-muted'}>{participant.name}</p>
-                          <p className={isIncluded ? 'p2' : 'p2 text-is-muted'}>
+                          <p className={`truncate-text ${isIncluded ? '' : 'text-is-muted'}`}>{participant.name}</p>
+                          <p className={`truncate-text ${isIncluded ? 'p2' : 'p2 text-is-muted'}`}>
                             {group.currency}{formatAmount(displayedSplit)}
                           </p>
                         </div>
@@ -1539,7 +1534,7 @@ const EditExpense: React.FC = () => {
 
                       {formData.split_type === 'equal' && (
                         <div className={`split-breakdown-even-split-container${isIncluded ? '' : ' is-disabled'}`}>
-                          <span>{group.currency}{formatAmount(displayedSplit)}</span>
+                          <span className="truncate-text">{group.currency}{formatAmount(displayedSplit)}</span>
                         </div>
                       )}
 
@@ -1615,7 +1610,7 @@ const EditExpense: React.FC = () => {
                       )}
 
                       {formData.split_type === 'percentage' && (
-                        <div className="split-breakdown-amount-split-container percent">
+                        <div className="split-breakdown-amount-split-container">
                           <input
                             type="text"
                             value={draftPercentages.hasOwnProperty(participant.id)
@@ -1649,27 +1644,27 @@ const EditExpense: React.FC = () => {
           </div>
 
           <footer className="has-gradient-bg">
-            <div className="breakdown-container">
-              <div className="breakdown-details">
+            <div className="breakdown-container" style={{ minWidth: 0 }}>
+              <div className="breakdown-details truncate-text">
                 <p>Total Attributed: </p>
-                <h2>
+                <h2 className="truncate-text auto-width" style={{ flex: '0 1 auto' }}>
                   {group.currency}{formatAmount(totalAssigned)}
                 </h2>
               </div>
               {formData.split_type === 'amount' && (
-                <div className="p2">
+                <div className="p2 truncate-text">
                   Remaining: <span className={Math.abs(remainingAmount) < 0.01 ? 'text-is-success' : 'text-is-error'}>
                     {group.currency}{formatAmount(remainingAmount)}
                   </span>
                 </div>
               )}
               {formData.split_type === 'shares' && (
-                <div className="p2">
+                <div className="p2 truncate-text">
                   Total Shares: {totalShares}
                 </div>
               )}
               {formData.split_type === 'percentage' && (
-                <div className="p2">
+                <div className="p2 truncate-text">
                   Total Percentage: <span className={Math.abs(totalPercentage - 100) < 0.01 ? 'text-is-success' : 'text-is-error'}>
                     {totalPercentage.toFixed(2)}%
                   </span>

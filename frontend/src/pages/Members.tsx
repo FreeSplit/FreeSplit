@@ -3,11 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getGroup, deleteParticipant } from '../services/api';
 import { Group, Participant } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from '../nav/nav-bar';
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faPlus, faUserXmark } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faPlus, faUserXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import AddMemberModal from '../modals/add-member';
 import EditMemberModal from '../modals/edit-member';
 import { ring } from 'ldrs'; ring.register();
@@ -15,6 +16,7 @@ import { ring } from 'ldrs'; ring.register();
 const Members: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [loading, setLoading] = useState(true);
@@ -114,6 +116,8 @@ const Members: React.FC = () => {
             <h1>Members ({participants.length})</h1>
             <p>Select a group member to edit or delete them.</p>
           </div>
+
+          <div className="dark-divider"></div>
           
           <div className="list">
             {participants.length === 0 ? (
@@ -130,8 +134,9 @@ const Members: React.FC = () => {
                   key={participant.id}
                   className="list-item"
                   onClick={() => openEditModal(participant)}
+                  style={{ minWidth: 0}}
                 >
-                  <p>{participant.name}</p>
+                  <p className="truncate-text left-align-text">{participant.name}</p>
                   <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
                 </button>
               ))
@@ -169,8 +174,8 @@ const Members: React.FC = () => {
                 className="btn fab-shadow"
                 onClick={() => setAddMemberOpen(true)}
               >
-                <span>Add a new member</span>
-                <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+                <span>Add new members</span>
+                <FontAwesomeIcon icon={faUserPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
               </button>
             </div>
             < NavBar />

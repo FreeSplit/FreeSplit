@@ -3,17 +3,22 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { getDebtsPageData, createPayment, getSplitsByGroup, getGroup, getPaymentsByGroup, deletePayment } from '../services/api';
 import { DebtPageData, SplitWithNames, Participant, Payment } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import SimplifyModal from "../modals/simplification"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faDollarSign, faPlus, faCircleInfo,} from '@fortawesome/free-solid-svg-icons';
-import { ring } from 'ldrs'; ring.register();
+import { ring } from 'ldrs';
+import { formatAmount } from '../utils/format';
+
+ring.register();
 
 const Debts: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [debts, setDebts] = useState<DebtPageData[]>([]);
   const [currency, setCurrency] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -195,18 +200,26 @@ const Debts: React.FC = () => {
               )}
             </div>
 
+            <div className="dark-divider"></div>
+
             {/* Debts List */}
             <div className="list">
               {debts.map((debt, index) => {
+                const formattedDebtAmount = formatAmount(debt.debt_amount);
+                const debtDescription = `${debt.debtor_name} owes ${debt.lender_name}`;
+                const debtorClassName = `debt-name is-bold${debt.debtor_name.length > 14 ? ' is-flex' : ''}`;
+                const lenderClassName = `debt-name is-bold${debt.lender_name.length > 14 ? ' is-flex' : ''}`;
                 return (
                   <div key={debt.id || `debt-${index}`} className="expenses-container">
                     <div className="expense">
-                      <div className="v-flex">
-                        <p>
-                          <span className="is-bold">{debt.debtor_name}</span> owes <span className="is-bold">{debt.lender_name}</span>
+                      <div className="v-flex" style={{ minWidth: 0 }}>
+                        <p className="debt-line" title={`${debtDescription} ${currency}${formattedDebtAmount}`}>
+                          <span className={debtorClassName}>{debt.debtor_name}</span>
+                          <span className="debt-label">owes</span>
+                          <span className={lenderClassName}>{debt.lender_name}</span>
                         </p>
-                        <p>
-                          <span className="p2 is-bold text-is-success">{currency}{debt.debt_amount.toFixed(2)}</span>
+                        <p className="p2 is-bold text-is-success truncate-text">
+                          {currency}{formattedDebtAmount}
                         </p>
                       </div>
                       <button
@@ -224,17 +237,23 @@ const Debts: React.FC = () => {
               {payments.map((payment) => {
                 const payerName = participantNames[payment.payer_id] ?? 'Someone';
                 const payeeName = participantNames[payment.payee_id] ?? 'Someone';
+                const formattedPaymentAmount = formatAmount(payment.amount);
+                const paymentDescription = `${payerName} paid ${payeeName}`;
+                const payerClassName = `debt-name is-bold${payerName.length > 14 ? ' is-flex' : ''}`;
+                const payeeClassName = `debt-name is-bold${payeeName.length > 14 ? ' is-flex' : ''}`;
 
                 return (
                   <div key={`payment-${payment.id}`} className="expenses-container">
                     <div className="expense">
-                      <div className="v-flex">
-                      <p className="text-is-muted ">
-                        <span className="is-bold">{payerName}</span> paid <span className="is-bold">{payeeName}</span>{' '}
-                      </p>
-                      <p>
-                        <span className="p2 is-bold">{currency}{payment.amount.toFixed(2)}</span>
-                      </p>
+                      <div className="v-flex" style={{ minWidth: 0 }} title={`${paymentDescription} ${currency}${formattedPaymentAmount}`}>
+                        <p className="debt-line text-is-muted">
+                          <span className={payerClassName}>{payerName}</span>
+                          <span className="debt-label">paid</span>
+                          <span className={payeeClassName}>{payeeName}</span>
+                        </p>
+                        <p className="p2 is-bold truncate-text">
+                          {currency}{formattedPaymentAmount}
+                        </p>
                       </div>
                       <div className="h-flex gap-8px">
                         <button

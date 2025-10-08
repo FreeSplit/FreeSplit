@@ -84,7 +84,7 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
       <div className="card">
         <div className="modal-header">
           <h2>Edit member</h2>
-          <button type="button" onClick={onClose} aria-label="Close edit member modal">
+          <button className="icon-link-container w-hover" type="button" onClick={onClose} aria-label="Close edit member modal">
             <FontAwesomeIcon icon={faXmark} style={{ fontSize: 24 }} aria-hidden="true" />
           </button>
         </div>

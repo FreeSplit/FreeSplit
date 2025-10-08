@@ -46,9 +46,17 @@
   background: var(--color-primary);
   color: var(--color-bg);
   font-weight: 600;
-  line-height: 1;
+  line-height: normal;
+  max-width: 100%;
+  min-width: 0;
 }
-.chip-text { white-space: nowrap; }
+
+.chip-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
 .chip-remove {
   background: transparent;
   border: 0;

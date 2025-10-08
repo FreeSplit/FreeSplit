@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faUserPlus, } from '@fortawesome/free-solid-svg-icons'
 import { localStorageService } from '../services/localStorage'
+import { useRobotsMeta } from '../hooks/useRobotsMeta'
 import LogoHeader from '../nav/logo-header'
 import SigFooter from '../nav/sig-footer'
 
 function Index() {
   const [hasGroups, setHasGroups] = useState(false);
+  useRobotsMeta('index, follow');
 
   useEffect(() => {
     const checkForGroups = async () => {

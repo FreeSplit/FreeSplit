@@ -4,6 +4,7 @@ import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
 import { Group, Expense, Participant } from '../services/api';
 import { useGroupTracking } from '../hooks/useGroupTracking';
+import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
@@ -25,6 +26,7 @@ const formatAmount = (value: number): string => {
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  useRobotsMeta('noindex, nofollow');
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -146,14 +148,19 @@ const GroupDashboard: React.FC = () => {
               ) : (
                 <>
                 <h1>Expenses</h1>
+                <div className="dark-divider"></div>
                 <div className="list">
                   {expenses.slice(0, 5).map((expense) => (
                     <button key={expense.id} onClick={() => navigate(`/groups/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
                       <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
-                        <div className="expense-details">
-                          <p>{expense.name}</p>
-                          <p className="p2">{getParticipantName(expense.payer_id)} paid <span className="is-green">{group.currency}{formatAmount(expense.cost)}</span></p>
+                        <div className="expense-details" style={{ minWidth: 0 }}>
+                          <p className="truncate-text is-bold">{expense.name}</p>
+                          <p className="p2 clamp-two-lines" style={{ display: 'flex', gap: 4, alignItems: 'baseline', minWidth: 0 }}>
+                            <span className="truncate-text auto-width" style={{ flex: '0 1 auto', display: 'inline-block', maxWidth: '50%' }}>{getParticipantName(expense.payer_id)}</span>
+                            <span>paid</span>
+                            <span className="is-green truncate-text auto-width" style={{ flex: '0 1 auto', display: 'inline-block', maxWidth: '50%' }}>{group.currency}{formatAmount(expense.cost)}</span>
+                          </p>
                         </div>
                         <FontAwesomeIcon icon={faChevronRight} className="icon" style={{ fontSize: 20 }} aria-hidden="true" />
                       </div>
