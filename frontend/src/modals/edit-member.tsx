@@ -7,12 +7,21 @@ import toast from 'react-hot-toast';
 
 type EditMemberModalProps = {
   participant: Participant;
+  participantCount: number;
+  minimumParticipantCount?: number;
   onClose: () => void;
   onMemberUpdated?: (participant: Participant) => void;
   onMemberDeleted?: (participantId: number) => void;
 };
 
-const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose, onMemberUpdated, onMemberDeleted }) => {
+const EditMemberModal: React.FC<EditMemberModalProps> = ({
+  participant,
+  participantCount,
+  minimumParticipantCount = 2,
+  onClose,
+  onMemberUpdated,
+  onMemberDeleted,
+}) => {
   const [name, setName] = useState(participant.name);
   const [submitting, setSubmitting] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -54,6 +63,11 @@ const EditMemberModal: React.FC<EditMemberModalProps> = ({ participant, onClose,
   };
 
   const handleDelete = async () => {
+    if (participantCount <= minimumParticipantCount) {
+      toast.error('Groups must have at least two members.');
+      return;
+    }
+
     if (!window.confirm(`Remove ${participant.name}? This action cannot be undone.`)) {
       return;
     }

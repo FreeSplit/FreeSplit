@@ -48,6 +48,11 @@ const Members: React.FC = () => {
   }, [urlSlug, loadGroupData]);
 
   const handleDeleteMember = async (participantId: number) => {
+    if (participants.length <= 2) {
+      toast.error('Groups must have at least two members.');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this member? This will also delete all their expenses and splits.')) {
       return;
     }
@@ -155,6 +160,7 @@ const Members: React.FC = () => {
         {isEditMemberOpen && selectedParticipant && (
           <EditMemberModal
             participant={selectedParticipant}
+            participantCount={participants.length}
             onClose={() => {
               setEditMemberOpen(false);
               setSelectedParticipant(null);
