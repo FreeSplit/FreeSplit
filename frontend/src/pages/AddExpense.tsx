@@ -6,9 +6,10 @@ import { useGroupTracking } from '../hooks/useGroupTracking';
 import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMinus, faPlus, faChevronDown, faXmark, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus, faChevronDown, faXmark, faCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import SplitTypeModal from "../modals/split-types"
 import { ring } from 'ldrs'; ring.register();
 
 const roundToTwoDecimals = (num: number): number => {
@@ -92,6 +93,7 @@ const AddExpense: React.FC = () => {
     cost?: string;
     payer?: string;
   };
+  const [isSplitTypeOpen, setSplitTypeOpen] = useState(false);
 
   // Track group visit for user groups feature
   useGroupTracking();
@@ -1295,46 +1297,55 @@ const AddExpense: React.FC = () => {
               {/* Split Type */}
                 <div className="split-breakdown-container">
                   <div className="split-breakdown-header">
-                    <label htmlFor="split_type" className="form-label">
-                      Split
-                    </label>
-                    <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
+                    <div className="h-flex align-center gap-4px">
+                      <label htmlFor="split_type" className="form-label">
+                        Split
+                      </label>
                       <button
                         type="button"
-                        id="split_type"
-                        className="dropdown-pill dropdown-button"
-                        style={{ position: 'relative', zIndex: 2 }}
-                        onClick={() => setSplitTypeDropdownOpen(prev => !prev)}
-                        aria-haspopup="menu"
-                        aria-expanded={isSplitTypeDropdownOpen}
+                        onClick={() => setSplitTypeOpen(true)}
+                        aria-label="More info about simplification"
                       >
-                        <span>{selectedSplitType}</span>
-                        <FontAwesomeIcon icon={faChevronDown} />
+                        <FontAwesomeIcon icon={faCircleInfo} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
                       </button>
-                      {isSplitTypeDropdownOpen && (
-                        <div
-                          className="dropdown-container right" style={{ width: 'max-content', maxWidth: 'none' }}
-                        >
-                          <div className="list">
-                            {splitTypeOptions.map(option => (
-                              <button
-                                key={option.value}
-                                className="item"
-                                style={
-                                  option.value === formData.split_type
-                                    ? { backgroundColor: 'var(--color-primary-darkest)' }
-                                    : undefined
-                                }
-                                onClick={() => handleSplitTypeSelect(option.value)}
-                              >
-                                {option.label}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
                     </div>
+                    <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
+                    <button
+                      type="button"
+                      id="split_type"
+                      className="dropdown-pill dropdown-button"
+                      style={{ position: 'relative', zIndex: 2 }}
+                      onClick={() => setSplitTypeDropdownOpen(prev => !prev)}
+                      aria-haspopup="menu"
+                      aria-expanded={isSplitTypeDropdownOpen}
+                    >
+                      <span>{selectedSplitType}</span>
+                      <FontAwesomeIcon icon={faChevronDown} />
+                    </button>
+                    {isSplitTypeDropdownOpen && (
+                      <div
+                        className="dropdown-container right" style={{ width: 'max-content', maxWidth: 'none' }}
+                      >
+                        <div className="list">
+                          {splitTypeOptions.map(option => (
+                            <button
+                              key={option.value}
+                              className="item"
+                              style={
+                                option.value === formData.split_type
+                                  ? { backgroundColor: 'var(--color-primary-darkest)' }
+                                  : undefined
+                              }
+                              onClick={() => handleSplitTypeSelect(option.value)}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                </div>
 
                   {/* Split Details */}
                     {participants.map(participant => {
@@ -1563,6 +1574,9 @@ const AddExpense: React.FC = () => {
             />
           </div>
         </div>
+      )}
+      {isSplitTypeOpen && (
+        <SplitTypeModal onClose={() => setSplitTypeOpen(false)} />
       )}
     </>
   );
