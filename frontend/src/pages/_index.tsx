@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faUserPlus, } from '@fortawesome/free-solid-svg-icons'
+import { faUsers, } from '@fortawesome/free-solid-svg-icons'
 import { localStorageService } from '../services/localStorage'
 import { useRobotsMeta } from '../hooks/useRobotsMeta'
 import LogoHeader from '../nav/logo-header'
@@ -37,7 +37,7 @@ function Index() {
             </div>
             <Link to="/create-a-group/" className="btn">
               <span>Create a new group</span>
-              <FontAwesomeIcon icon={faUserPlus} aria-hidden="true"/>
+              <FontAwesomeIcon icon={faUsers} aria-hidden="true"/>
             </Link>
             {hasGroups && (
               <Link to="/groups" className="a">
