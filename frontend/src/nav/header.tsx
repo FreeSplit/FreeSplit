@@ -161,57 +161,59 @@ const Header: React.FC = () => {
 
   return (
     <div className="header">
-      <Link to="/" className="icon-link-container">
-        <FontAwesomeIcon className="has-color-white" icon={faHouse} style={{ fontSize: 20 }} aria-hidden="true" />
-      </Link>
-      <div className="relative" ref={dropdownRef}>
-        <button
-          className="dropdown-button header-dropdown"
-          style={{ position: 'relative', zIndex: 2 }}
-          onClick={() => setDropdownOpen((prev) => !prev)}
-          title="Switch groups"
-        >
-          <h1 className="h2 truncate-text">{(getGroupDisplayName(urlSlug))}</h1>
-          <FontAwesomeIcon icon={faChevronDown} />
-        </button>
-        {isDropdownOpen && (
-          <div
-            className="dropdown-container left"
+      <div className="h-flex gap-8px" style={{ minWidth: 0 }}>
+        <Link to="/" className="icon-link-container">
+          <FontAwesomeIcon className="has-color-white" icon={faHouse} style={{ fontSize: 20 }} aria-hidden="true" />
+        </Link>
+        <div className="relative" ref={dropdownRef}>
+          <button
+            className="dropdown-button header-dropdown"
+            style={{ position: 'relative', zIndex: 2 }}
+            onClick={() => setDropdownOpen((prev) => !prev)}
+            title="Switch groups"
           >
-            <div className="list">
-              {userGroups.map((userGroup) => (
-                <button
-                  key={userGroup.groupUrlSlug}
-                  className="item truncate-text"
-                  style={{
-                    backgroundColor:
-                      userGroup.groupUrlSlug === urlSlug
-                        ? 'var(--color-primary-darkest)'
-                        : undefined
-                  }}
-                  onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
+            <h1 className="h2 truncate-text">{(getGroupDisplayName(urlSlug))}</h1>
+            <FontAwesomeIcon icon={faChevronDown} />
+          </button>
+          {isDropdownOpen && (
+            <div
+              className="dropdown-container left" style={{ width: 'max-content', maxWidth: '260px' }}
+            >
+              <div className="list">
+                {userGroups.map((userGroup) => (
+                  <button
+                    key={userGroup.groupUrlSlug}
+                    className="item truncate-text"
+                    style={{
+                      backgroundColor:
+                        userGroup.groupUrlSlug === urlSlug
+                          ? 'var(--color-primary-darkest)'
+                          : undefined
+                    }}
+                    onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
+                  >
+                    {(getGroupDisplayName(userGroup.groupUrlSlug))}
+                  </button>
+                ))}
+                <div className="dropdown-divider" />
+                <Link
+                  to="/groups/"
+                  className="item"
+                  onClick={() => setDropdownOpen(false)}
                 >
-                  {(getGroupDisplayName(userGroup.groupUrlSlug))}
-                </button>
-              ))}
-              <div className="dropdown-divider" />
-              <Link
-                to="/groups/"
-                className="item"
-                onClick={() => setDropdownOpen(false)}
-              >
-                View my groups
-              </Link>
-              <Link
-                to="/create-a-group/"
-                className="item"
-                onClick={() => setDropdownOpen(false)}
-              >
-                Create a group
-              </Link>
+                  View my groups
+                </Link>
+                <Link
+                  to="/create-a-group/"
+                  className="item"
+                  onClick={() => setDropdownOpen(false)}
+                >
+                  Create a group
+                </Link>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
       <div className="h-flex align-center">
         <button

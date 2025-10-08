@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faReceipt, faPlus, faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import { faReceipt, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
 import { ring } from 'ldrs'; ring.register();
 
@@ -178,7 +178,7 @@ const GroupDashboard: React.FC = () => {
                 onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
               >
                 <span>Add a new expense</span>
-                <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+                <FontAwesomeIcon icon={faReceipt} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
               </button>
             </div>
             < NavBar />

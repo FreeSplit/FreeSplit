@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { createGroup } from '../services/api';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons'
+import { faXmark, faUsers } from '@fortawesome/free-solid-svg-icons'
 import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import '../styles/participants-form.css';
 
@@ -361,7 +361,7 @@ const CreateGroup: React.FC = () => {
             aria-disabled={isButtonDisabled}
           >
             <span>Create group</span>
-            <FontAwesomeIcon icon={faUserPlus} aria-hidden="true"/>
+            <FontAwesomeIcon icon={faUsers} aria-hidden="true"/>
           </button>
         </footer>
       </div>

@@ -255,7 +255,8 @@
   outline: none;
   border-radius: 0; -webkit-appearance: none;
   line-height: 1.25;
-  overflow-x: scroll;
+  overflow-x: hidden;
+  text-overflow: scroll;
   width: auto;
 }
 

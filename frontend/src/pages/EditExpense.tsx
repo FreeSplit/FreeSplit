@@ -6,9 +6,10 @@ import { useGroupTracking } from '../hooks/useGroupTracking';
 import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMinus, faPlus, faChevronDown, faXmark, faTrash, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faMinus, faPlus, faChevronDown, faXmark, faTrash, faCheck, faCircleInfo } from '@fortawesome/free-solid-svg-icons';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import SplitTypeModal from "../modals/split-types"
 import { ring } from 'ldrs'; ring.register();
 
 const roundToTwoDecimals = (num: number): number => {
@@ -92,6 +93,7 @@ const EditExpense: React.FC = () => {
     cost?: string;
     payer?: string;
   };
+  const [isSplitTypeOpen, setSplitTypeOpen] = useState(false);
 
   // Track group visit for user groups feature
   useGroupTracking();
@@ -1448,9 +1450,18 @@ const EditExpense: React.FC = () => {
 
                 <div className="split-breakdown-container">
                   <div className="split-breakdown-header">
-                    <label htmlFor="split_type" className="form-label">
-                      Split
-                    </label>
+                    <div className="h-flex align-center gap-4px">
+                      <label htmlFor="split_type" className="form-label">
+                        Split
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setSplitTypeOpen(true)}
+                        aria-label="More info about simplification"
+                      >
+                        <FontAwesomeIcon icon={faCircleInfo} className="icon" style={{ fontSize: 16 }} aria-hidden="true" />
+                      </button>
+                    </div>
                     <div className="split-breakdown-dropdown-menu" ref={splitTypeDropdownRef}>
                     <button
                       type="button"
@@ -1540,29 +1551,31 @@ const EditExpense: React.FC = () => {
 
                       {formData.split_type === 'amount' && (
                         <div className="split-breakdown-amount-split-container amount hide-scrollbar">
-                          <p className={isIncluded ? undefined : 'text-is-muted'}>
-                            {group.currency}
-                          </p>
-                          <input
-                            type="text"
-                            value={draftSplits.hasOwnProperty(participant.id)
-                              ? draftSplits[participant.id]
-                              : toFixedString(displayedSplit)}
-                            onFocus={() => beginSplitEdit(participant.id, displayedSplit)}
-                            onChange={(e) => handleSplitDraftChange(participant.id, e.target.value)}
-                            onBlur={() => commitSplitChange(participant.id, displayedSplit)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault();
-                                commitSplitChange(participant.id, displayedSplit);
-                              }
-                            }}
-                            className="split-input"
-                            
-                            disabled={!isIncluded || submitting || deleting}
-                            inputMode="decimal"
-                            pattern="[0-9]*\\.?[0-9]*"
-                          />
+                          <div className="h-flex maxw-100">
+                            <p className={isIncluded ? undefined : 'text-is-muted'}>
+                              {group.currency}
+                            </p>
+                            <input
+                              type="text"
+                              value={draftSplits.hasOwnProperty(participant.id)
+                                ? draftSplits[participant.id]
+                                : toFixedString(displayedSplit)}
+                              onFocus={() => beginSplitEdit(participant.id, displayedSplit)}
+                              onChange={(e) => handleSplitDraftChange(participant.id, e.target.value)}
+                              onBlur={() => commitSplitChange(participant.id, displayedSplit)}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter') {
+                                  event.preventDefault();
+                                  commitSplitChange(participant.id, displayedSplit);
+                                }
+                              }}
+                              className="split-input"
+                              
+                              disabled={!isIncluded || submitting || deleting}
+                              inputMode="decimal"
+                              pattern="[0-9]*\\.?[0-9]*"
+                            />
+                          </div>
                         </div>
                       )}
 
@@ -1723,6 +1736,9 @@ const EditExpense: React.FC = () => {
             />
           </div>
         </div>
+      )}
+      {isSplitTypeOpen && (
+        <SplitTypeModal onClose={() => setSplitTypeOpen(false)} />
       )}
     </>
   );

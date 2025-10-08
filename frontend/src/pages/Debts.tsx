@@ -9,7 +9,7 @@ import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
 import SimplifyModal from "../modals/simplification"
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faDollarSign, faPlus, faCircleInfo,} from '@fortawesome/free-solid-svg-icons';
+import { faMoneyBillTransfer, faReceipt, faCircleInfo,} from '@fortawesome/free-solid-svg-icons';
 import { ring } from 'ldrs';
 import { formatAmount } from '../utils/format';
 
@@ -218,7 +218,7 @@ const Debts: React.FC = () => {
                           <span className="debt-label">owes</span>
                           <span className={lenderClassName}>{debt.lender_name}</span>
                         </p>
-                        <p className="p2 is-bold text-is-success truncate-text">
+                        <p className="p2 text-is-success truncate-text">
                           {currency}{formattedDebtAmount}
                         </p>
                       </div>
@@ -251,7 +251,7 @@ const Debts: React.FC = () => {
                           <span className="debt-label">paid</span>
                           <span className={payeeClassName}>{payeeName}</span>
                         </p>
-                        <p className="p2 is-bold truncate-text">
+                        <p className="p2 truncate-text">
                           {currency}{formattedPaymentAmount}
                         </p>
                       </div>
@@ -277,7 +277,7 @@ const Debts: React.FC = () => {
           {/* No Debts */}
           {debts.length === 0 && payments.length === 0 && (
             <div className="content-container">
-              <FontAwesomeIcon icon={faDollarSign} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
+              <FontAwesomeIcon icon={faMoneyBillTransfer} className="icon" style={{ fontSize: 44 }} aria-hidden="true" />
               <div className="v-flex gap-8px align-center text-is-centered">
                 <h2>No debts</h2>
                 <p>Add an expense to track your group debts.</p>
@@ -295,7 +295,7 @@ const Debts: React.FC = () => {
               onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
             >
               <span>Add a new expense</span>
-              <FontAwesomeIcon icon={faPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+              <FontAwesomeIcon icon={faReceipt} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
             </button>
           </div>
           < NavBar />
