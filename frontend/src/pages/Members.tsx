@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import NavBar from '../nav/nav-bar';
 import Header from "../nav/header";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faChevronRight, faPlus, faUserXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faUserXmark, faUserPlus } from '@fortawesome/free-solid-svg-icons';
 import AddMemberModal from '../modals/add-member';
 import EditMemberModal from '../modals/edit-member';
 import { ring } from 'ldrs'; ring.register();

@@ -218,7 +218,7 @@ const Debts: React.FC = () => {
                           <span className="debt-label">owes</span>
                           <span className={lenderClassName}>{debt.lender_name}</span>
                         </p>
-                        <p className="p2 is-bold text-is-success truncate-text">
+                        <p className="p2 text-is-success truncate-text">
                           {currency}{formattedDebtAmount}
                         </p>
                       </div>
@@ -251,7 +251,7 @@ const Debts: React.FC = () => {
                           <span className="debt-label">paid</span>
                           <span className={payeeClassName}>{payeeName}</span>
                         </p>
-                        <p className="p2 is-bold truncate-text">
+                        <p className="p2 truncate-text">
                           {currency}{formattedPaymentAmount}
                         </p>
                       </div>
