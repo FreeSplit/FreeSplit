@@ -907,3 +907,7 @@ input[type="number"] {
   height: 1px;
   background-color: var(--color-bg-hover);
 }
+
+.maxw-100 {
+  max-width: 100%;
+}

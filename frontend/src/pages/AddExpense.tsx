@@ -1394,28 +1394,30 @@ const AddExpense: React.FC = () => {
 
                           {formData.split_type === 'amount' && (
                             <div className="split-breakdown-amount-split-container amount hide-scrollbar">
-                              <p className={isIncluded ? undefined : 'text-is-muted'}>
-                                {group.currency}
-                              </p>
-                              <input
-                                type="text"
-                                value={draftSplits.hasOwnProperty(participant.id)
-                                  ? draftSplits[participant.id]
-                                  : formatAmount(displayedSplit)}
-                                onFocus={() => beginSplitEdit(participant.id, displayedSplit)}
-                                onChange={(e) => handleSplitDraftChange(participant.id, e.target.value)}
-                                onBlur={() => commitSplitChange(participant.id, displayedSplit)}
-                                onKeyDown={(event) => {
-                                  if (event.key === 'Enter') {
-                                    event.preventDefault();
-                                    commitSplitChange(participant.id, displayedSplit);
-                                  }
-                                }}
-                                className="split-input"
-                                inputMode="decimal"
-                                pattern="[0-9]*\\.?[0-9]*"
-                                disabled={!isIncluded}
-                              />
+                              <div className="h-flex maxw-100">
+                                <p className={isIncluded ? undefined : 'text-is-muted'}>
+                                  {group.currency}
+                                </p>
+                                <input
+                                  type="text"
+                                  value={draftSplits.hasOwnProperty(participant.id)
+                                    ? draftSplits[participant.id]
+                                    : formatAmount(displayedSplit)}
+                                  onFocus={() => beginSplitEdit(participant.id, displayedSplit)}
+                                  onChange={(e) => handleSplitDraftChange(participant.id, e.target.value)}
+                                  onBlur={() => commitSplitChange(participant.id, displayedSplit)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === 'Enter') {
+                                      event.preventDefault();
+                                      commitSplitChange(participant.id, displayedSplit);
+                                    }
+                                  }}
+                                  className="split-input"
+                                  inputMode="decimal"
+                                  pattern="[0-9]*\\.?[0-9]*"
+                                  disabled={!isIncluded}
+                                />
+                              </div>
                             </div>
                           )}
 
