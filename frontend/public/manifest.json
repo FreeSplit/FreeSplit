@@ -15,6 +15,12 @@
   "url_handlers": [
     { "origin": "https://freesplit.ca" }
   ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+freesplit",
+      "url": "/?protocol=%s"
+    }
+  ],
   "display": "standalone",
   "theme_color": "#000000",
   "background_color": "#ffffff"
