@@ -9,12 +9,19 @@ import EditExpense from './pages/EditExpense';
 import Members from './pages/Members';
 import Debts from './pages/Debts';
 import Groups from './pages/Groups';
+import { useProtocolHandler } from './hooks/useProtocolHandler';
 import './styles/global.css';
 import './styles/tokens.css';
 import './styles/components.css';
 import './styles/participants-form.css';
 import './styles/split-breakdown.css';
 import './styles/simplify-animation.css';
+
+// Component to handle protocol links (web+freesplit://)
+const ProtocolHandler: React.FC = () => {
+  useProtocolHandler();
+  return null;
+};
 
 // Catch-all component for unmatched routes
 const CatchAllRoute: React.FC = () => {
@@ -38,6 +45,7 @@ function App() {
   return (
     <div className="App">
       <Router>
+        <ProtocolHandler />
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/create-a-group/" element={<CreateGroup />} />
