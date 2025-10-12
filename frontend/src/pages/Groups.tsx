@@ -176,10 +176,10 @@ const Groups: React.FC = () => {
       }
 
       // Select the participant (data is already preloaded)
-      await localStorageService.updateGroupParticipant(groupUrlSlug, participantId, participantName);
+      await localStorageService.updateGroupParticipant(groupUrlSlug, participantId);
       setUserGroups(prev => prev.map(g => 
         g.groupUrlSlug === groupUrlSlug 
-          ? { ...g, userParticipantId: participantId, userParticipantName: participantName }
+          ? { ...g, userParticipantId: participantId }
           : g
       ));
       toast.success(`Selected ${participantName} for this group`);
@@ -275,8 +275,14 @@ const Groups: React.FC = () => {
                   const participants = findGroupParticipants(group.groupUrlSlug);
                   const isExpanded = expandedParticipants.has(group.groupUrlSlug);
                   const isOptionsExpanded = expandedOptions.has(group.groupUrlSlug);
-                  const selectedParticipantLabel = group.userParticipantName
-                    ? truncateParticipantName(group.userParticipantName)
+                  
+                  // Resolve participant name from backend data (not stored in localStorage)
+                  const currentParticipantName = participants?.participants.find(
+                    p => p.id === group.userParticipantId
+                  )?.name;
+                  
+                  const selectedParticipantLabel = currentParticipantName
+                    ? truncateParticipantName(currentParticipantName)
                     : 'Select your name';
 
                   return (
@@ -330,7 +336,7 @@ const Groups: React.FC = () => {
                                     title="Select your name"
                                     style={{ position: 'relative', zIndex: 2 }}
                                   >
-                                    <span title={group.userParticipantName || undefined}>{selectedParticipantLabel}</span>
+                                    <span title={currentParticipantName || undefined}>{selectedParticipantLabel}</span>
                                     <FontAwesomeIcon icon={faChevronDown} />
                                   </button>
 
