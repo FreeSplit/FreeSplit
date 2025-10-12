@@ -2,7 +2,6 @@
 interface UserGroup {
   groupUrlSlug: string;
   userParticipantId: number;
-  userParticipantName: string;
   lastVisited: string;
 }
 
@@ -110,7 +109,6 @@ class LocalStorageService {
         const newGroup: UserGroup = {
           groupUrlSlug,
           userParticipantId: 0, // Will be set when user selects their name
-          userParticipantName: '', // Will be set when user selects their name
           lastVisited: new Date().toISOString()
         };
         await this.saveUserGroup(newGroup);
@@ -121,14 +119,14 @@ class LocalStorageService {
   }
 
   // Update participant info for a group
-  async updateGroupParticipant(groupUrlSlug: string, participantId: number, participantName: string): Promise<void> {
+  // Note: We only store the participant ID; the name is resolved from backend data
+  async updateGroupParticipant(groupUrlSlug: string, participantId: number): Promise<void> {
     try {
       const existingGroups = await this.getUserGroups();
       const group = existingGroups.find(g => g.groupUrlSlug === groupUrlSlug);
       
       if (group) {
         group.userParticipantId = participantId;
-        group.userParticipantName = participantName;
         group.lastVisited = new Date().toISOString();
         await this.saveUserGroup(group);
       }
