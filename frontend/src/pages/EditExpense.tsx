@@ -329,7 +329,9 @@ const EditExpense: React.FC = () => {
       return;
     }
 
-    const current = customShares[participantId] || shares[participantId] || 1;
+    const current = customShares[participantId] !== undefined 
+      ? customShares[participantId] 
+      : (shares[participantId] !== undefined ? shares[participantId] : 1);
     const next = current + delta;
     applyShareValue(participantId, next);
   };
