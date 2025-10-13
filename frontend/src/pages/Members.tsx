@@ -152,6 +152,7 @@ const Members: React.FC = () => {
         {isAddMemberOpen && (
           <AddMemberModal
             group={group}
+            participants={participants}
             onClose={() => setAddMemberOpen(false)}
             onMemberAdded={handleMemberAdded}
           />

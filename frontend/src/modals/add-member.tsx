@@ -8,11 +8,12 @@ import '../styles/participants-form.css';
 
 type AddMemberModalProps = {
   group: Group;
+  participants: Participant[];
   onClose: () => void;
   onMemberAdded?: (participant: Participant) => void;
 };
 
-const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMemberAdded }) => {
+const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, participants, onClose, onMemberAdded }) => {
   const [pendingMembers, setPendingMembers] = useState<string[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [inputError, setInputError] = useState<string | null>(null);
@@ -36,6 +37,9 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
 
   const normalizeMembers = useCallback((list: string[]) => {
     const seen = new Set<string>();
+    // Add existing participant names to the seen set
+    participants.forEach((p) => seen.add(p.name.toLowerCase()));
+    
     return list
       .map((name) => name.replace(/,+/g, ' ').trim())
       .filter(Boolean)
@@ -47,7 +51,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
         seen.add(key);
         return true;
       });
-  }, []);
+  }, [participants]);
 
   const showInputError = useCallback((message: string) => {
     setInputError(message);
@@ -75,6 +79,8 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
     }
 
     const currentKeys = new Set(pendingMembers.map((name) => name.toLowerCase()));
+    // Add existing participant names to check for duplicates
+    const existingKeys = new Set(participants.map((p) => p.name.toLowerCase()));
     const addedKeys = new Set<string>();
     const uniqueItems: string[] = [];
     let foundDuplicate = false;
@@ -85,7 +91,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
         return;
       }
       const key = normalized.toLowerCase();
-      if (currentKeys.has(key) || addedKeys.has(key)) {
+      if (currentKeys.has(key) || addedKeys.has(key) || existingKeys.has(key)) {
         foundDuplicate = true;
         return;
       }
@@ -100,7 +106,7 @@ const AddMemberModal: React.FC<AddMemberModalProps> = ({ group, onClose, onMembe
     if (foundDuplicate) {
       showInputError('Members must have a unique name.');
     }
-  }, [pendingMembers, handleMembersChange, showInputError]);
+  }, [pendingMembers, participants, handleMembersChange, showInputError]);
 
   const removeMemberAt = useCallback((index: number) => {
     handleMembersChange(pendingMembers.filter((_, i) => i !== index));
