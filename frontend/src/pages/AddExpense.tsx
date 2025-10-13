@@ -342,9 +342,7 @@ const AddExpense: React.FC = () => {
         nextSplits[participant.id] = amount;
         nextShares[participant.id] = 1;
         nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
-        nextCustomSplits[participant.id] = amount;
-        nextCustomShares[participant.id] = 1;
-        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
+        // Don't update custom values - preserve them for when switching back to amount/shares/percentage
       });
     } else if (splitType === 'shares') {
       const workingShares: { [key: number]: number } = {};
@@ -436,9 +434,11 @@ const AddExpense: React.FC = () => {
         const participantId = participant.id;
         const amount = roundToTwoDecimals(amounts[participantId] ?? 0);
         nextSplits[participantId] = amount;
-        nextShares[participantId] = 0;
-        nextCustomShares[participantId] = 0;
         nextCustomSplits[participantId] = amount;
+        // Calculate shares from the amounts for consistency
+        const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
+        nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+        nextShares[participantId] = nextCustomShares[participantId];
       });
     } else if (splitType === 'amount') {
       const lockedMap = lockedAmountState;
@@ -452,8 +452,10 @@ const AddExpense: React.FC = () => {
           totalLockedAmount += amount;
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          nextShares[participantId] = 0;
-          nextCustomShares[participantId] = 0;
+          // Calculate shares and percentages from the amounts for consistency
+          const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
+          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+          nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
         }
@@ -488,8 +490,10 @@ const AddExpense: React.FC = () => {
           const amount = roundToTwoDecimals(distributed[index] ?? 0);
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          nextShares[participantId] = 0;
-          nextCustomShares[participantId] = 0;
+          // Calculate shares and percentages from the amounts for consistency
+          const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
+          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+          nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
         });
@@ -637,40 +641,10 @@ const AddExpense: React.FC = () => {
       const inclusion = includedParticipants;
       const activeParticipants = participants.filter(participant => inclusion[participant.id]);
 
-      const updatedCustomSplits: { [key: number]: number } = { ...customSplits };
-      const updatedCustomShares: { [key: number]: number } = { ...customShares };
-      const updatedCustomPercentages: { [key: number]: number } = { ...customPercentages };
+      // Don't modify custom values here - they're already preserved and maintained by redistributeSplits
+      // Only clear locked states when not in the corresponding mode
       const nextLockedAmounts = newSplitType === 'amount' ? lockedAmountParticipants : {};
       const nextLockedPercentages = newSplitType === 'percentage' ? lockedPercentageParticipants : {};
-
-      if (newSplitType === 'shares') {
-        const equalAmount = activeParticipants.length > 0 ? cost / activeParticipants.length : 0;
-        activeParticipants.forEach(participant => {
-          const amount = splits[participant.id] ?? 0;
-          updatedCustomShares[participant.id] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
-        });
-      } else if (newSplitType === 'percentage') {
-        activeParticipants.forEach(participant => {
-          const amount = splits[participant.id] ?? 0;
-          updatedCustomPercentages[participant.id] = cost > 0 ? roundToTwoDecimals((amount / cost) * 100) : 0;
-        });
-      } else if (newSplitType === 'amount') {
-        activeParticipants.forEach(participant => {
-          updatedCustomSplits[participant.id] = splits[participant.id] ?? 0;
-        });
-      }
-
-      participants.forEach(participant => {
-        if (!inclusion[participant.id]) {
-          updatedCustomSplits[participant.id] = 0;
-          updatedCustomShares[participant.id] = 0;
-          updatedCustomPercentages[participant.id] = 0;
-        }
-      });
-
-      setCustomSplits(updatedCustomSplits);
-      setCustomShares(updatedCustomShares);
-      setCustomPercentages(updatedCustomPercentages);
       setDraftSplits({});
       setDraftShares({});
       setDraftPercentages({});
@@ -684,9 +658,6 @@ const AddExpense: React.FC = () => {
       redistributeSplits({
         splitType: newSplitType,
         inclusion,
-        customSplitsState: updatedCustomSplits,
-        customSharesState: updatedCustomShares,
-        customPercentagesState: updatedCustomPercentages,
         costValue: cost,
         lockedAmountState: nextLockedAmounts,
         lockedPercentageState: nextLockedPercentages,
