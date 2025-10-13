@@ -49,6 +49,7 @@ const Header: React.FC = () => {
       } catch (error) {
         console.error('Failed to load group for header', error);
         setGroup(null);
+        return;
       }
     };
 
@@ -70,8 +71,6 @@ const Header: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    let isCancelled = false;
-
     const populateGroupNames = async () => {
       try {
         const entries = await Promise.all(
@@ -86,19 +85,13 @@ const Header: React.FC = () => {
           })
         );
 
-        if (!isCancelled) {
-          setGroupNames(Object.fromEntries(entries));
-        }
+        setGroupNames(Object.fromEntries(entries));
       } catch (error) {
         console.error('Unexpected error loading group names for header dropdown', error);
       }
     };
 
     populateGroupNames();
-
-    return () => {
-      isCancelled = true;
-    };
   }, [userGroups]);
 
   useEffect(() => {
@@ -172,7 +165,7 @@ const Header: React.FC = () => {
             onClick={() => setDropdownOpen((prev) => !prev)}
             title="Switch groups"
           >
-            <h1 className="h2 truncate-text">{(getGroupDisplayName(urlSlug))}</h1>
+            <h1 className="h2 truncate-text">{group?.name}</h1>
             <FontAwesomeIcon icon={faChevronDown} />
           </button>
           {isDropdownOpen && (
@@ -192,7 +185,7 @@ const Header: React.FC = () => {
                     }}
                     onClick={() => handleGroupSelect(userGroup.groupUrlSlug)}
                   >
-                    {(getGroupDisplayName(userGroup.groupUrlSlug))}
+                    {getGroupDisplayName(userGroup.groupUrlSlug)}
                   </button>
                 ))}
                 <div className="dropdown-divider" />
