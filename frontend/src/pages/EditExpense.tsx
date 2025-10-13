@@ -495,25 +495,21 @@ const EditExpense: React.FC = () => {
         });
       }
 
-      const percentageMap: { [key: number]: number } = {};
-      activeParticipants.forEach(participant => {
+      // Use existing amounts from customSplits - don't recalculate from percentages
+      // Amounts are the source of truth
+      activeParticipants.forEach((participant) => {
         const participantId = participant.id;
-        const percentage = Math.max(0, nextCustomPercentages[participantId] ?? 0);
-        percentageMap[participantId] = percentage;
+        const amount = Math.max(0, customSplitsState[participantId] ?? splits[participantId] ?? 0);
+        nextSplits[participantId] = amount;
+        // Don't update customSplits here - preserve the source of truth
       });
-
-      const amounts = calculateAmountsFromPercentages(percentageMap, costValue);
-
-      // Calculate simplified shares from amounts
-      const amountsArray = activeParticipants.map(p => amounts[p.id] ?? 0);
+      
+      // Calculate simplified shares from the existing amounts
+      const amountsArray = activeParticipants.map(p => nextSplits[p.id] ?? 0);
       const sharesArray = calculateSharesFromAmounts(amountsArray);
       
       activeParticipants.forEach((participant, index) => {
         const participantId = participant.id;
-        const amount = roundToTwoDecimals(amounts[participantId] ?? 0);
-        nextSplits[participantId] = amount;
-        nextCustomSplits[participantId] = amount;
-        // Use simplified shares
         nextCustomShares[participantId] = sharesArray[index];
         nextShares[participantId] = sharesArray[index];
       });
