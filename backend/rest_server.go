@@ -17,6 +17,10 @@ import (
 	"gorm.io/gorm"
 )
 
+// MAX_VALID_NUMBER is the maximum allowed value for monetary amounts (cost, splits, payments)
+// This corresponds to the database limit of numeric(10,2) which supports up to 99,999,999.99
+const MAX_VALID_NUMBER = 99999999.99
+
 func main() {
 	// Get database URL from environment variable
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -568,6 +572,20 @@ func createExpense(w http.ResponseWriter, r *http.Request, expenseService servic
 		return
 	}
 
+	// Validate cost amount
+	if requestData.Expense.Cost > MAX_VALID_NUMBER {
+		http.Error(w, "Amount must be less than 100 million", http.StatusBadRequest)
+		return
+	}
+
+	// Validate split amounts
+	for _, split := range requestData.Splits {
+		if split.SplitAmount > MAX_VALID_NUMBER {
+			http.Error(w, "Amount must be less than 100 million", http.StatusBadRequest)
+			return
+		}
+	}
+
 	// Convert splits
 	splits := make([]*services.Split, len(requestData.Splits))
 	for i, split := range requestData.Splits {
@@ -641,6 +659,20 @@ func updateExpense(w http.ResponseWriter, r *http.Request, expenseService servic
 	if err := json.NewDecoder(r.Body).Decode(&requestData); err != nil {
 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
 		return
+	}
+
+	// Validate cost amount
+	if requestData.Expense.Cost > MAX_VALID_NUMBER {
+		http.Error(w, "Amount must be less than 100 million", http.StatusBadRequest)
+		return
+	}
+
+	// Validate split amounts
+	for _, split := range requestData.Splits {
+		if split.SplitAmount > MAX_VALID_NUMBER {
+			http.Error(w, "Amount must be less than 100 million", http.StatusBadRequest)
+			return
+		}
 	}
 
 	// Convert splits
@@ -777,6 +809,12 @@ func createPayment(w http.ResponseWriter, r *http.Request, debtService services.
 
 	if req.PaidAmount < 0 {
 		http.Error(w, "Paid amount cannot be negative", http.StatusBadRequest)
+		return
+	}
+
+	// Validate payment amount
+	if req.PaidAmount > MAX_VALID_NUMBER {
+		http.Error(w, "Amount must be less than 100 million", http.StatusBadRequest)
 		return
 	}
 
