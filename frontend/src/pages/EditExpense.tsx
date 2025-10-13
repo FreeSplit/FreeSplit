@@ -368,8 +368,10 @@ const EditExpense: React.FC = () => {
       let totalShares = 0;
 
       activeParticipants.forEach(participant => {
-        const rawShare = customSharesState[participant.id] || shares[participant.id] || 1;
-        const shareValue = Math.max(1, Math.round(rawShare));
+        const rawShare = customSharesState[participant.id] !== undefined 
+          ? customSharesState[participant.id] 
+          : (shares[participant.id] !== undefined ? shares[participant.id] : 1);
+        const shareValue = Math.max(0, Math.round(rawShare));
         workingShares[participant.id] = shareValue;
         nextCustomShares[participant.id] = shareValue;
         totalShares += shareValue;
@@ -455,7 +457,7 @@ const EditExpense: React.FC = () => {
         nextCustomSplits[participantId] = amount;
         // Calculate shares from the amounts for consistency
         const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-        nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+        nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 1;
         nextShares[participantId] = nextCustomShares[participantId];
       });
     } else if (splitType === 'amount') {
@@ -471,7 +473,7 @@ const EditExpense: React.FC = () => {
           nextSplits[participantId] = amount;
           // Calculate shares and percentages from the amounts for consistency
           const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 1;
           nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
@@ -509,7 +511,7 @@ const EditExpense: React.FC = () => {
           nextSplits[participantId] = amount;
           // Calculate shares and percentages from the amounts for consistency
           const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 1;
           nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
@@ -617,7 +619,7 @@ const EditExpense: React.FC = () => {
 
         activeParticipants.forEach(participant => {
           const amount = initialSplits[participant.id] || 0;
-          const shareValue = equalAmount > 0 ? Math.max(1, Math.round(amount / equalAmount)) : 1;
+          const shareValue = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 1;
           workingShares[participant.id] = shareValue;
         });
 
@@ -903,12 +905,7 @@ const EditExpense: React.FC = () => {
   };
 
   const applyShareValue = (participantId: number, nextShare: number) => {
-    if (nextShare <= 0) {
-      handleParticipantToggle(participantId, false);
-      return;
-    }
-
-    const shareValue = Math.max(1, Math.round(nextShare));
+    const shareValue = Math.max(0, Math.round(nextShare));
     const updatedCustomShares = {
       ...customShares,
       [participantId]: shareValue,
@@ -940,13 +937,12 @@ const EditExpense: React.FC = () => {
 
     const raw = draftShares[participantId];
     const numeric = raw ? parseInt(raw, 10) : fallbackValue;
-    if (!Number.isFinite(numeric) || numeric <= 0) {
+    if (!Number.isFinite(numeric) || numeric < 0) {
       setDraftShares(prev => {
         const next = { ...prev };
         delete next[participantId];
         return next;
       });
-      handleParticipantToggle(participantId, false);
       return;
     }
     applyShareValue(participantId, numeric);
@@ -1562,7 +1558,7 @@ const EditExpense: React.FC = () => {
                             type="button"
                             className="share-adjust__button"
                             onClick={() => adjustShare(participant.id, -1)}
-                            disabled={!isIncluded || participantShare <= 1 || submitting || deleting}
+                            disabled={!isIncluded || participantShare <= 0 || submitting || deleting}
                             aria-label={`Decrease shares for ${participant.name}`}
                           >
                             <FontAwesomeIcon icon={faMinus} />
