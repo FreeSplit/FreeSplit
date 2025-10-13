@@ -91,11 +91,24 @@ const Members: React.FC = () => {
     return (
       <div className="page">
         <div className="body">
+          <Header />
           <div className="content-section align-center">
             <div className="content-container">
               <l-ring size="44" color="var(--color-primary)" />
-              <h2>Loading group data...</h2>
+              <h2>Loading member data...</h2>
             </div>
+          </div>
+          <div className="floating-cta-footer">
+            <div className="floating-cta-container">
+              <button 
+                className="btn fab-shadow"
+                onClick={() => setAddMemberOpen(true)}
+              >
+                <span>Add new members</span>
+                <FontAwesomeIcon icon={faUserPlus} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+              </button>
+            </div>
+            < NavBar />
           </div>
         </div>
       </div>

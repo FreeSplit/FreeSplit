@@ -156,11 +156,24 @@ const Debts: React.FC = () => {
     return (
       <div className="page">
         <div className="body">
+          <Header />
           <div className="content-section align-center">
             <div className="content-container">
               <l-ring size="44" color="var(--color-primary)" />
               <h2>Loading debt data...</h2>
             </div>
+          </div>
+          <div className="floating-cta-footer">
+            <div className="floating-cta-container">
+              <button 
+                className="btn fab-shadow"
+                onClick={() => navigate(`/groups/${urlSlug}/expenses/add`)}
+              >
+                <span>Add a new expense</span>
+                <FontAwesomeIcon icon={faReceipt} className="icon has-primary-color" style={{ fontSize: 16 }} aria-hidden="true" />
+              </button>
+            </div>
+            < NavBar />
           </div>
         </div>
       </div>
@@ -174,8 +187,17 @@ const Debts: React.FC = () => {
         <Header />
 
         <div className="content-section">
-          {/* W/ Debts */}
-          {(debts.length > 0 || payments.length > 0) && (
+
+          {loading ? (
+                  <div className="content-container">
+                    <l-ring size="44" color="var(--color-primary)" />
+                    <h2>Loading debt data...</h2>
+                  </div>
+              ) : 
+
+          /* W/ Debts */
+
+          (debts.length > 0 || payments.length > 0) && (
             <>
             <div className="v-flex gap-8px">
               <h1>Debts</h1>
