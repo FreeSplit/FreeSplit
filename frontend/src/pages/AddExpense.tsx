@@ -84,6 +84,40 @@ const formatAmount = (value: number): string => {
 
 const toFixedString = (value: number): string => value.toFixed(2);
 
+// Calculate GCD (Greatest Common Divisor) for simplifying shares
+const gcd = (a: number, b: number): number => {
+  a = Math.abs(Math.round(a));
+  b = Math.abs(Math.round(b));
+  while (b !== 0) {
+    const temp = b;
+    b = a % b;
+    a = temp;
+  }
+  return a;
+};
+
+// Calculate shares from amounts in their simplest form
+const calculateSharesFromAmounts = (amounts: number[]): number[] => {
+  // Round amounts to avoid floating point issues
+  const roundedAmounts = amounts.map(a => Math.round(a * 100)); // Convert to cents
+  
+  // Filter out zeros
+  const nonZeroAmounts = roundedAmounts.filter(a => a > 0);
+  
+  if (nonZeroAmounts.length === 0) {
+    return amounts.map(() => 0);
+  }
+  
+  // Find GCD of all non-zero amounts
+  let divisor = nonZeroAmounts[0];
+  for (let i = 1; i < nonZeroAmounts.length; i++) {
+    divisor = gcd(divisor, nonZeroAmounts[i]);
+  }
+  
+  // Divide all amounts by the GCD to get simplest shares
+  return roundedAmounts.map(a => a === 0 ? 0 : Math.round(a / divisor));
+};
+
 const AddExpense: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
@@ -432,15 +466,18 @@ const AddExpense: React.FC = () => {
 
       const amounts = calculateAmountsFromPercentages(percentageMap, costValue);
 
-      activeParticipants.forEach(participant => {
+      // Calculate simplified shares from amounts
+      const amountsArray = activeParticipants.map(p => amounts[p.id] ?? 0);
+      const sharesArray = calculateSharesFromAmounts(amountsArray);
+      
+      activeParticipants.forEach((participant, index) => {
         const participantId = participant.id;
         const amount = roundToTwoDecimals(amounts[participantId] ?? 0);
         nextSplits[participantId] = amount;
         nextCustomSplits[participantId] = amount;
-        // Calculate shares from the amounts for consistency
-        const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-        nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 0;
-        nextShares[participantId] = nextCustomShares[participantId];
+        // Use simplified shares
+        nextCustomShares[participantId] = sharesArray[index];
+        nextShares[participantId] = sharesArray[index];
       });
     } else if (splitType === 'amount') {
       const lockedMap = lockedAmountState;
@@ -454,10 +491,6 @@ const AddExpense: React.FC = () => {
           totalLockedAmount += amount;
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          // Calculate shares and percentages from the amounts for consistency
-          const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 0;
-          nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
         }
@@ -492,14 +525,18 @@ const AddExpense: React.FC = () => {
           const amount = roundToTwoDecimals(distributed[index] ?? 0);
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          // Calculate shares and percentages from the amounts for consistency
-          const equalAmount = activeCount > 0 ? costValue / activeCount : 0;
-          nextCustomShares[participantId] = equalAmount > 0 ? Math.max(0, Math.round(amount / equalAmount)) : 0;
-          nextShares[participantId] = nextCustomShares[participantId];
           nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
           nextCustomPercentages[participantId] = nextPercentages[participantId];
         });
       }
+      
+      // Calculate simplified shares from all amounts at once
+      const amountsArray = activeParticipants.map(p => nextSplits[p.id] ?? 0);
+      const sharesArray = calculateSharesFromAmounts(amountsArray);
+      activeParticipants.forEach((participant, index) => {
+        nextCustomShares[participant.id] = sharesArray[index];
+        nextShares[participant.id] = sharesArray[index];
+      });
     }
 
     participants.forEach(participant => {
