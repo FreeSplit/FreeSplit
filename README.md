@@ -8,23 +8,132 @@ FreeSplit is a modern expense splitting application that eliminates the hassle o
 
 The application generates unique shareable links for each group, allowing multiple people to add expenses and view balances without requiring accounts or logins. All data is stored locally, giving you complete control over your financial information.
 
-## Features
+## ✨ Features
 
-### MVP Features
-- ✅ Create groups with auto-generated unique links
-- ✅ Add/edit/delete expenses with detailed tracking
-- ✅ Add/edit/delete group members
-- ✅ Multiple split types: Equal, Amount, Share, and Percentage
-- ✅ Calculate balances per member
-- ✅ Simplify debts (minimize number of transactions)
-- ✅ Shareable links (multi-user editing, no login required)
-- ✅ Persistence with SQLite database
-- ✅ Unlimited expenses, completely ad-free
-- ✅ Spending totals (group + per member)
-- ✅ Real-time debt calculations
-- ✅ Responsive Progressive Web App (PWA)
+### Group Management
+- **Create Groups** - Create expense groups with auto-generated unique shareable links
+- **Multi-Currency Support** - Set currency per group (USD, EUR, GBP, etc.)
+- **Group Dashboard** - View group summary, total spending, and member balances at a glance
+- **Member Management** - Add, edit, or remove group members anytime
+- **My Groups** - Track and access all your groups from a centralized page
 
-### Future Enhancement Ideas
+### Expense Tracking
+- **Add Expenses** - Record expenses with custom names, amounts, and emoji icons
+- **Edit & Delete** - Modify or remove expenses with full history tracking
+- **Expense Payer** - Designate who paid for each expense
+- **Expense List** - View all expenses chronologically with visual indicators
+
+### Advanced Split Types
+FreeSplit supports four flexible ways to split expenses:
+
+1. **Equal Split** - Automatically divides expenses equally among selected participants
+2. **Amount Split** - Set custom dollar amounts for each person with automatic remainder distribution
+3. **Share Split** - Assign integer shares (e.g., 2 shares vs 1 share = 66.67% vs 33.33%)
+4. **Percentage Split** - Define precise percentage splits with automatic validation
+
+**Additional Split Features:**
+- **Selective Participants** - Include/exclude specific members from any expense
+- **Lock Values** - Lock individual amounts or percentages while others adjust automatically
+- **Real-time Calculations** - See split amounts update instantly as you type
+- **Smart Rounding** - Proper penny distribution ensures totals always match exactly
+- **Seamless Switching** - Switch between split types while preserving your custom values
+
+### Debt Management
+- **Balance Calculation** - Automatically calculates who owes whom based on all expenses
+- **Debt Simplification** - Minimizes the number of transactions needed to settle up
+- **Visual Debt Display** - Clear visualization of debts with "lends" and "borrows" sections
+- **Spending Summary** - See total spent and net balance per member
+
+### User Experience
+- **Progressive Web App (PWA)** - Install on mobile devices for an app-like experience
+- **No Login Required** - Access groups via shareable links, no accounts needed
+- **Responsive Design** - Optimized for mobile phones, tablets, and desktops
+- **Offline Capable** - View cached data even without internet connection
+- **Touch-Friendly** - Large buttons and intuitive gestures for mobile use
+- **Toast Notifications** - Clear feedback for all actions
+- **Clean Interface** - Modern, minimal design focusing on usability
+
+### Technical Features
+- **Self-Hosted** - Complete control over your data, no third-party services
+- **PostgreSQL Database** - Robust, reliable data persistence
+- **RESTful API** - Clean API architecture for potential integrations
+- **Docker Support** - Easy deployment with Docker Compose
+- **Unlimited Usage** - No user limits, expense limits, or group limits
+- **Completely Ad-Free** - No advertisements, tracking, or monetization
+
+## 🚀 Quick Start
+
+FreeSplit can be run in two ways:
+
+### Option 1: Using Docker (Recommended)
+
+The easiest way to get started:
+
+```bash
+# Clone the repository
+git clone https://github.com/tmfrsyth/freesplit.git
+cd freesplit
+
+# Start with Docker
+./start-docker.sh
+```
+
+Access the application at:
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:8080
+
+### Option 2: Local Development
+
+For development or if you prefer not to use Docker:
+
+```bash
+# Clone the repository
+git clone https://github.com/tmfrsyth/freesplit.git
+cd freesplit
+
+# Run setup script
+./setup.sh
+
+# Start the application
+./start.sh
+```
+
+Access the application at:
+- **Frontend**: http://localhost:3001
+- **Backend API**: http://localhost:8080
+
+## 📖 Usage
+
+1. **Create a Group** - Start by creating a new expense group and adding members
+2. **Share the Link** - Send the group link to others so they can add expenses too
+3. **Add Expenses** - Record expenses and choose how to split them
+4. **View Balances** - Check the Debts page to see who owes what
+5. **Settle Up** - Use the simplified debt list to settle balances efficiently
+
+## 🛠️ Technologies
+
+- **Backend**: Go 1.21+ with clean REST API architecture
+- **Frontend**: React 18 with TypeScript
+- **Database**: PostgreSQL for data persistence
+- **Styling**: Tailwind CSS for responsive design
+- **Icons**: FontAwesome and Lucide React
+- **Notifications**: React Hot Toast
+- **PWA**: Service Worker for offline functionality
+- **Deployment**: Docker & Docker Compose
+
+## 📚 Documentation
+
+For developers and those interested in contributing:
+
+- **[DEVELOPMENT.md](DEVELOPMENT.md)** - Development setup, architecture, and contribution guidelines
+- **[DEPLOYMENT.md](DEPLOYMENT.md)** - Production deployment instructions
+- **[Backend README](backend/README.md)** - Backend API documentation
+- **[Frontend README](frontend/README.md)** - Frontend architecture details
+
+## 🌟 Future Enhancements
+
+Ideas for future features:
+
 - Categorize expenses with custom categories
 - Receipt photo uploads and storage
 - Payment requests and reminders
@@ -32,168 +141,28 @@ The application generates unique shareable links for each group, allowing multip
 - Export/import to CSV/Excel
 - Recurring transactions for subscriptions
 - Multi-language support
-- Mobile offline entry of expenses
+- Enhanced offline functionality
+- Dark mode theme
 
-
-
-## Technologies Used
-
-- **Backend**: Go with REST API
-- **Frontend**: React with TypeScript
-- **Database**: SQLite
-- **Deployment**: Docker containers
-- **Communication**: HTTP REST API for frontend-backend communication
-- **Styling**: Tailwind CSS
-- **Icons**: Lucide React
-- **Notifications**: React Hot Toast
-
-## Quick Start
-
-### Using Docker Compose (Recommended)
-
-1. Clone the repository:
-```bash
-git clone https://github.com/tmfrsyth/freesplit.git
-cd freesplit
-```
-
-2. Run the setup script:
-```bash
-chmod +x setup.sh
-./setup.sh
-```
-
-3. Start the application:
-```bash
-./start.sh
-```
-
-4. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
-
-### Manual Setup
-
-#### Backend Setup
-
-1. Navigate to the backend directory:
-```bash
-cd backend
-```
-
-2. Install Go dependencies:
-```bash
-go mod tidy
-```
-
-3. Run the backend:
-```bash
-go run rest_server.go
-```
-
-#### Frontend Setup
-
-1. Navigate to the frontend directory:
-```bash
-cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
-npm start
-```
-
-## Starting and Stopping the Project
-
-### Start the Application
-```bash
-./start.sh
-```
-
-This script will:
-- Start the backend server on port 8080
-- Start the frontend development server on port 3000
-- Display helpful information about accessing the application
-
-### Stop the Application
-```bash
-./stop.sh
-```
-
-This script will:
-- Stop the backend server
-- Stop the frontend development server
-- Clean up any running processes
-
-### Individual Services
-
-To start only the backend:
-```bash
-cd backend && go run rest_server.go
-```
-
-To start only the frontend:
-```bash
-cd frontend && npm start
-```
-
-## Development
-
-### Backend Development
-
-The backend uses Go modules with a clean REST API architecture. Key files:
-- `rest_server.go` - REST API server entry point
-- `internal/database/models.go` - Database models and migrations
-- `internal/services/` - Business logic service implementations
-
-### Frontend Development
-
-The frontend is a React PWA with TypeScript. Key files:
-- `src/App.tsx` - Main application component
-- `src/pages/` - Page components
-- `src/services/api.ts` - API client
-- `public/manifest.json` - PWA manifest
-
-### Adding New Features
-
-1. Define new data types in `internal/services/types.go`
-2. Add service methods to the appropriate interface in `internal/services/interfaces.go`
-3. Implement the service methods in `internal/services/`
-4. Add REST endpoints in `rest_server.go`
-5. Update the frontend API client in `src/services/api.ts`
-6. Add UI components in `src/pages/`
-
-## Deployment
-
-### Docker Deployment
-
-1. Build and run with Docker Compose:
-```bash
-docker-compose up --build
-```
-
-2. Access the application:
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8080
-
-### Self-Hosting
-
-The application is designed to be easily self-hosted. Simply run the setup script and start the services on your preferred server.
-
-## Authors
+## 👥 Authors
 
 - **Thomas Forsyth** - *Team Captain: Initial work and architecture* - [tmfrsyth](https://github.com/tmfrsyth)
 - **Kris Sousa** - *Code Monkey: Development and implementation* - [KMFSousa](https://github.com/KMFSousa)
 
-## License
+## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Support
+Copyright (c) 2025 tmfrsyth
 
-For issues and questions, please create an issue in the repository.
+## 💬 Support
+
+For issues, questions, or feature requests, please create an issue in the [GitHub repository](https://github.com/tmfrsyth/freesplit/issues).
+
+## 🙏 Acknowledgments
+
+FreeSplit was built to provide a simple, privacy-focused alternative to commercial expense-splitting apps. We believe in keeping your financial data under your control.
+
+---
+
+**Made with ❤️ for people who split expenses together**
