@@ -108,6 +108,16 @@ const calculateSharesFromAmounts = (amounts: number[]): number[] => {
     return amounts.map(() => 0);
   }
   
+  // Check if all non-zero amounts are approximately equal (within 1 cent tolerance)
+  const minAmount = Math.min(...nonZeroAmounts);
+  const maxAmount = Math.max(...nonZeroAmounts);
+  const areApproximatelyEqual = (maxAmount - minAmount) <= 1;
+  
+  if (areApproximatelyEqual) {
+    // All non-zero amounts are equal (or differ by rounding), give them each 1 share
+    return roundedAmounts.map(a => a === 0 ? 0 : 1);
+  }
+  
   // Find GCD of all non-zero amounts
   let divisor = nonZeroAmounts[0];
   for (let i = 1; i < nonZeroAmounts.length; i++) {
@@ -403,13 +413,21 @@ const AddExpense: React.FC = () => {
 
       const shareAmounts = calculateAmountsFromShares(workingShares, costValue);
 
-      activeParticipants.forEach(participant => {
+      // Calculate percentages from shares first
+      const totalSharesForPercentage = Object.values(workingShares).reduce((sum, val) => sum + val, 0);
+      const basePercentages = activeParticipants.map(p => 
+        totalSharesForPercentage > 0 ? (workingShares[p.id] / totalSharesForPercentage) * 100 : 0
+      );
+      const distributedPercentages = distributeWithRemainder(basePercentages, 100);
+      
+      activeParticipants.forEach((participant, index) => {
         const amount = roundToTwoDecimals(shareAmounts[participant.id] ?? 0);
+        const percentage = roundToTwoDecimals(distributedPercentages[index] ?? 0);
         nextSplits[participant.id] = amount;
         nextShares[participant.id] = workingShares[participant.id];
-        nextPercentages[participant.id] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
+        nextPercentages[participant.id] = percentage;
         nextCustomSplits[participant.id] = amount;
-        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
+        nextCustomPercentages[participant.id] = percentage;
       });
     } else if (splitType === 'percentage') {
       const lockedMap = lockedPercentageState;
@@ -493,8 +511,6 @@ const AddExpense: React.FC = () => {
           totalLockedAmount += amount;
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
-          nextCustomPercentages[participantId] = nextPercentages[participantId];
         }
       });
 
@@ -527,8 +543,6 @@ const AddExpense: React.FC = () => {
           const amount = roundToTwoDecimals(distributed[index] ?? 0);
           nextCustomSplits[participantId] = amount;
           nextSplits[participantId] = amount;
-          nextPercentages[participantId] = costValue > 0 ? roundToTwoDecimals((amount / costValue) * 100) : 0;
-          nextCustomPercentages[participantId] = nextPercentages[participantId];
         });
       }
       
@@ -538,6 +552,17 @@ const AddExpense: React.FC = () => {
       activeParticipants.forEach((participant, index) => {
         nextCustomShares[participant.id] = sharesArray[index];
         nextShares[participant.id] = sharesArray[index];
+      });
+      
+      // Calculate percentages from shares, not amounts
+      const totalSharesForPercentage = sharesArray.reduce((sum, val) => sum + val, 0);
+      const basePercentages = sharesArray.map(share => 
+        totalSharesForPercentage > 0 ? (share / totalSharesForPercentage) * 100 : 0
+      );
+      const distributedPercentages = distributeWithRemainder(basePercentages, 100);
+      activeParticipants.forEach((participant, index) => {
+        nextPercentages[participant.id] = roundToTwoDecimals(distributedPercentages[index] ?? 0);
+        nextCustomPercentages[participant.id] = nextPercentages[participant.id];
       });
     }
 
