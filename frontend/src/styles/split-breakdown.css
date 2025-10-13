@@ -120,11 +120,12 @@
   padding: 2px 6px;
   align-items: center;
   border-radius: 4px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  border: 1px solid var(--color-text);
+  background: transparent;
+  color: var(--color-text);
+  border: 1px solid transparent;
   align-self: stretch;
-  max-width: 127px;
+  width: 127px;
+  text-align: right;
 }
 
 .split-breakdown-amount-split-container {
@@ -140,6 +141,7 @@
     overflow: hidden;
     width: 127px;
     flex-shrink: 0;
+    justify-items: end;
 }
 
 
@@ -241,9 +243,7 @@
 }
 
 .split-breakdown-even-split-container.is-disabled {
-  background: var(--color-muted);
-  color: var(--color-bg);
-  border-color: var(--color-muted);
+  color: var(--color-muted);
 }
 
 .split-input {
@@ -255,12 +255,22 @@
   outline: none;
   border-radius: 0; -webkit-appearance: none;
   line-height: 1.25;
-  overflow-x: hidden;
+  overflow: hidden;
   text-overflow: scroll;
-  width: auto;
+  width: fit-content;
+  max-width: 100%;
+  flex: 0 1 fit-content;
 }
 
 .split-input.percent {
   width: 52px;
 }
 
+.split-breakdown-amount-split-container .split-input {
+  width: max-content;
+  max-width: 100%;
+  flex: 0 1 auto;
+  min-width: 0;
+  display: inline-block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-align: right;
+}

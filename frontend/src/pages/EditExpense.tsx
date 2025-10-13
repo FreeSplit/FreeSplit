@@ -1577,7 +1577,6 @@ const EditExpense: React.FC = () => {
                                 }
                               }}
                               className="split-input"
-                              
                               disabled={!isIncluded || submitting || deleting}
                               inputMode="decimal"
                               pattern="[0-9]*\\.?[0-9]*"
