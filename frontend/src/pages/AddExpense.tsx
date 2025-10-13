@@ -477,16 +477,23 @@ const AddExpense: React.FC = () => {
         });
       }
 
-      // Use existing amounts from customSplits - don't recalculate from percentages
-      // Amounts are the source of truth
-      activeParticipants.forEach((participant) => {
-        const participantId = participant.id;
-        const amount = Math.max(0, customSplitsState[participantId] ?? splits[participantId] ?? 0);
-        nextSplits[participantId] = amount;
-        // Don't update customSplits here - preserve the source of truth
+      // Calculate amounts from the redistributed percentages
+      const baseAmountsFromPercentages = activeParticipants.map(participant => {
+        const percentage = nextPercentages[participant.id] ?? 0;
+        return (percentage / 100) * costValue;
       });
       
-      // Calculate simplified shares from the existing amounts
+      // Distribute with proper rounding to ensure total matches exactly
+      const distributedAmounts = distributeWithRemainder(baseAmountsFromPercentages, costValue);
+      
+      activeParticipants.forEach((participant, index) => {
+        const participantId = participant.id;
+        const amount = roundToTwoDecimals(distributedAmounts[index] ?? 0);
+        nextSplits[participantId] = amount;
+        nextCustomSplits[participantId] = amount;
+      });
+      
+      // Calculate simplified shares from the amounts
       const amountsArray = activeParticipants.map(p => nextSplits[p.id] ?? 0);
       const sharesArray = calculateSharesFromAmounts(amountsArray);
       
