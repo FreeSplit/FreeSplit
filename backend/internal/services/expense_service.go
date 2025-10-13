@@ -184,18 +184,26 @@ func (s *expenseService) UpdateExpense(ctx context.Context, req *UpdateExpenseRe
 		}
 	}()
 
-	// Update expense
-	expense := database.Expense{
-		ID:        uint(req.Expense.Id),
-		Name:      req.Expense.Name,
-		Cost:      req.Expense.Cost,
-		Emoji:     req.Expense.Emoji,
-		PayerID:   uint(req.Expense.PayerId),
-		SplitType: req.Expense.SplitType,
-		GroupID:   uint(req.Expense.GroupId),
+	// Get existing expense first to preserve created_at
+	var expense database.Expense
+	if err := tx.First(&expense, req.Expense.Id).Error; err != nil {
+		tx.Rollback()
+		if err == gorm.ErrRecordNotFound {
+			return nil, fmt.Errorf("expense not found")
+		}
+		return nil, fmt.Errorf("failed to get expense: %v", err)
 	}
 
-	if err := tx.Save(&expense).Error; err != nil {
+	// Update only the fields that should change
+	updates := map[string]interface{}{
+		"name":       req.Expense.Name,
+		"cost":       req.Expense.Cost,
+		"emoji":      req.Expense.Emoji,
+		"payer_id":   req.Expense.PayerId,
+		"split_type": req.Expense.SplitType,
+	}
+
+	if err := tx.Model(&expense).Updates(updates).Error; err != nil {
 		tx.Rollback()
 		return nil, fmt.Errorf("failed to update expense: %v", err)
 	}
