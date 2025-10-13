@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Plus, Users, DollarSign, Receipt, Settings } from 'lucide-react';
 import { getGroup, getExpensesByGroup, deleteExpense } from '../services/api';
 import { Group, Expense, Participant } from '../services/api';
@@ -8,6 +8,7 @@ import { useRobotsMeta } from '../hooks/useRobotsMeta';
 import toast from 'react-hot-toast';
 import NavBar from "../nav/nav-bar";
 import Header from "../nav/header";
+import WelcomeModal from "../modals/welcome";
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faReceipt, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
@@ -26,12 +27,13 @@ const formatAmount = (value: number): string => {
 const GroupDashboard: React.FC = () => {
   const { urlSlug } = useParams<{ urlSlug: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   useRobotsMeta('noindex, nofollow');
   const [group, setGroup] = useState<Group | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isShareOpen, setShareOpen] = useState(false);
+  const [isWelcomeOpen, setWelcomeOpen] = useState(false);
 
   // Track group visit for user groups feature
   useGroupTracking();
@@ -59,6 +61,13 @@ const GroupDashboard: React.FC = () => {
       loadGroupData();
     }
   }, [urlSlug, loadGroupData]);
+
+  useEffect(() => {
+    if (group && (location.state as { showWelcome?: boolean } | null)?.showWelcome) {
+      setWelcomeOpen(true);
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [group, location, navigate]);
 
 
   const calculateTotalSpent = () => {
@@ -135,6 +144,9 @@ const GroupDashboard: React.FC = () => {
         <div className="body">
           {/* Header */}
             <Header />
+            {isWelcomeOpen && group ? (
+              <WelcomeModal group={group} onClose={() => setWelcomeOpen(false)} />
+            ) : null}
           {/* Expenses */}
             <div className="content-section">
               {expenses.length === 0 ? (

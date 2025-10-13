@@ -234,7 +234,11 @@ const CreateGroup: React.FC = () => {
       });
 
       setErrors({});
-      navigate(`/groups/${response.url_slug}`);
+      navigate(`/groups/${response.url_slug}`, {
+        state: {
+          showWelcome: true,
+        },
+      });
     } catch (error) {
       console.error('Error creating group:', error);
     }
