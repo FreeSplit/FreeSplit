@@ -146,8 +146,8 @@ Ideas for future features:
 
 ## 👥 Authors
 
-- **Thomas Forsyth** - *Team Captain: Initial work and architecture* - [tmfrsyth](https://github.com/tmfrsyth)
-- **Kris Sousa** - *Code Monkey: Development and implementation* - [KMFSousa](https://github.com/KMFSousa)
+- **Thomas Forsyth** - *UI/UX Design and project planning* - [tmfrsyth](https://github.com/tmfrsyth)
+- **Kris Sousa** - *Backend Development, Typscript implementation and Architecture Design* - [KMFSousa](https://github.com/KMFSousa)
 
 ## 📄 License
 
