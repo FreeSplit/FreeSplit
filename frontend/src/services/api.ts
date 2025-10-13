@@ -66,6 +66,7 @@ export interface Expense {
   split_type: string;
   split_ids: number[];
   group_id: number;
+  created_at?: string; // ISO 8601 timestamp from backend (optional for client-side creation)
 }
 
 export interface Split {
