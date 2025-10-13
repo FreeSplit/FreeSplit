@@ -990,6 +990,7 @@ const AddExpense: React.FC = () => {
 
     const trimmedName = formData.name.trim();
     const costValue = formData.cost.trim();
+    const costNumeric = parseDecimalValue(costValue);
     const nextErrors: FormErrors = {};
 
     if (!trimmedName) {
@@ -998,6 +999,8 @@ const AddExpense: React.FC = () => {
 
     if (!costValue) {
       nextErrors.cost = 'Please enter the expense cost.';
+    } else if (costNumeric > 99999999.99) {
+      nextErrors.cost = 'Amount must be less than 100 million';
     }
 
     if (formData.payer_id === 0) {
@@ -1069,8 +1072,13 @@ const AddExpense: React.FC = () => {
 
       toast.success('Expense added successfully!');
       navigate(`/groups/${urlSlug}`);
-    } catch (error) {
-      toast.error('Failed to add expense');
+    } catch (error: any) {
+      // Check for specific backend error messages
+      if (error?.response?.status === 400 && error?.response?.data) {
+        toast.error(`Failed to add expense: ${error.response.data}`);
+      } else {
+        toast.error('Failed to add expense');
+      }
       console.error('Error adding expense:', error);
     } finally {
       setSubmitting(false);

@@ -1150,6 +1150,8 @@ const EditExpense: React.FC = () => {
 
     if (!formData.cost.trim() || costValue <= 0) {
       nextErrors.cost = 'Please enter the expense cost.';
+    } else if (costValue > 99999999.99) {
+      nextErrors.cost = 'Amount must be less than 100 million';
     }
 
     if (formData.payer_id === 0) {
@@ -1205,8 +1207,13 @@ const EditExpense: React.FC = () => {
 
       toast.success('Expense updated successfully!');
       navigate(`/groups/${urlSlug}`);
-    } catch (error) {
-      toast.error('Failed to update expense');
+    } catch (error: any) {
+      // Check for specific backend error messages
+      if (error?.response?.status === 400 && error?.response?.data) {
+        toast.error(`Failed to update expense: ${error.response.data}`);
+      } else {
+        toast.error('Failed to update expense');
+      }
       console.error('Error updating expense:', error);
     } finally {
       setSubmitting(false);
