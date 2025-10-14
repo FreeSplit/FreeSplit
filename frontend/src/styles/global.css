@@ -548,19 +548,6 @@ input[type="number"] {
   border-radius: 8px;
 }
 
-/* Force full width for emoji-mart picker */
-.emoji-picker-container em-emoji-picker {
-  width: 100% !important;
-  max-width: 100% !important;
-  display: block !important;
-  min-width: 100% !important;
-}
-
-/* Ensure picker styling for production builds */
-.emoji-picker-container [data-id="picker"] {
-  width: 100% !important;
-  max-width: 100% !important;
-}
 
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
