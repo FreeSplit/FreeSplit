@@ -231,35 +231,6 @@ const AddExpense: React.FC = () => {
     setEmojiPickerOpen(false);
   }, [setEmojiPickerOpen, setFormData]);
 
-  useEffect(() => {
-    if (!isEmojiPickerOpen) {
-      return;
-    }
-
-    let frame: number | null = null;
-
-    const applyHostStyles = () => {
-      const host = emojiPickerRef.current?.querySelector<HTMLElement>('em-emoji-picker');
-
-      if (!host) {
-        frame = requestAnimationFrame(applyHostStyles);
-        return;
-      }
-
-      host.style.width = '100%';
-      host.style.maxWidth = '100%';
-      host.style.display = 'block';
-      host.style.minWidth = '100%';
-    };
-
-    applyHostStyles();
-
-    return () => {
-      if (frame) {
-        cancelAnimationFrame(frame);
-      }
-    };
-  }, [isEmojiPickerOpen]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {

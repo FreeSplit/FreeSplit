@@ -508,17 +508,23 @@ input[type="number"] {
   inset: 0;
   background: rgba(0,0,0,0.45);
   display: flex;
-  align-items: flex-end;
+  align-items: flex-start;
   justify-content: center;
   z-index: 120;
+  padding-top: 180px;
 }
 
 .emoji-picker-container {
   width: 100%;
-  max-width: 672px;
-  max-height: 80vh;
+  max-width: 352px;
+  max-height: 435px;
   display: flex;
   justify-content: center;
+  align-items: center;
+  background: #ffffff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
 }
 
 .emoji-picker-container > div {
@@ -535,13 +541,13 @@ input[type="number"] {
 }
 
 .emoji-picker-container .em-emoji-picker {
-  --epr-picker-width: 100%;
   width: 100% !important;
-  max-width: none !important;
+  max-width: 100% !important;
   box-shadow: none;
   border: 0;
-  border-radius: 16px 16px 0 0;
+  border-radius: 8px;
 }
+
 
 .expenses-container {
   display: flex; flex-direction: column; align-items: left;
