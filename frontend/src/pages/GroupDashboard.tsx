@@ -227,7 +227,6 @@ const GroupDashboard: React.FC = () => {
                       onClick={loadMoreExpenses}
                       disabled={loadingMore}
                       className="btn"
-                      style={{ width: '100%' }}
                     >
                       {loadingMore ? 'Loading...' : 'Load More...'}
                     </button>
