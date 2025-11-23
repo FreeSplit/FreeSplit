@@ -21,13 +21,13 @@ func NewExpenseService(db *gorm.DB) ExpenseService {
 	return &expenseService{db: db}
 }
 
-// GetExpensesByGroup retrieves all expenses for a specific group ordered by creation date.
+// GetExpensesByGroup retrieves expenses for a specific group ordered by creation date.
 // Input: GetExpensesByGroupRequest containing GroupId
 // Output: GetExpensesByGroupResponse with list of expenses
-// Description: Fetches all expenses for a group in descending order by creation date
+// Description: Fetches expenses for a group in descending order by creation date, with a minimum limit of 50
 func (s *expenseService) GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error) {
 	var expenses []database.Expense
-	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Find(&expenses).Error; err != nil {
+	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Limit(50).Find(&expenses).Error; err != nil {
 		return nil, fmt.Errorf("failed to get expenses: %v", err)
 	}
 

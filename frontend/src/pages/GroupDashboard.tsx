@@ -178,7 +178,7 @@ const GroupDashboard: React.FC = () => {
                 <h1>Expenses</h1>
                 <div className="dark-divider"></div>
                 <div className="list">
-                  {expenses.slice(0, 5).map((expense) => (
+                  {expenses.map((expense) => (
                     <button key={expense.id} onClick={() => navigate(`/groups/${urlSlug}/expenses/${expense.id}/edit`)} className="expenses-container">
                       <div className="expense">
                         <span className="expense-emoji">{expense.emoji}</span>
