@@ -507,8 +507,27 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService s
 		return
 	}
 
+	// Parse query parameters for pagination
+	query := r.URL.Query()
+	offset := int32(0)
+	limit := int32(0)
+
+	if offsetStr := query.Get("offset"); offsetStr != "" {
+		if parsedOffset, err := strconv.Atoi(offsetStr); err == nil && parsedOffset >= 0 {
+			offset = int32(parsedOffset)
+		}
+	}
+
+	if limitStr := query.Get("limit"); limitStr != "" {
+		if parsedLimit, err := strconv.Atoi(limitStr); err == nil && parsedLimit > 0 {
+			limit = int32(parsedLimit)
+		}
+	}
+
 	serviceReq := &services.GetExpensesByGroupRequest{
 		GroupId: int32(groupID),
+		Offset:  offset,
+		Limit:   limit,
 	}
 
 	resp, err := expenseService.GetExpensesByGroup(context.TODO(), serviceReq)
@@ -519,7 +538,7 @@ func getExpensesByGroup(w http.ResponseWriter, r *http.Request, expenseService s
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resp.Expenses)
+	json.NewEncoder(w).Encode(resp)
 }
 
 func getSplitsByGroup(w http.ResponseWriter, r *http.Request, expenseService services.ExpenseService) {

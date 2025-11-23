@@ -230,8 +230,20 @@ export const deleteParticipant = async (participantId: number): Promise<void> =>
 };
 
 // Expense API
-export const getExpensesByGroup = async (groupId: number): Promise<Expense[]> => {
-  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/expenses`);
+export interface GetExpensesResponse {
+  data: Expense[];
+  pagination: {
+    total_records: number;
+  };
+}
+
+export const getExpensesByGroup = async (groupId: number, offset: number = 0, limit: number = 50): Promise<GetExpensesResponse> => {
+  const response = await axios.get(`${API_BASE_URL}/api/group/${groupId}/expenses`, {
+    params: {
+      offset,
+      limit
+    }
+  });
   return response.data;
 };
 

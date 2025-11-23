@@ -9,6 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
+const EXPENSES_PER_PAGE = 50
+
 type expenseService struct {
 	db *gorm.DB
 }
@@ -22,12 +24,30 @@ func NewExpenseService(db *gorm.DB) ExpenseService {
 }
 
 // GetExpensesByGroup retrieves expenses for a specific group ordered by creation date.
-// Input: GetExpensesByGroupRequest containing GroupId
-// Output: GetExpensesByGroupResponse with list of expenses
-// Description: Fetches expenses for a group in descending order by creation date, with a minimum limit of 50
+// Input: GetExpensesByGroupRequest containing GroupId, Offset, and Limit
+// Output: GetExpensesByGroupResponse with list of expenses and pagination info
+// Description: Fetches expenses for a group in descending order by creation date with pagination support
 func (s *expenseService) GetExpensesByGroup(ctx context.Context, req *GetExpensesByGroupRequest) (*GetExpensesByGroupResponse, error) {
+	// Set default limit if not provided
+	limit := req.Limit
+	if limit <= 0 {
+		limit = EXPENSES_PER_PAGE
+	}
+
+	offset := req.Offset
+	if offset < 0 {
+		offset = 0
+	}
+
+	// Count total expenses for the group
+	var totalRecords int64
+	if err := s.db.Model(&database.Expense{}).Where("group_id = ?", req.GroupId).Count(&totalRecords).Error; err != nil {
+		return nil, fmt.Errorf("failed to count expenses: %v", err)
+	}
+
+	// Fetch expenses with pagination
 	var expenses []database.Expense
-	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Limit(50).Find(&expenses).Error; err != nil {
+	if err := s.db.Where("group_id = ?", req.GroupId).Order("created_at DESC").Offset(int(offset)).Limit(int(limit)).Find(&expenses).Error; err != nil {
 		return nil, fmt.Errorf("failed to get expenses: %v", err)
 	}
 
@@ -37,7 +57,10 @@ func (s *expenseService) GetExpensesByGroup(ctx context.Context, req *GetExpense
 	}
 
 	return &GetExpensesByGroupResponse{
-		Expenses: responseExpenses,
+		Data: responseExpenses,
+		Pagination: GetExpensesPagination{
+			TotalRecords: int32(totalRecords),
+		},
 	}, nil
 }
 

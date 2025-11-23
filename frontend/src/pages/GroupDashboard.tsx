@@ -14,6 +14,8 @@ import { faReceipt, faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import FreesplitLogo from '../images/FreeSplit.svg';
 import { ring } from 'ldrs'; ring.register();
 
+const EXPENSES_PER_PAGE = 50;
+
 const formatAmount = (value: number): string => {
   if (!Number.isFinite(value)) {
     return '0.00';
@@ -34,6 +36,9 @@ const GroupDashboard: React.FC = () => {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWelcomeOpen, setWelcomeOpen] = useState(false);
+  const [totalRecords, setTotalRecords] = useState<number>(0);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [currentOffset, setCurrentOffset] = useState<number>(0);
 
   // Track group visit for user groups feature
   useGroupTracking();
@@ -44,17 +49,36 @@ const GroupDashboard: React.FC = () => {
       setLoading(true);
       const groupResponse = await getGroup(urlSlug!);
       
-      const expensesResponse = await getExpensesByGroup(groupResponse.group.id);
+      const expensesResponse = await getExpensesByGroup(groupResponse.group.id, 0, EXPENSES_PER_PAGE);
 
       setGroup(groupResponse.group);
       setParticipants(groupResponse.participants);
-      setExpenses(expensesResponse);
+      setExpenses(expensesResponse.data);
+      setTotalRecords(expensesResponse.pagination.total_records);
+      setCurrentOffset(EXPENSES_PER_PAGE);
     } catch (error) {
       console.error('Error loading group data:', error);
     } finally {
       setLoading(false);
     }
   }, [urlSlug]);
+
+  const loadMoreExpenses = useCallback(async () => {
+    if (!group || loadingMore) return;
+    
+    try {
+      setLoadingMore(true);
+      const expensesResponse = await getExpensesByGroup(group.id, currentOffset, EXPENSES_PER_PAGE);
+      
+      setExpenses(prev => [...prev, ...expensesResponse.data]);
+      setCurrentOffset(prev => prev + EXPENSES_PER_PAGE);
+    } catch (error) {
+      console.error('Error loading more expenses:', error);
+      toast.error('Failed to load more expenses');
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [group, currentOffset, loadingMore]);
 
   useEffect(() => {
     if (urlSlug) {
@@ -90,9 +114,11 @@ const GroupDashboard: React.FC = () => {
       try {
         await deleteExpense(expenseId);
         toast.success('Expense deleted successfully');
-        // Reload expenses
-        const expensesResponse = await getExpensesByGroup(group!.id);
-        setExpenses(expensesResponse);
+        // Reload expenses from the beginning
+        const expensesResponse = await getExpensesByGroup(group!.id, 0, EXPENSES_PER_PAGE);
+        setExpenses(expensesResponse.data);
+        setTotalRecords(expensesResponse.pagination.total_records);
+        setCurrentOffset(EXPENSES_PER_PAGE);
       } catch (error) {
         toast.error('Failed to delete expense');
         console.error('Error deleting expense:', error);
@@ -195,6 +221,18 @@ const GroupDashboard: React.FC = () => {
                     </button>
                   ))}
                 </div>
+                {expenses.length < totalRecords && (
+                  <div className="content-container text-is-centered" style={{ marginTop: '16px' }}>
+                    <button
+                      onClick={loadMoreExpenses}
+                      disabled={loadingMore}
+                      className="btn"
+                      style={{ width: '100%' }}
+                    >
+                      {loadingMore ? 'Loading...' : 'Load More...'}
+                    </button>
+                  </div>
+                )}
                 </>
               )}
             </div>

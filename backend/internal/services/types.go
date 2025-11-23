@@ -62,10 +62,17 @@ type DeleteParticipantRequest struct {
 // Request and Response types for Expense operations
 type GetExpensesByGroupRequest struct {
 	GroupId int32 `json:"group_id"`
+	Offset  int32 `json:"offset,omitempty"`
+	Limit   int32 `json:"limit,omitempty"`
 }
 
 type GetExpensesByGroupResponse struct {
-	Expenses []*Expense `json:"expenses"`
+	Data       []*Expense           `json:"data"`
+	Pagination GetExpensesPagination `json:"pagination"`
+}
+
+type GetExpensesPagination struct {
+	TotalRecords int32 `json:"total_records"`
 }
 
 type CreateExpenseRequest struct {
