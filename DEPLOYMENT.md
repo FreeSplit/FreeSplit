@@ -24,6 +24,7 @@
    - **Environment**: `Docker`
 4. **Environment Variables**:
    - `REACT_APP_API_URL`: `https://freesplit-backend.onrender.com`
+   - `REACT_APP_PUBLIC_URL` - public origin used in share links (defaults to the page origin)
 5. **Deploy**
 
 ### Step 3: Access Your App

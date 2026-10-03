@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark } from '@fortawesome/free-solid-svg-icons';
 import type { Group } from '../services/api';
 import toast from 'react-hot-toast';
+import { PUBLIC_URL } from '../config';
 
 type ShareLinkProps = {
   group: Group;
@@ -12,7 +13,7 @@ type ShareLinkProps = {
 const ShareModal: React.FC<ShareLinkProps> = ({ group, onClose }) => {
   const [copySuccess, setCopySuccess] = useState(false);
   const resetTimerRef = useRef<number | null>(null);
-  const shareUrl = `https://freesplit.ca/groups/${group.url_slug}`;
+  const shareUrl = `${PUBLIC_URL}/groups/${group.url_slug}`;
 
   useEffect(() => {
     return () => {
